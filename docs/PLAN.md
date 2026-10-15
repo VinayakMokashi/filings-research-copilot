@@ -142,13 +142,13 @@ Size is relative: S < M < L.
 
 **Goal:** a repository where every later phase lands cleanly.
 
-- [ ] 0.1 Initialise git and create the public GitHub repository (MIT licence).
+- [x] 0.1 Initialise git and create the public GitHub repository (MIT licence).
 - [x] 0.2 Package skeleton with uv (hatchling build, `src/copilot` layout) and a committed lockfile.
 - [x] 0.3 Quality gates: ruff (lint and format), mypy in strict mode, pytest with `integration` and `eval` markers (unit tests cannot reach the network), pre-commit hooks.
 - [x] 0.4 Typed settings with `pydantic-settings`, `.env.example`, structured logging with structlog.
 - [x] 0.5 LLM gateway v0 on LiteLLM's router: model roles, retries, fallbacks, token and cost accounting, reasoning-tag splitting, and a fake LLM for tests.
 - [x] 0.6 Docker Compose with Qdrant and Postgres, bound to 127.0.0.1, with health checks.
-- [ ] 0.7 CI on GitHub Actions (lint, format, types, tests, a full-history gitleaks scan), Dependabot updates, and a GitHub Pages deploy for the project page.
+- [x] 0.7 CI on GitHub Actions (lint, format, types, tests, a full-history gitleaks scan), Dependabot updates, and a GitHub Pages deploy for the project page.
 - [ ] 0.8 Check which models the Groq key can use (`uv run poe models`), confirm the strong and fast roles, and run the live smoke test (`uv run poe smoke`).
 
 **Done when:** checks pass locally and in CI, the Compose services are healthy, the project page is live on GitHub Pages, and the smoke test gets a reply from each role.
