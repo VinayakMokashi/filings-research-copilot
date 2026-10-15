@@ -1,0 +1,45 @@
+# Local services for development. Start with `uv run poe services-up`.
+# Both ports are bound to 127.0.0.1, so other machines can't reach these services;
+# the credentials below are for local development only.
+name: filings-copilot
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.19.2
+    ports:
+      - "127.0.0.1:${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      # The image has no curl or wget, so ask /readyz over a raw bash TCP socket.
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/127.0.0.1/6333 && printf ''GET /readyz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n'' >&3 && grep -q ''200 OK'' <&3'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: copilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-copilot}
+      POSTGRES_DB: copilot
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      # Postgres 18+ keeps data in a versioned directory under /var/lib/postgresql.
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      # -h forces a TCP probe: on first start the image's init server listens only on the
+      # Unix socket, so a socket probe could report healthy too early.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U copilot -d copilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  qdrant_data:
+  postgres_data:
