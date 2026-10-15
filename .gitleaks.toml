@@ -1,0 +1,31 @@
+# Secret-scanning rules: gitleaks' defaults plus explicit patterns for the providers this
+# project uses, so their keys are caught in any context. On their own, the default rules
+# only catch these keys through the generic keyword-based rule.
+title = "filings-research-copilot"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "groq-api-key"
+description = "Groq API key"
+regex = '''\bgsk_[A-Za-z0-9]{40,64}\b'''
+keywords = ["gsk_"]
+
+[[rules]]
+id = "cerebras-api-key"
+description = "Cerebras API key"
+regex = '''\bcsk-[a-z0-9]{32,64}\b'''
+keywords = ["csk-"]
+
+[[rules]]
+id = "openrouter-api-key"
+description = "OpenRouter API key"
+regex = '''\bsk-or-v1-[a-f0-9]{64}\b'''
+keywords = ["sk-or-v1-"]
+
+[[rules]]
+id = "langfuse-secret-key"
+description = "Langfuse secret key"
+regex = '''\bsk-lf-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b'''
+keywords = ["sk-lf-"]
