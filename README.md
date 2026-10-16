@@ -49,6 +49,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | CI: lint, format, strict types, tests, a full-history secret scan | `.github/workflows/ci.yml`, `.gitleaks.toml` |
 | Weekly dependency updates for Actions, `uv.lock` and pre-commit hooks | `.github/dependabot.yml` |
 | FinanceBench download checked against a pinned manifest; dev/test split by company, with the test set held out | `src/copilot/eval/`, `eval/financebench/` ([data card](docs/data/financebench.md)) |
+| Evaluation harness: retrieval metrics, bootstrap intervals, paired permutation tests, run reports | `src/copilot/eval/`, `eval/results/` ([guide](docs/concepts/evaluation-statistics.md), [runbook](docs/runbooks/running-evaluations.md)) |
 
 ## Local development
 
@@ -62,6 +63,7 @@ uv run poe check              # ruff, format check, mypy, pytest: the same steps
 uv run poe secrets            # gitleaks over the full history, as CI does (needs Docker)
 uv run poe smoke              # one live call per model role (needs the key)
 uv run poe fetch-financebench # evaluation questions and the PDFs they cite (159 MB)
+uv run poe eval-retrieval --baseline first-pages   # score a retriever, with 95% intervals
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).

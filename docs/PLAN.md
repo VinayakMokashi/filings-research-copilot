@@ -104,7 +104,7 @@ Starting points, each confirmed by an ADR when its phase lands.
 | API and UI | FastAPI with SSE streaming; Streamlit as a thin client | Python end to end | Phase 6 |
 | MCP | Official MCP Python SDK | Works with standard MCP clients | Phase 6 |
 | Observability | Langfuse Cloud traces; JSON logs | Per-step latency, tokens and cost | Phase 6 |
-| Evaluation | Own harness, an LLM judge checked against human labels, bootstrap CIs | Deterministic retrieval metrics; fair comparisons | Phase 1 |
+| Evaluation | Own harness, an LLM judge checked against human labels, bootstrap CIs, paired permutation tests | Deterministic retrieval metrics; fair comparisons | [ADR-0007](decisions/0007-evaluation-statistics.md) |
 | Infrastructure | Docker Compose locally; Terraform → ECS Fargate, RDS, S3, SQS, DynamoDB, Secrets Manager, CloudWatch, in demo windows | Production shape without paying for idle time | [ADR-0003](decisions/0003-aws-demo-windows.md) |
 | CI/CD | GitHub Actions pinned to commit SHAs; a checksum-verified gitleaks scan of the full history; Dependabot updates; AWS access through OIDC | No long-lived keys; reproducible pipelines | Phases 0 and 8 |
 
@@ -169,10 +169,10 @@ Size is relative: S < M < L.
 - [ ] 1.6 Write a data dictionary and table descriptions for the SQL agent.
 - [ ] 1.7 SQL eval set: about 40 questions with verified gold SQL, including unanswerable ones.
 - [ ] 1.8 Routing eval set: about 200 labelled queries across routes (hand-written seeds plus paraphrases, all checked by hand).
-- [ ] 1.9 Eval harness: loaders, metrics (recall@k, MRR, execution accuracy, accuracy), bootstrap CIs, paired tests, result writers.
+- [x] 1.9 Eval harness: loaders, metrics (recall@k, hit@k, MRR), bootstrap CIs, paired permutation and McNemar tests, Holm adjustment, result writers ([ADR-0007](decisions/0007-evaluation-statistics.md)). Execution and routing accuracy plug in with their eval sets (1.7, 1.8).
 
 **Done when:** every dataset has a data card and checksum, the facts tables pass their cross-checks, and the harness scores dummy predictions.
-**Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)) and XBRL normalisation; guides `xbrl-and-financial-metrics.md`, `evaluation-statistics.md`; data card [financebench.md](data/financebench.md).
+**Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)), evaluation statistics ([ADR-0007](decisions/0007-evaluation-statistics.md)) and XBRL normalisation; guides `xbrl-and-financial-metrics.md` and [evaluation-statistics.md](concepts/evaluation-statistics.md); data card [financebench.md](data/financebench.md); runbook [running-evaluations.md](runbooks/running-evaluations.md).
 **Manual steps:** spot-check 20 random metric values against the filings; add the SEC contact to `.env`.
 
 ### Phase 2: Ingestion and retrieval baseline (L)
