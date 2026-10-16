@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 1, Data and evaluation sets (in progress) |
+| **Current phase** | Phase 2, Ingestion and retrieval baseline (next) |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -73,7 +73,7 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Python 3.12, uv, git, Docker | Installed | Phase 0 | |
 | GitHub CLI, authenticated | Installed | Phase 0 | |
 | Groq API key | Added | Phase 0 (step 0.8) | In `.env`; verified live on 2026-10-17 |
-| SEC EDGAR contact for the User-Agent header | Pending | Phase 1 | Goes in `.env` |
+| SEC EDGAR contact for the User-Agent header | Added | Phase 1 | In `.env`; sent only to sec.gov |
 | Hugging Face account and token | Pending | Phase 7 | Publishing models (FinanceBench comes from GitHub) |
 | Langfuse Cloud (free tier) | Pending | Phase 6 | Tracing |
 | Kaggle or Colab GPU (free tier) | Pending | Phase 7 | Fine-tuning |
@@ -174,7 +174,7 @@ Size is relative: S < M < L.
 
 **Done when:** every dataset has a data card and checksum, the facts tables pass their cross-checks, and the harness scores dummy predictions.
 **Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)), evaluation statistics ([ADR-0007](decisions/0007-evaluation-statistics.md)) and XBRL normalisation ([ADR-0008](decisions/0008-xbrl-normalisation.md)); guides [xbrl-and-financial-metrics.md](concepts/xbrl-and-financial-metrics.md) and [evaluation-statistics.md](concepts/evaluation-statistics.md); data cards [financebench.md](data/financebench.md), [routing-set.md](data/routing-set.md), [sec-company-facts.md](data/sec-company-facts.md) and [sql-set.md](data/sql-set.md); runbook [running-evaluations.md](runbooks/running-evaluations.md).
-**Manual steps:** spot-check 20 random metric values against the filings; add the SEC contact to `.env`.
+**Manual steps:** spot-check 20 random metric values against the filings ([sheet](data/facts-spot-check.md), waiting for the owner's check); add the SEC contact to `.env` (done).
 
 ### Phase 2: Ingestion and retrieval baseline (L)
 
@@ -312,10 +312,9 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 
 | Before | Decision | Current thinking |
 |---|---|---|
-| Phase 1 | SEC contact for the User-Agent header | Owner's name and email, kept in `.env` |
 | Phase 8 | How to serve HTTPS | A domain we own with an ACM certificate on the load balancer, or CloudFront's default `*.cloudfront.net` certificate in front of it (no domain needed; CloudFront's origin timeout must allow streamed answers) |
 
-Already decided: public repository with an MIT licence ([ADR-0004](decisions/0004-tooling-and-workflow.md)); AWS runs in demo windows ([ADR-0003](decisions/0003-aws-demo-windows.md)).
+Already decided: public repository with an MIT licence ([ADR-0004](decisions/0004-tooling-and-workflow.md)); AWS runs in demo windows ([ADR-0003](decisions/0003-aws-demo-windows.md)); the SEC contact is the owner's name and email, kept in `.env`.
 
 ## 9. Risks
 
@@ -350,7 +349,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | Phase | Status | Started | Finished |
 |---|---|---|---|
 | 0 Foundations | Done | 2026-10-15 | 2026-10-17 |
-| 1 Data and evaluation sets | In progress | 2026-10-17 | |
+| 1 Data and evaluation sets | Done | 2026-10-17 | 2026-10-17 |
 | 2 Ingestion and retrieval baseline | Planned | | |
 | 3 Doc agent | Planned | | |
 | 4 Data agent | Planned | | |

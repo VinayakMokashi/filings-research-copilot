@@ -15,6 +15,21 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 1 · Phase 1 complete
+
+- **Goal:** confirm Phase 1's exit criteria and publish the milestone.
+- **Done:**
+  - **Every dataset has a data card and checksum:** FinanceBench (a manifest of git blob ids, and SHA-256 for each side of the split), the routing set and the SQL set (SHA-256 for each side), and the SEC company facts (a manifest with the SHA-256 of all 81 files).
+  - **The facts tables pass their cross-checks:** all 33 FinanceBench dev metrics questions, as formulas, match exactly.
+  - **The harness scores dummy predictions:** first-pages retrieval, keyword and majority routing, and gold and decline-all SQL, each with 95% intervals.
+  - Generated a [spot-check sheet](data/facts-spot-check.md) of 20 random annual values with links to their filings, for the manual check the plan asks for.
+  - Updated the plan, the README and the project page.
+- **Commands:** `uv run poe spot-check-facts`, `uv run poe check`.
+- **Results:** floors on dev to beat in later phases: retrieval hit@20 0.29 (Phase 2), routing accuracy 0.623 (Phase 5), SQL accuracy 0.250 when declining everything (Phase 4).
+- **Problems and fixes:** none new.
+- **Decisions:** none.
+- **Next:** Phase 2, the ingestion and retrieval baseline: parse the FinanceBench PDFs page by page, chunk them, index them in Qdrant with dense and BM25 vectors, and measure page recall on the dev evidence pages.
+
 ### 2026-10-17 · Phase 1 · SQL eval set
 
 - **Goal:** questions the data agent will be judged on, with verified gold SQL, including some it should decline (step 1.7).

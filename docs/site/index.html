@@ -217,7 +217,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><dt>Sources</dt><dd>10-K and 10-Q text · XBRL company facts</dd></div>
     <div><dt>Benchmark</dt><dd>FinanceBench public sample</dd></div>
     <div><dt>Target platform</dt><dd>AWS ECS Fargate, on demand · Qdrant · open models on Groq</dd></div>
-    <div><dt>Status</dt><dd>Phase 1 (second of 11) in progress</dd></div>
+    <div><dt>Status</dt><dd>Phases 0 and 1 done; Phase 2 next</dd></div>
   </dl>
   <div class="actions">
     <a class="btn btn-primary" href="#architecture">See the architecture</a>
@@ -422,7 +422,7 @@ td.metric{font-weight:600;white-space:nowrap}
   <div class="item-head">
     <p class="eyebrow">Item 8 · Financial statements</p>
     <h2 id="h-eval">Evaluation</h2>
-    <p class="intro">The numbers this project will be judged on. The eval sets are fixed in Phase 1, before any retrieval code exists.</p>
+    <p class="intro">The numbers this project will be judged on. The eval sets were fixed in Phase 1, before any retrieval code: a FinanceBench split by company (100 dev questions, 50 held out), 198 routing questions and 42 SQL questions with verified gold queries.</p>
   </div>
   <div class="cols">
     <div>
@@ -434,13 +434,13 @@ td.metric{font-weight:600;white-space:nowrap}
             <tr><td class="metric">MRR@10</td><td>How high the first relevant chunk ranks</td><td>FinanceBench dev, evidence pages</td><td>2, 7</td><td><span class="pill">Pending</span></td></tr>
             <tr><td class="metric">Answer correctness</td><td>The final answer is right, judged by an LLM checked against human labels</td><td>FinanceBench dev; held-out test at milestones</td><td>3, 5</td><td><span class="pill">Pending</span></td></tr>
             <tr><td class="metric">Faithfulness</td><td>Every claim is supported by its citation</td><td>The same answers</td><td>3, 5</td><td><span class="pill">Pending</span></td></tr>
-            <tr><td class="metric">Execution accuracy</td><td>Generated SQL returns the gold result</td><td>About 40 hand-verified SQL questions</td><td>4</td><td><span class="pill">Pending</span></td></tr>
-            <tr><td class="metric">Routing accuracy</td><td>Each question reaches the right specialist</td><td>About 200 labelled queries</td><td>5, 7</td><td><span class="pill">Pending</span></td></tr>
+            <tr><td class="metric">Execution accuracy</td><td>Generated SQL returns the gold result</td><td>42 hand-verified SQL questions</td><td>4</td><td><span class="pill">Pending</span></td></tr>
+            <tr><td class="metric">Routing accuracy</td><td>Each question reaches the right specialist</td><td>198 labelled queries</td><td>5, 7</td><td><span class="pill">Pending</span></td></tr>
             <tr><td class="metric">p95 latency, cost</td><td>Fast and cheap enough to run in public</td><td>All suites, plus a load test</td><td>6, 8</td><td><span class="pill">Pending</span></td></tr>
           </tbody>
         </table>
       </div>
-      <p class="tnote">Every result is reported with a 95% bootstrap confidence interval. A change ships only when its paired improvement on the dev set is significant. The held-out test set is opened only at milestones.</p>
+      <p class="tnote">Every result is reported with a 95% bootstrap confidence interval. A change ships only when its paired improvement on the dev set is significant. The held-out test set is opened only at milestones. Floors so far, on dev: the first 20 pages of the right document include an evidence page 29% of the time, keyword routing is right 62% of the time, and the XBRL facts database reproduces all 33 FinanceBench metrics answers.</p>
     </div>
     <aside class="note" aria-label="Lesson carried over">
       <span class="eyebrow">Lesson carried over</span>
@@ -583,7 +583,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <p class="intro">Every phase ends with tests, an evaluation wherever quality changes, and documentation: a build log entry, decision records and concept guides.</p>
   </div>
   <div class="strip" aria-hidden="true">
-    <span class="seg done"></span><span class="seg now"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
+    <span class="seg done"></span><span class="seg done"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
   </div>
   <div class="strip-scale" aria-hidden="true"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
   <div class="legend"><span><i class="sw done"></i>Done</span><span><i class="sw now"></i>In progress</span><span><i class="sw"></i>Planned</span></div>
@@ -592,7 +592,7 @@ td.metric{font-weight:600;white-space:nowrap}
       <thead><tr><th>Phase</th><th>What ships</th><th>What it proves</th><th>Status</th></tr></thead>
       <tbody>
         <tr><td><span class="ph">0</span>Foundations</td><td>Repo, CI, typed config, LLM gateway, local Qdrant and Postgres</td><td>Later phases land on tested ground</td><td><span class="pill pill-done">Done</span></td></tr>
-        <tr><td><span class="ph">1</span>Data and eval sets</td><td>FinanceBench splits, XBRL facts tables, SQL and routing sets, eval harness</td><td>We know how we'll be judged before building</td><td><span class="pill pill-now">In progress</span></td></tr>
+        <tr><td><span class="ph">1</span>Data and eval sets</td><td>FinanceBench splits, XBRL facts tables, SQL and routing sets, eval harness</td><td>We know how we'll be judged before building</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">2</span>Retrieval baseline</td><td>PDF ingestion, chunkers, hybrid search, reranking</td><td>Retrieval settings are chosen by measurement</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">3</span>Doc agent</td><td>Query rewriting, cited answers, abstention, calculator</td><td>Answers are grounded in filing text</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">4</span>Data agent</td><td>text2sql-analyst over XBRL facts, with value linking</td><td>Reported numbers come from SQL queries</td><td><span class="pill">Planned</span></td></tr>
@@ -641,7 +641,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><h3>Serving</h3><div class="chips"><span class="chip">FastAPI</span><span class="chip">SSE</span><span class="chip">Streamlit</span><span class="chip">MCP Python SDK</span><span class="chip">Langfuse</span></div></div>
     <div><h3>Infrastructure</h3><div class="chips"><span class="chip">Docker</span><span class="chip">Terraform</span><span class="chip">GitHub Actions</span><span class="chip">ECS Fargate</span><span class="chip">RDS</span><span class="chip">S3</span><span class="chip">SQS</span><span class="chip">DynamoDB</span><span class="chip">Secrets Manager</span><span class="chip">CloudWatch</span></div></div>
   </div>
-  <p class="tnote">Set up in Phase 0: LiteLLM (Groq configured as the default provider), Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot. The rest is confirmed in a decision record when its phase lands.</p>
+  <p class="tnote">In use after Phases 0 and 1: LiteLLM with Groq, Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts and the evaluation harness. The rest is confirmed in a decision record when its phase lands.</p>
 </section>
 </main>
 
