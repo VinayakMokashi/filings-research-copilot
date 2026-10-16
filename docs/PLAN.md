@@ -168,11 +168,11 @@ Size is relative: S < M < L.
 - [ ] 1.5 Build a `metrics` table that maps canonical metrics (revenue, net income, capex, R&D and so on) to the tags each company actually uses; test a sample against FinanceBench answers.
 - [ ] 1.6 Write a data dictionary and table descriptions for the SQL agent.
 - [ ] 1.7 SQL eval set: about 40 questions with verified gold SQL, including unanswerable ones.
-- [ ] 1.8 Routing eval set: about 200 labelled queries across routes (hand-written seeds plus paraphrases, all checked by hand).
+- [x] 1.8 Routing eval set: 198 labelled queries across six routes (66 hand-written seeds plus two reviewed paraphrases each), split by seed into dev (138) and held-out test (60); data card [routing-set.md](data/routing-set.md).
 - [x] 1.9 Eval harness: loaders, metrics (recall@k, hit@k, MRR), bootstrap CIs, paired permutation and McNemar tests, Holm adjustment, result writers ([ADR-0007](decisions/0007-evaluation-statistics.md)). Execution and routing accuracy plug in with their eval sets (1.7, 1.8).
 
 **Done when:** every dataset has a data card and checksum, the facts tables pass their cross-checks, and the harness scores dummy predictions.
-**Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)), evaluation statistics ([ADR-0007](decisions/0007-evaluation-statistics.md)) and XBRL normalisation; guides `xbrl-and-financial-metrics.md` and [evaluation-statistics.md](concepts/evaluation-statistics.md); data card [financebench.md](data/financebench.md); runbook [running-evaluations.md](runbooks/running-evaluations.md).
+**Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)), evaluation statistics ([ADR-0007](decisions/0007-evaluation-statistics.md)) and XBRL normalisation; guides `xbrl-and-financial-metrics.md` and [evaluation-statistics.md](concepts/evaluation-statistics.md); data cards [financebench.md](data/financebench.md) and [routing-set.md](data/routing-set.md); runbook [running-evaluations.md](runbooks/running-evaluations.md).
 **Manual steps:** spot-check 20 random metric values against the filings; add the SEC contact to `.env`.
 
 ### Phase 2: Ingestion and retrieval baseline (L)
