@@ -51,6 +51,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | FinanceBench download checked against a pinned manifest; dev/test split by company, with the test set held out | `src/copilot/eval/`, `eval/financebench/` ([data card](docs/data/financebench.md)) |
 | Evaluation harness: retrieval metrics, bootstrap intervals, paired permutation tests, run reports | `src/copilot/eval/`, `eval/results/` ([guide](docs/concepts/evaluation-statistics.md), [runbook](docs/runbooks/running-evaluations.md)) |
 | Routing eval set: 198 labelled questions, split by seed, with keyword and majority baselines | `eval/routing/` ([data card](docs/data/routing-set.md)) |
+| SEC EDGAR client (declared contact, rate limit, retries) and the 40-company universe matched to CIKs | `src/copilot/ingest/`, `data/reference/companies.csv` ([data card](docs/data/sec-company-facts.md)) |
 
 ## Local development
 
@@ -66,6 +67,7 @@ uv run poe smoke              # one live call per model role (needs the key)
 uv run poe fetch-financebench # evaluation questions and the PDFs they cite (159 MB)
 uv run poe eval-retrieval --baseline first-pages   # score a retriever, with 95% intervals
 uv run poe eval-routing --baseline keyword         # score a router
+uv run poe fetch-sec          # SEC company facts for the 40 companies (needs SEC_USER_AGENT)
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).

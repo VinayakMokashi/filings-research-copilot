@@ -116,7 +116,7 @@ filings-research-copilot/
 │   ├── config.py     # typed settings                         (Phase 0)
 │   ├── logs.py       # structured logging                     (Phase 0)
 │   ├── llm/          # gateway, model roles, fake for tests   (Phase 0)
-│   ├── ingest/       # fetchers, parsers, chunkers, indexer   (Phase 2)
+│   ├── ingest/       # SEC client and universe (Phase 1); parsers, chunkers, indexer (Phase 2)
 │   ├── retrieval/    # hybrid search, fusion, reranking       (Phase 2)
 │   ├── sql/          # text2sql-analyst adapter, value linking (Phase 4)
 │   ├── agents/       # LangGraph graph, router, validator     (Phase 5)
@@ -163,8 +163,8 @@ Size is relative: S < M < L.
 
 - [x] 1.1 Download the FinanceBench public sample (questions, answers, evidence pages, PDFs); check its licence; write a data card.
 - [x] 1.2 Split it into dev (100) and held-out test (50), grouped by company and stratified by question type ([ADR-0006](decisions/0006-evaluation-splits.md)). Record the test-set checksum before any tuning; the test set is only opened at milestones.
-- [ ] 1.3 Build the company universe from FinanceBench's companies; map names to tickers and CIKs with SEC's `company_tickers.json`.
-- [ ] 1.4 Fetch XBRL company facts (declared User-Agent, at most 10 requests per second); normalise into `companies`, `filings` and `facts` tables.
+- [x] 1.3 Build the company universe from FinanceBench's companies; map names to tickers and CIKs with SEC's `company_tickers.json`. All 40 companies in its document list are matched: 32 by normalised name, 6 by ticker and 2 delisted ones by CIK ([companies.csv](../data/reference/companies.csv)).
+- [ ] 1.4 Fetch XBRL company facts (declared User-Agent, at most 10 requests per second); normalise into `companies`, `filings` and `facts` tables. Fetching is done (`poe fetch-sec`, [data card](data/sec-company-facts.md)); normalising is next.
 - [ ] 1.5 Build a `metrics` table that maps canonical metrics (revenue, net income, capex, R&D and so on) to the tags each company actually uses; test a sample against FinanceBench answers.
 - [ ] 1.6 Write a data dictionary and table descriptions for the SQL agent.
 - [ ] 1.7 SQL eval set: about 40 questions with verified gold SQL, including unanswerable ones.
