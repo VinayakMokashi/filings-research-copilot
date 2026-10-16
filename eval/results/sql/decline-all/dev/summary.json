@@ -1,0 +1,76 @@
+{
+  "suite": "sql",
+  "run": "decline-all",
+  "split": "dev",
+  "created": "2026-10-16T21:48:03.233048Z",
+  "questions": 28,
+  "test_split_opened": false,
+  "system": {
+    "baseline": "decline-all"
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.25,
+      "low": 0.10714285714285714,
+      "high": 0.42857142857142855
+    }
+  },
+  "by": {
+    "answerable": {
+      "answerable": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "unanswerable": {
+        "questions": 7,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "difficulty": {
+      "easy": {
+        "questions": 8,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.375,
+            "low": 0.125,
+            "high": 0.75
+          }
+        }
+      },
+      "hard": {
+        "questions": 8,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "medium": {
+        "questions": 12,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.3333333333333333,
+            "low": 0.08333333333333333,
+            "high": 0.5833333333333334
+          }
+        }
+      }
+    }
+  }
+}
