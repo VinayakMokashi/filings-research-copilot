@@ -48,6 +48,18 @@ uv run poe eval-routing --predictions routes.jsonl --run llm-router-v1
 
 A routing predictions file has one line per dev question: `{"id": "r001", "route": "doc"}`. Runs land in `eval/results/routing/<run>/<split>/`, with accuracy overall, by route and by origin (seed or paraphrase). The set itself is fixed: rebuilding it needs `poe build-routing-set --force` and a note in the build log.
 
+## Score SQL
+
+Needs the facts database (`uv run poe build-facts`).
+
+```bash
+uv run poe eval-sql --baseline gold           # 100%: checks the scorer
+uv run poe eval-sql --baseline decline-all
+uv run poe eval-sql --predictions answers.jsonl --run sql-agent-v1
+```
+
+Each line of a predictions file is `{"id": "s01", "sql": "SELECT ..."}`, or `{"id": "s33", "declined": true}` to decline. Queries run read-only with a step limit. Runs land in `eval/results/sql/<run>/<split>/`, with accuracy overall, for answerable and unanswerable questions, and by difficulty. After rebuilding the facts database, `uv run pytest -m integration` confirms every gold query still returns its recorded rows.
+
 ## Compare two runs
 
 ```bash

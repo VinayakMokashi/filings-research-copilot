@@ -18,3 +18,4 @@ Each card records:
 | [Routing set](routing-set.md) | 198 questions labelled with the route the copilot should take | 2026-10-17 |
 | [SEC company facts](sec-company-facts.md) | XBRL financial facts and the company universe from SEC EDGAR | 2026-10-17 |
 | [Facts database dictionary](facts-dictionary.md) | Every table and column in the SQLite facts database | 2026-10-17 |
+| [SQL set](sql-set.md) | 42 questions over the facts database, with verified gold SQL or a reason to decline | 2026-10-17 |
