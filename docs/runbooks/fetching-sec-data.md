@@ -27,6 +27,15 @@ uv run poe fetch-sec --refresh
 
 A refresh changes the manifest. Commit it together with anything rebuilt from the new data, and note it in the build log.
 
+## Build and check the facts database
+
+```bash
+uv run poe build-facts    # data/processed/facts.db, about 20 seconds
+uv run poe check-facts    # the 33 FinanceBench cross-checks
+```
+
+`build-facts` prints row counts and, for each metric, the share of company-years from FY2015 to FY2023 that have a value. `check-facts` writes `eval/results/facts/financebench-dev-checks.md` and `.json`; after a refresh or a change to the normalisation rules, every check should still agree. If one doesn't, its row names the tags it used or the value it couldn't find.
+
 ## Troubleshooting
 
 | Message | Cause and fix |
@@ -34,4 +43,5 @@ A refresh changes the manifest. Commit it together with anything rebuilt from th
 | `SEC requires a User-Agent with a contact` | `SEC_USER_AGENT` is missing or has no email. Set it in `.env`. |
 | `No SEC match for <name>` | A FinanceBench name didn't match SEC's ticker list. Find the company's CIK on EDGAR and add it to `TICKER_OVERRIDES` (if it still trades) or `CIK_OVERRIDES` in `src/copilot/ingest/universe.py`. |
 | `returned HTTP 403` | SEC blocked the request, usually because of a missing or generic User-Agent. Check `SEC_USER_AGENT`. |
+| `facts.db doesn't exist` | Run `uv run poe build-facts` first. |
 | `returned HTTP 429` after retries | Too many requests. The client already waits between requests and honours `Retry-After`; wait a few minutes and run again. Cached files are kept. |

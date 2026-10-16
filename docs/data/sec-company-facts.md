@@ -35,6 +35,12 @@ For each company, the company-facts file holds every XBRL fact it has filed, gro
 
 3M's file, for example, has 35,334 facts across 700 `us-gaap` concepts. The largest file is JPMorgan's (8.0 MB); all 40 together are 164 MB, and the submissions files add 11 MB.
 
+## From raw facts to the facts database
+
+`uv run poe build-facts` turns the 40 files into `data/processed/facts.db` (257 MB, not committed) in about 20 seconds: 1.06 million facts from 2,623 filings, 4,233 concepts, and 15,359 annual values for 28 canonical metrics. The rules are in [ADR-0008](../decisions/0008-xbrl-normalisation.md), the guide is [xbrl-and-financial-metrics.md](../concepts/xbrl-and-financial-metrics.md), and every table and column is in the [data dictionary](facts-dictionary.md).
+
+**Cross-check.** `uv run poe check-facts` rewrites each of the 33 metrics questions in the FinanceBench dev split as a formula over the annual values. All 33 match the gold answers exactly at the precision the question asks for ([report](../../eval/results/facts/financebench-dev-checks.md)).
+
 ## Known issues
 
 - **The data moves.** Companies keep filing, so a refresh changes the files. The manifest records exactly what was used.
@@ -43,3 +49,6 @@ For each company, the company-facts file holds every XBRL fact it has filed, gro
 - **No segments.** The API returns only facts without dimensions, which means consolidated totals. Segment and geographic breakdowns aren't here.
 - **Fiscal calendars differ.** Fiscal years end in January (Walmart, Best Buy), May (Nike, FedEx), June (Microsoft), August (Costco) and so on, and some companies use 52/53-week years that end on a weekday (AMD, Intel, PepsiCo, Kraft Heinz, Johnson & Johnson). The submissions record gives only the latest fiscal year end.
 - **Changed tickers.** Block's ticker is now XYZ (formerly SQ); CIKs don't change, so the universe keys on CIK.
+- **SEC's fiscal-year labels are sometimes wrong.** Best Buy's FY2021 10-K is labelled 2020, and Ulta, Foot Locker and Salesforce have similar slips. The database derives each 10-K's label from its period end instead.
+- **Original filings contain tagging errors.** MGM's FY2011 10-K tagged net income as −$30.3 million; the next year's filing corrected it to $3,114.6 million. Stock splits also restate share counts (Amazon, 2022). The database keeps the first-reported value and the latest one side by side.
+- **Transition years.** Best Buy's 2013 transition report covers 11 months, so that year has balance-sheet values but no annual flow values.

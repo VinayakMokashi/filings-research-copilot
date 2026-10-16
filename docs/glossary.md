@@ -19,6 +19,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Data card** | A short document describing a dataset: source, licence, size, checksums, fields, splits and known issues. |
 | **Demo window** | A period when the full AWS stack is brought up for a demo and torn down afterwards, so idle time costs nothing. |
 | **DSPy** | A framework that treats prompts as programs and optimises them against a metric. |
+| **Duration and instant facts** | A duration fact covers a period with a start and end date (revenue for a year); an instant fact is measured on one date (total assets at the year end). |
 | **ECS Fargate** | AWS's service for running containers without managing servers. |
 | **Embedding** | A vector that represents meaning; similar texts get nearby vectors. |
 | **Execution accuracy (EX)** | Generated SQL counts as correct when it returns the same result as the gold query. |
@@ -47,6 +48,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
+| **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |
 | **RRF** | Reciprocal Rank Fusion: merge ranked lists by summing 1/(k + rank) for each item. |
 | **Self-consistency** | Sample several reasoning paths and keep the majority answer. |
 | **Self-Discover** | The model selects, adapts and structures reasoning modules into a plan, then follows the plan. |
@@ -55,4 +57,5 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
+| **Transition report (10-KT)** | An annual report covering a short period, filed when a company changes its fiscal year end. |
 | **XBRL** | The tagged data format companies use to file financial statements. Each number carries a concept tag, a period and a unit. |
