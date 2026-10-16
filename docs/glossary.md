@@ -5,12 +5,15 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | Term | Meaning |
 |---|---|
 | **10-K / 10-Q** | Annual and quarterly reports that US public companies file with the SEC. |
+| **52/53-week fiscal year** | A fiscal year that ends on the same weekday each year (for example the last Saturday of December), so it runs 52 or 53 weeks. |
+| **Accession number** | SEC's unique id for one filing, such as `0000066740-24-000016`. |
 | **ADR** | Architecture Decision Record: a short note recording one decision, the options considered and why. |
 | **BM25** | A keyword-ranking formula that scores documents by term frequency, term rarity and document length. Strong for exact terms such as tickers and line items. |
 | **Bootstrap confidence interval** | Resample the eval questions with replacement many times, recompute the metric each time, and take percentiles to see how uncertain the number is. |
 | **Chunk** | A piece of a document that gets its own embedding and can be retrieved on its own. |
 | **CIK** | Central Index Key, the SEC's unique ID for each filer. |
 | **Citation precision** | The share of cited sources that actually support the claim they're attached to. |
+| **Company facts** | SEC's per-company JSON of every XBRL fact the company has filed, without dimensions, from `data.sec.gov/api/xbrl/companyfacts`. |
 | **Corrective RAG** | Grade the retrieved documents before generating; if they're weak, rewrite the query or fall back. |
 | **Cross-encoder** | A model that reads the query and a passage together to score relevance. Slower than embedding search, but more precise. |
 | **Data card** | A short document describing a dataset: source, licence, size, checksums, fields, splits and known issues. |
