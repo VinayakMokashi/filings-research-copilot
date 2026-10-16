@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 1 · Routing eval set
+
+- **Goal:** labelled questions for the router that sends each question to a specialist (step 1.8).
+- **Done:**
+  - Wrote 66 seed questions across six routes (`doc`, `data`, `hybrid`, `brief`, `smalltalk`, `decline`), with labelling rules for the close calls.
+  - `poe paraphrase-routing-seeds` asked `gpt-oss-120b` for three rewrites per seed through the gateway. Every rewrite was reviewed and given a verdict with a reason, kept in `eval/routing/candidates.jsonl`.
+  - `copilot.eval.routing`: building the set, a split grouped by seed, the held-out guard and checksums, scoring, and keyword and majority baselines; `poe build-routing-set` and `poe eval-routing`.
+  - Wrote the [routing-set data card](data/routing-set.md).
+- **Commands:** `uv run poe paraphrase-routing-seeds`, `uv run poe build-routing-set`, `uv run poe eval-routing --baseline keyword`, `uv run poe eval-routing --baseline majority`, `uv run poe check`.
+- **Results:**
+  - 201 model rewrites: 124 accepted, 37 valid but surplus, and 40 rejected for a source hint (11), added scope (5), a shifted route (2), being too close to another question (7), a refusal (3) or a poem (12). Eight rewrites were written by hand.
+  - 198 questions: dev 138 and test 60, with a seed and its paraphrases always on the same side.
+  - Keyword baseline on dev: accuracy 0.623 (95% interval 0.543 to 0.703); majority class: 0.217 (0.152 to 0.290).
+  - 122 tests pass offline, 18 of them new.
+- **Problems and fixes:**
+  - **Refusals.** The model refused to paraphrase three `decline` seeds (retirement savings in one stock, revealing the system prompt, hacking a website) and wrote the poem a fourth seed asked for. Those seeds got hand-written rewrites, recorded as such.
+  - **A brittle baseline.** The keyword rules score 0.957 on dev seeds but 0.457 on dev paraphrases: they were written while reading the seeds. Testing on seeds alone would have hidden this, which is the reason for the paraphrases.
+  - **Invisible typography.** The model writes non-breaking hyphens (U+2011) in "10-K", which keyword rules and tokenisers treat differently from a plain hyphen. The build step normalises them.
+  - **Escapes in source files.** `\u2011` in a hand-edited Python string came out as the literal character, which ruff flags as ambiguous (RUF001). The escapes are now written explicitly.
+- **Decisions:** none new; the split rule and review rules are in the data card.
+- **Next:** the SEC steps (1.3 to 1.6) once the SEC contact is in `.env`, then the SQL eval set (1.7).
+
 ### 2026-10-17 · Phase 1 · Evaluation harness
 
 - **Goal:** a harness that turns predictions into scores with honest uncertainty, and a rule for when a change counts as better (step 1.9).
