@@ -15,6 +15,26 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 1 · Evaluation harness
+
+- **Goal:** a harness that turns predictions into scores with honest uncertainty, and a rule for when a change counts as better (step 1.9).
+- **Done:**
+  - `copilot.eval.metrics`: recall@k, hit@k and reciprocal rank over de-duplicated rankings.
+  - `copilot.eval.stats`: percentile bootstrap intervals, a paired permutation test with a bootstrap interval for the difference, McNemar's exact test and Holm–Bonferroni adjustment, all seeded ([ADR-0007](decisions/0007-evaluation-statistics.md)).
+  - `copilot.eval.report`: run directories with per-question rows, a JSON summary and a Markdown summary, intervals by question type, and paired comparisons matched by question id.
+  - `copilot.eval.retrieval`: gold pages from FinanceBench evidence, strict scoring of predictions files, and the first-pages baseline.
+  - The `poe eval-retrieval` and `poe compare-runs` commands; the guide [evaluation-statistics.md](concepts/evaluation-statistics.md) and the runbook [running-evaluations.md](runbooks/running-evaluations.md).
+- **Commands:** `uv add numpy`, `uv run poe eval-retrieval --baseline first-pages`, `uv run poe check`.
+- **Results:**
+  - The first-pages baseline (the first 20 pages of the correct document) on dev: hit@20 = 0.29 (95% interval 0.20 to 0.38), recall@10 = 0.197 (0.123 to 0.277), MRR@10 = 0.075 (0.041 to 0.117). Metrics-generated questions score 0, because financial statements sit beyond page 20 of a 10-K; novel-generated questions reach hit@20 = 0.70, because many are about short 8-Ks and earnings releases.
+  - Asking for the test split without `--allow-test` stops with exit code 2.
+  - 104 tests pass offline, 42 of them new; mypy strict is clean.
+- **Problems and fixes:**
+  - **Identical intervals for different seeds.** With 0/1 scores at n = 50, every resampled mean is a multiple of 0.02, so two seeds often give the same interval and a seeding test failed. It now uses graded scores.
+  - **mypy and powers of two.** `2**n` is typed as `Any`, because a negative exponent would give a float, so McNemar's tail now divides by `1 << n`.
+- **Decisions:** [ADR-0007](decisions/0007-evaluation-statistics.md).
+- **Next:** the routing eval set (step 1.8). The SEC steps (1.3 to 1.6) and the SQL set (1.7) wait for the SEC contact in `.env`.
+
 ### 2026-10-17 · Phase 1 · FinanceBench data and splits
 
 - **Goal:** fix the benchmark questions and the held-out test set before writing any retrieval code (steps 1.1 and 1.2).
