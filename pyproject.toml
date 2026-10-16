@@ -51,6 +51,8 @@ fetch-financebench = { cmd = "python scripts/fetch_financebench.py", help = "Dow
 split-financebench = { cmd = "python scripts/split_financebench.py", help = "Make the FinanceBench dev/test split once, before any tuning" }
 eval-retrieval = { cmd = "python scripts/eval_retrieval.py", help = "Score retrieval on FinanceBench evidence pages (--baseline first-pages or --predictions FILE)" }
 compare-runs = { cmd = "python scripts/compare_runs.py", help = "Paired test of two eval runs on one metric" }
+paraphrase-routing-seeds = { cmd = "python scripts/paraphrase_routing_seeds.py", help = "Ask the strong model for paraphrases of the routing seeds, for review" }
+build-routing-set = { cmd = "python scripts/build_routing_set.py", help = "Build the routing eval set from seeds and reviewed paraphrases" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
