@@ -19,8 +19,10 @@ htmlcov/
 !.env.example
 
 # Data and model artifacts: large, reproducible or licensed.
-# To track a small file directly in data/ (a manifest or checksum), add "!data/<file>" below.
+# data/reference/ holds small committed files (manifests, curated mappings); the rest of
+# data/ is downloads and built databases.
 data/*
+!data/reference/
 /models/
 *.onnx
 *.safetensors

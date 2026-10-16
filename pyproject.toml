@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.1",
     "litellm>=1.105.1",
+    "pydantic>=2.14.1",
     "pydantic-settings>=2.16.0",
     "structlog>=26.1.0",
 ]
@@ -45,6 +46,7 @@ services-up = { cmd = "docker compose up -d --wait", help = "Start Qdrant and Po
 services-down = { cmd = "docker compose down", help = "Stop the local services (data volumes are kept)" }
 models = { cmd = "python scripts/list_models.py", help = "List the models your Groq key can use" }
 smoke = { cmd = "python scripts/smoke_llm.py", help = "One live call per model role through the gateway" }
+fetch-financebench = { cmd = "python scripts/fetch_financebench.py", help = "Download FinanceBench and verify every file (--pdfs all for every PDF)" }
 
 # ---------------------------------------------------------------------------
 # Lint and format

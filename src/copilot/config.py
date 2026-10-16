@@ -7,6 +7,7 @@ credentials keep their conventional names (`GROQ_API_KEY`, `SEC_USER_AGENT`, ...
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr
@@ -45,6 +46,9 @@ class Settings(BaseSettings):
     llm_timeout_s: float = Field(default=60.0, gt=0)
     llm_max_retries: int = Field(default=2, ge=0)
     llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+
+    # Local data: downloads under data/raw, built databases under data/processed
+    data_dir: Path = Path("data")
 
     # Local services
     qdrant_url: str = "http://127.0.0.1:6333"
