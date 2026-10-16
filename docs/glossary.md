@@ -13,6 +13,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Citation precision** | The share of cited sources that actually support the claim they're attached to. |
 | **Corrective RAG** | Grade the retrieved documents before generating; if they're weak, rewrite the query or fall back. |
 | **Cross-encoder** | A model that reads the query and a passage together to score relevance. Slower than embedding search, but more precise. |
+| **Data card** | A short document describing a dataset: source, licence, size, checksums, fields, splits and known issues. |
 | **Demo window** | A period when the full AWS stack is brought up for a demo and torn down afterwards, so idle time costs nothing. |
 | **DSPy** | A framework that treats prompts as programs and optimises them against a metric. |
 | **ECS Fargate** | AWS's service for running containers without managing servers. |
@@ -20,6 +21,9 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Execution accuracy (EX)** | Generated SQL counts as correct when it returns the same result as the gold query. |
 | **Fallback chain** | Models tried in order when a role's own model keeps failing after retries. |
 | **FinanceBench** | A benchmark of questions over real company filings, with answers and evidence pages. |
+| **Git blob id** | The SHA-1 hash git computes over a file's contents. Used here to check every downloaded file against a manifest. |
+| **Grouped split** | A split that keeps every item of a group (here, a company) on the same side, so nothing about the group leaks across. |
+| **Held-out test set** | Questions set aside while building and opened only at milestones, so the reported result isn't tuned to them. |
 | **HNSW** | A graph-based index for fast approximate nearest-neighbour search. |
 | **Hybrid search** | Combining keyword (BM25) and semantic (dense) search. |
 | **HyDE** | Hypothetical Document Embeddings: write a hypothetical answer, embed it, and search with that instead of the raw question. |
@@ -42,5 +46,6 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
 | **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
+| **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
 | **XBRL** | The tagged data format companies use to file financial statements. Each number carries a concept tag, a period and a unit. |

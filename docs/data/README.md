@@ -11,3 +11,7 @@ Each card records:
 - Fields used
 - Splits, and how they were made
 - Known issues
+
+| Card | What it is | Added |
+|---|---|---|
+| [FinanceBench](financebench.md) | 150 questions over real filings, with answers and evidence pages; the evaluation benchmark | 2026-10-17 |
