@@ -27,3 +27,4 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [first-pages](../../eval/results/retrieval/first-pages/dev/summary.md) | Retrieval | Dev | hit@20 0.29 (0.20 to 0.38) | Floor: the first 20 pages of the correct document |
 | [majority](../../eval/results/routing/majority/dev/summary.md) | Routing | Dev | accuracy 0.217 (0.152 to 0.290) | Always the most common route |
 | [keyword](../../eval/results/routing/keyword/dev/summary.md) | Routing | Dev | accuracy 0.623 (0.543 to 0.703) | Floor: hand-written keyword rules |
+| [financebench-dev-checks](../../eval/results/facts/financebench-dev-checks.md) | Facts database | Dev | 33 of 33 agree exactly | FinanceBench metrics questions as formulas over annual values |
