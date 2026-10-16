@@ -1,0 +1,76 @@
+{
+  "suite": "sql",
+  "run": "gold",
+  "split": "dev",
+  "created": "2026-10-16T21:48:01.652668Z",
+  "questions": 28,
+  "test_split_opened": false,
+  "system": {
+    "baseline": "gold"
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    }
+  },
+  "by": {
+    "answerable": {
+      "answerable": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "unanswerable": {
+        "questions": 7,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "difficulty": {
+      "easy": {
+        "questions": 8,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "hard": {
+        "questions": 8,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "medium": {
+        "questions": 12,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      }
+    }
+  }
+}

@@ -58,6 +58,7 @@ fetch-sec = { cmd = "python scripts/fetch_sec.py", help = "Match the companies t
 build-facts = { cmd = "python scripts/build_facts_db.py", help = "Build the SQLite facts database from the cached company facts" }
 check-facts = { cmd = "python scripts/check_facts.py", help = "Cross-check the facts database against FinanceBench dev answers" }
 build-sql-set = { cmd = "python scripts/build_sql_set.py", help = "Build the SQL eval set by running every gold query on the facts database" }
+eval-sql = { cmd = "python scripts/eval_sql.py", help = "Score SQL predictions (--baseline gold or decline-all, or --predictions FILE)" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
