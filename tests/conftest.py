@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import socket
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
@@ -52,3 +52,41 @@ def _no_network(monkeypatch: pytest.MonkeyPatch) -> None:
 def settings() -> Settings:
     """Settings with a dummy Groq key; never reads a `.env` file."""
     return Settings(_env_file=None, groq_api_key=SecretStr("test-groq-key"))
+
+
+QuestionRecord = Callable[..., dict[str, Any]]
+
+
+@pytest.fixture
+def question_record() -> QuestionRecord:
+    """Build a FinanceBench question record with every source field, as the JSONL has it."""
+
+    def make(
+        number: int,
+        company: str = "Acme",
+        doc_name: str = "ACME_2022_10K",
+        question_type: str = "metrics-generated",
+        page: int = 59,
+    ) -> dict[str, Any]:
+        return {
+            "financebench_id": f"financebench_id_{number:05d}",
+            "company": company,
+            "doc_name": doc_name,
+            "question_type": question_type,
+            "question_reasoning": "Information extraction",
+            "domain_question_num": None,
+            "question": f"What was {company}'s FY2022 capital expenditure (question {number})?",
+            "answer": "$1577.00",
+            "justification": None,
+            "dataset_subset_label": "OPEN_SOURCE",
+            "evidence": [
+                {
+                    "evidence_text": "Purchases of property, plant and equipment (1,577)",
+                    "doc_name": doc_name,
+                    "evidence_page_num": page,
+                    "evidence_text_full_page": "Consolidated Statement of Cash Flows ...",
+                }
+            ],
+        }
+
+    return make
