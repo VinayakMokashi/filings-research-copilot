@@ -248,6 +248,44 @@ def test_annual_revenue_uses_original_reports_and_follows_tag_changes() -> None:
     )
 
 
+def test_revenue_takes_the_largest_figure_among_its_tags() -> None:
+    # General Mills tags a partial `Revenues` figure beside its full contract revenue.
+    def fact(tag: str, value: float) -> Fact:
+        return Fact(
+            1,
+            "us-gaap",
+            tag,
+            "USD",
+            "2021-05-31",
+            "2022-05-29",
+            value,
+            "k",
+            "10-K",
+            "2022-06-30",
+            2022,
+            "FY",
+            None,
+        )
+
+    facts = [
+        fact("Revenues", 2.1e9),
+        fact("RevenueFromContractWithCustomerExcludingAssessedTax", 19.0e9),
+    ]
+    filings = filings_from(facts)
+    (revenue,) = annual_values(facts, filings, METRICS_BY_NAME["revenue"])
+    (other,) = annual_values(
+        [replace(f, tag="OperatingIncomeLoss") for f in facts[:1]],
+        filings,
+        METRICS_BY_NAME["operating_income"],
+    )
+
+    assert (revenue.value, revenue.tag) == (
+        19.0e9,
+        "RevenueFromContractWithCustomerExcludingAssessedTax",
+    )
+    assert other.value == 2.1e9  # every other metric keeps priority order
+
+
 def test_annual_instant_values_come_from_each_year_end() -> None:
     facts = list(iter_facts(company_facts()))
     values = annual_values(facts, filings_from(facts), METRICS_BY_NAME["total_assets"])

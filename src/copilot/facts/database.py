@@ -73,7 +73,8 @@ CREATE TABLE metrics (
     description TEXT NOT NULL,
     kind TEXT NOT NULL CHECK (kind IN ('duration', 'instant')),
     unit TEXT NOT NULL,
-    statement TEXT NOT NULL
+    statement TEXT NOT NULL,
+    pick TEXT NOT NULL CHECK (pick IN ('priority', 'largest'))
 );
 CREATE TABLE metric_tags (
     metric TEXT NOT NULL REFERENCES metrics (metric),
@@ -113,8 +114,11 @@ def build(path: Path, companies: Sequence[Company], facts_dir: Path) -> dict[str
     try:
         conn.executescript(SCHEMA)
         conn.executemany(
-            "INSERT INTO metrics VALUES (?, ?, ?, ?, ?, ?)",
-            [(m.name, m.label, m.description, m.kind, m.unit, m.statement) for m in METRICS],
+            "INSERT INTO metrics VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [
+                (m.name, m.label, m.description, m.kind, m.unit, m.statement, m.pick)
+                for m in METRICS
+            ],
         )
         conn.executemany(
             "INSERT INTO metric_tags VALUES (?, ?, 'us-gaap', ?)",

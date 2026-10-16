@@ -30,7 +30,7 @@ Keep every fact from every 10-K, 10-K/A, 10-KT and 10-Q in a `facts` table, and 
 2. **Fiscal-year label.** A 10-K's label comes from its period end, named the company's way: either by the year the fiscal year ends in, or by the year most of its days fall in. For each company, the way that agrees with more of SEC's labels wins.
 3. **Current period only.** An annual value comes from facts in that fiscal year's own 10-K that end on its period end, so comparatives in later filings are never used.
 4. **Full years only.** Duration metrics need a period of 350 to 380 days, which covers 52/53-week years and leaves out short transition years.
-5. **Ranked tags.** Each of the 28 canonical metrics lists its tags in priority order; each year uses the highest-ranked tag reported that year.
+5. **Ranked tags.** Each of the 28 canonical metrics lists its tags in priority order; each year uses the highest-ranked tag reported that year. Revenue is the exception: it takes the largest figure among its tags, because a company's total can't be smaller than a part it also tags (General Mills tags a $2 billion `Revenues` figure beside $19 billion of sales; American Express tags contract revenue beside its larger total revenue).
 6. **As first reported.** The value is the one in the original 10-K. The latest figure for the same period is stored beside it as `latest_value`.
 
 ## Evidence

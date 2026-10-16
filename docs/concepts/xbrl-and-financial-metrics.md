@@ -38,7 +38,7 @@ flowchart LR
 1. **Flatten** (`iter_facts`). Keep facts from 10-K, 10-K/A, 10-KT and 10-Q filings, once per filing.
 2. **Find each filing's period** (`filings_from`). Take the facts that cover a full fiscal year (or quarter, or transition period) and end on or before the filing date; the period end is their most common end date within two weeks of the latest. Comparatives end a year earlier and fall outside the window.
 3. **Label the fiscal year** (`fiscal_year_labels`). Name each 10-K's year from its period end, using the company's convention: the year it ends in (Walmart) or the year most of its days fall in (Ulta). The convention that agrees with more of SEC's labels wins, which outvotes SEC's occasional mistakes.
-4. **Pick annual values** (`annual_values`). For each canonical metric and fiscal year, use the year's own 10-K, only facts ending on its period end, a full-year period for flow items, and the highest-ranked tag reported that year. Store the value as first reported, and the latest figure for the same period beside it.
+4. **Pick annual values** (`annual_values`). For each canonical metric and fiscal year, use the year's own 10-K, only facts ending on its period end, a full-year period for flow items, and the highest-ranked tag reported that year (for revenue, the largest figure among its tags). Store the value as first reported, and the latest figure for the same period beside it.
 5. **Cross-check** (`checks.py`). Each FinanceBench dev metrics question becomes a formula, such as `revenue[2019] / ((property_plant_equipment_net[2018] + property_plant_equipment_net[2019]) / 2)` for Activision Blizzard's fixed-asset turnover. A small evaluator parses the formula with `ast` and allows only arithmetic and `metric[year]` lookups.
 
 ## Where it lives in the code
@@ -69,6 +69,7 @@ flowchart LR
 - **The latest date isn't either.** Boeing's FY2017 10-K, filed in February 2018, contains a forward-looking fact for 2018; Foot Locker's FY2013 10-K has stray facts a day after its year end. The filing-date limit and the two-week window handle both.
 - **SEC's fiscal year is sometimes wrong.** Best Buy's FY2021 10-K is labelled 2020, which collided with FY2020 and dropped a year. Deriving the label from the period end fixed it, and fixed the same problem at Ulta, Foot Locker and Salesforce.
 - **Transition years.** Best Buy's 2013 10-KT covers 11 months. It gets balance-sheet values but no annual flow values.
+- **The top-ranked tag isn't always the total.** General Mills tags a $2 billion `Revenues` figure beside $19 billion of sales, and American Express tags contract revenue beside its larger total. Writing the SQL eval set exposed the first (a 127% net margin). Revenue now takes the largest figure among its tags, which changed 12 company-years, every one a fix.
 - **Original isn't always right.** MGM's original FY2011 10-K tagged net income as −$30.3 million; the next year's filing corrected it to $3,114.6 million. Stock splits restate share counts too (Amazon, 2022). `latest_value` makes both visible.
 
 ## Review questions

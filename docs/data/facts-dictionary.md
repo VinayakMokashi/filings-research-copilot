@@ -38,7 +38,7 @@ The table most questions need. Each value is the figure in that fiscal year's ow
 
 ### `metrics` and `metric_tags`
 
-`metrics` defines the 28 canonical metrics; `metric_tags` lists the tags behind each, in priority order. A lower-priority tag is used only in years when no higher one is reported, which handles companies changing tags over time.
+`metrics` defines the 28 canonical metrics; `metric_tags` lists the tags behind each, in priority order. A lower-priority tag is used only in years when no higher one is reported, which handles companies changing tags over time. Revenue (`pick = 'largest'` in `metrics`) instead takes the largest figure among its tags, because a total can't be smaller than a part the company also tags.
 
 | Metric | Label | Kind | Unit | Statement | Tags, in priority order |
 |---|---|---|---|---|---|
