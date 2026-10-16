@@ -74,7 +74,7 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | GitHub CLI, authenticated | Installed | Phase 0 | |
 | Groq API key | Added | Phase 0 (step 0.8) | In `.env`; verified live on 2026-10-17 |
 | SEC EDGAR contact for the User-Agent header | Pending | Phase 1 | Goes in `.env` |
-| Hugging Face account and token | Pending | Phases 1 and 7 | Datasets; publishing models |
+| Hugging Face account and token | Pending | Phase 7 | Publishing models (FinanceBench comes from GitHub) |
 | Langfuse Cloud (free tier) | Pending | Phase 6 | Tracing |
 | Kaggle or Colab GPU (free tier) | Pending | Phase 7 | Fine-tuning |
 | Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then |
@@ -127,6 +127,8 @@ filings-research-copilot/
 ├── training/         # fine-tuning scripts and notebooks      (Phase 7)
 ├── infra/            # Dockerfiles (Phase 6); Terraform       (Phase 8)
 ├── eval/             # question sets, results, summaries      (Phase 1)
+├── data/             # downloads and built databases (git-ignored), except
+│   └── reference/    #   small committed files: manifests, mappings (Phase 1)
 ├── scripts/          # one-off and operational scripts
 ├── tests/
 └── docs/
@@ -159,8 +161,8 @@ Size is relative: S < M < L.
 
 **Goal:** fix the questions the system will be judged on before writing retrieval code.
 
-- [ ] 1.1 Download the FinanceBench public sample (questions, answers, evidence pages, PDFs); check its licence; write a data card.
-- [ ] 1.2 Split it into dev (about 100) and held-out test (about 50), stratified by question type. Record the test-set checksum before any tuning; the test set is only opened at milestones.
+- [x] 1.1 Download the FinanceBench public sample (questions, answers, evidence pages, PDFs); check its licence; write a data card.
+- [x] 1.2 Split it into dev (100) and held-out test (50), grouped by company and stratified by question type ([ADR-0006](decisions/0006-evaluation-splits.md)). Record the test-set checksum before any tuning; the test set is only opened at milestones.
 - [ ] 1.3 Build the company universe from FinanceBench's companies; map names to tickers and CIKs with SEC's `company_tickers.json`.
 - [ ] 1.4 Fetch XBRL company facts (declared User-Agent, at most 10 requests per second); normalise into `companies`, `filings` and `facts` tables.
 - [ ] 1.5 Build a `metrics` table that maps canonical metrics (revenue, net income, capex, R&D and so on) to the tags each company actually uses; test a sample against FinanceBench answers.
@@ -170,7 +172,7 @@ Size is relative: S < M < L.
 - [ ] 1.9 Eval harness: loaders, metrics (recall@k, MRR, execution accuracy, accuracy), bootstrap CIs, paired tests, result writers.
 
 **Done when:** every dataset has a data card and checksum, the facts tables pass their cross-checks, and the harness scores dummy predictions.
-**Docs:** ADRs on eval-first splits and XBRL normalisation; guides `xbrl-and-financial-metrics.md`, `evaluation-statistics.md`.
+**Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)) and XBRL normalisation; guides `xbrl-and-financial-metrics.md`, `evaluation-statistics.md`; data card [financebench.md](data/financebench.md).
 **Manual steps:** spot-check 20 random metric values against the filings; add the SEC contact to `.env`.
 
 ### Phase 2: Ingestion and retrieval baseline (L)
@@ -340,6 +342,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-15 | HTTPS needs a domain or CloudFront (decided in Phase 8) | ACM cannot issue certificates for the load balancer's AWS-owned address |
 | 2026-10-15 | Definition of done item 4: fine-tuned components are adopted only on a significant gain | Matches the rule that every change must earn its place |
 | 2026-10-15 | Local services bound to 127.0.0.1; Postgres documented as app state | Pre-push review |
+| 2026-10-17 | FinanceBench split grouped by company as well as stratified by question type | Keeps every test company's filings out of tuning and Phase 7 training ([ADR-0006](decisions/0006-evaluation-splits.md)) |
 
 ## 11. Status tracker
 
