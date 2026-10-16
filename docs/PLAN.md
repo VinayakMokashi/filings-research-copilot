@@ -97,7 +97,7 @@ Starting points, each confirmed by an ADR when its phase lands.
 | Keyword search | BM25 sparse vectors (FastEmbed `Qdrant/bm25`) | Exact terms such as tickers and line items | Phase 2 |
 | Vector database | Qdrant: dense and sparse named vectors, RRF fusion, payload indexes | Native hybrid search; free cloud tier | Phase 2 |
 | Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2`; `bge-reranker-base` as a candidate | Small and fast on CPU | Phase 2 |
-| Numbers | SEC company facts → SQLite for the curated companies; Postgres in production | text2sql-analyst runs on SQLite as-is | Phases 1 and 8 |
+| Numbers | SEC company facts → SQLite for the curated companies; Postgres in production | text2sql-analyst runs on SQLite as-is | [ADR-0008](decisions/0008-xbrl-normalisation.md); Phase 8 |
 | App state | Postgres: the Compose container locally (127.0.0.1:5433), RDS on AWS. LangGraph checkpoints (Phase 5), feedback (Phases 6 and 9), and testing the Postgres executor for the facts tables (Phase 8). No code uses it in Phase 0 | One engine locally and in production | Phases 5, 6 and 8 |
 | Data agent | text2sql-analyst, an earlier project, as a pinned dependency | Reuses a tested pipeline | Phase 4 |
 | Orchestration | LangGraph state graph with a checkpointer | Routing, loops, streaming, human-in-the-loop | Phase 5 |
@@ -117,6 +117,7 @@ filings-research-copilot/
 │   ├── logs.py       # structured logging                     (Phase 0)
 │   ├── llm/          # gateway, model roles, fake for tests   (Phase 0)
 │   ├── ingest/       # SEC client and universe (Phase 1); parsers, chunkers, indexer (Phase 2)
+│   ├── facts/        # XBRL facts database, canonical metrics, cross-checks (Phase 1)
 │   ├── retrieval/    # hybrid search, fusion, reranking       (Phase 2)
 │   ├── sql/          # text2sql-analyst adapter, value linking (Phase 4)
 │   ├── agents/       # LangGraph graph, router, validator     (Phase 5)
@@ -164,15 +165,15 @@ Size is relative: S < M < L.
 - [x] 1.1 Download the FinanceBench public sample (questions, answers, evidence pages, PDFs); check its licence; write a data card.
 - [x] 1.2 Split it into dev (100) and held-out test (50), grouped by company and stratified by question type ([ADR-0006](decisions/0006-evaluation-splits.md)). Record the test-set checksum before any tuning; the test set is only opened at milestones.
 - [x] 1.3 Build the company universe from FinanceBench's companies; map names to tickers and CIKs with SEC's `company_tickers.json`. All 40 companies in its document list are matched: 32 by normalised name, 6 by ticker and 2 delisted ones by CIK ([companies.csv](../data/reference/companies.csv)).
-- [ ] 1.4 Fetch XBRL company facts (declared User-Agent, at most 10 requests per second); normalise into `companies`, `filings` and `facts` tables. Fetching is done (`poe fetch-sec`, [data card](data/sec-company-facts.md)); normalising is next.
-- [ ] 1.5 Build a `metrics` table that maps canonical metrics (revenue, net income, capex, R&D and so on) to the tags each company actually uses; test a sample against FinanceBench answers.
-- [ ] 1.6 Write a data dictionary and table descriptions for the SQL agent.
+- [x] 1.4 Fetch XBRL company facts (declared User-Agent, at most 10 requests per second); normalise into `companies`, `filings` and `facts` tables ([ADR-0008](decisions/0008-xbrl-normalisation.md), [data card](data/sec-company-facts.md)).
+- [x] 1.5 Build a `metrics` table that maps canonical metrics (revenue, net income, capex, R&D and so on) to the tags each company actually uses; test a sample against FinanceBench answers. 28 metrics; all 33 dev metrics questions, as formulas, match exactly ([report](../eval/results/facts/financebench-dev-checks.md)).
+- [x] 1.6 Write a data dictionary and table descriptions for the SQL agent ([dictionary](data/facts-dictionary.md); [descriptions](../data/reference/facts_descriptions.json) in text2sql-analyst's format).
 - [ ] 1.7 SQL eval set: about 40 questions with verified gold SQL, including unanswerable ones.
 - [x] 1.8 Routing eval set: 198 labelled queries across six routes (66 hand-written seeds plus two reviewed paraphrases each), split by seed into dev (138) and held-out test (60); data card [routing-set.md](data/routing-set.md).
 - [x] 1.9 Eval harness: loaders, metrics (recall@k, hit@k, MRR), bootstrap CIs, paired permutation and McNemar tests, Holm adjustment, result writers ([ADR-0007](decisions/0007-evaluation-statistics.md)). Execution and routing accuracy plug in with their eval sets (1.7, 1.8).
 
 **Done when:** every dataset has a data card and checksum, the facts tables pass their cross-checks, and the harness scores dummy predictions.
-**Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)), evaluation statistics ([ADR-0007](decisions/0007-evaluation-statistics.md)) and XBRL normalisation; guides `xbrl-and-financial-metrics.md` and [evaluation-statistics.md](concepts/evaluation-statistics.md); data cards [financebench.md](data/financebench.md) and [routing-set.md](data/routing-set.md); runbook [running-evaluations.md](runbooks/running-evaluations.md).
+**Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)), evaluation statistics ([ADR-0007](decisions/0007-evaluation-statistics.md)) and XBRL normalisation ([ADR-0008](decisions/0008-xbrl-normalisation.md)); guides [xbrl-and-financial-metrics.md](concepts/xbrl-and-financial-metrics.md) and [evaluation-statistics.md](concepts/evaluation-statistics.md); data cards [financebench.md](data/financebench.md) and [routing-set.md](data/routing-set.md); runbook [running-evaluations.md](runbooks/running-evaluations.md).
 **Manual steps:** spot-check 20 random metric values against the filings; add the SEC contact to `.env`.
 
 ### Phase 2: Ingestion and retrieval baseline (L)

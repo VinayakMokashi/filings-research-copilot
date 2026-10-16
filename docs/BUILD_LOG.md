@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 1 · Facts database
+
+- **Goal:** turn SEC company facts into tables the SQL agent can query, with one trustworthy value per company, metric and fiscal year (steps 1.4 to 1.6).
+- **Done:**
+  - `copilot.facts`: flattening company facts into `facts`, `filings` and `concepts`; finding each filing's period end; deriving fiscal-year labels; 28 canonical metrics with ranked tags; `annual_values` as first reported, with the latest figure beside it ([ADR-0008](decisions/0008-xbrl-normalisation.md)).
+  - A safe formula evaluator, and cross-checks that rewrite all 33 FinanceBench dev metrics questions as formulas.
+  - `poe build-facts` and `poe check-facts`; the [data dictionary](data/facts-dictionary.md) and table descriptions for the SQL agent; the guide [xbrl-and-financial-metrics.md](concepts/xbrl-and-financial-metrics.md).
+- **Commands:** `uv run poe build-facts`, `uv run poe check-facts`, `uv run poe check`.
+- **Results:**
+  - `data/processed/facts.db`: 1,059,696 facts from 2,623 filings, 4,233 concepts and 15,359 annual values, built in about 20 seconds.
+  - All 33 FinanceBench cross-checks match the gold answers exactly, at the precision each question asks for.
+  - FY2015 to FY2023 coverage is 96 to 98% for revenue, net income, cash from operations, total assets and equity.
+  - 186 tests pass offline, 39 of them new.
+- **Problems and fixes:**
+  - **Rounding, not errors.** The first run agreed on 28 of 33. Four misses were FinanceBench printing whole millions with two zero decimals (`$1616.00` for a filed 1,615.9). Each check now takes its precision from the question's wording.
+  - **Nike's inventory tag.** Nike reports inventory as `InventoryFinishedGoodsNetOfReserves`, now a fallback tag.
+  - **Finding the current period took four tries.** The most common end date failed when equity statements added older balances (Nike's FY2010). The latest end date failed on a forward-looking fact (Boeing's FY2017 10-K) and on stray contexts a day off (Foot Locker's FY2013). The final rule takes full-period facts ending by the filing date, then the most common end date within two weeks of the latest. Compared with the first rule it corrected 394 early-year values and lost none.
+  - **SEC's fiscal-year labels.** Best Buy's FY2021 10-K is labelled 2020, which collided with FY2020 and dropped a year; Ulta, Foot Locker and Salesforce had similar slips. Labels now come from the period end, named the company's way (by end year, like Walmart, or by the year most days fall in, like Ulta), with the convention decided by a vote over the company's filings.
+  - **A transition year.** Best Buy's 2013 10-KT covers 11 months; it now gets balance-sheet values but no annual flow values.
+- **Decisions:** [ADR-0008](decisions/0008-xbrl-normalisation.md).
+- **Next:** the SQL eval set (step 1.7), then close Phase 1.
+
 ### 2026-10-17 · Phase 1 · SEC client and company universe
 
 - **Goal:** match FinanceBench's companies to SEC filers and download their XBRL company facts (step 1.3 and the fetching half of 1.4).
