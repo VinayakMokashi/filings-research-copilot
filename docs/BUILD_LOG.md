@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 1 · SEC client and company universe
+
+- **Goal:** match FinanceBench's companies to SEC filers and download their XBRL company facts (step 1.3 and the fetching half of 1.4).
+- **Done:**
+  - Added the SEC contact to `.env`, with the owner's approval; SEC rejects requests that don't name one.
+  - `copilot.ingest.sec`: an EDGAR client that refuses to start without a contact, spaces requests to 5 per second (SEC allows 10), and retries 429 and 5xx responses with backoff, honouring `Retry-After`; cached, JSON-checked downloads.
+  - `copilot.ingest.universe`: name matching after normalising case, punctuation, "&" and corporate suffixes, with ticker and CIK overrides.
+  - `poe fetch-sec`: writes `data/reference/companies.csv` and `data/reference/sec_manifest.json` (URL, time, size and SHA-256 of all 81 files), and caches the raw JSON.
+  - Wrote the [SEC company facts data card](data/sec-company-facts.md) and the [fetching runbook](runbooks/fetching-sec-data.md).
+- **Commands:** `uv run poe fetch-sec`, `uv run poe check`.
+- **Results:**
+  - All 40 companies matched: 32 by name, 6 by ticker override and 2 by CIK override. The 80 company files downloaded in 49 seconds: 164 MB of company facts and 11 MB of submissions.
+  - 147 tests pass offline, 25 of them new.
+- **Problems and fixes:**
+  - **Delisted companies.** Activision Blizzard (acquired in 2023) and Foot Locker are no longer in SEC's ticker list. Both are matched by CIK, each checked against its SEC submissions record first.
+  - **Names that don't match.** "AMD", "Amazon" ("AMAZON COM INC"), "Costco" ("COSTCO WHOLESALE CORP /NEW") and three more need ticker overrides; normalising handles the rest, including state tags such as "/NY".
+- **Decisions:** none.
+- **Next:** normalise the facts into SQLite, map canonical metrics to each company's tags, and cross-check against FinanceBench (steps 1.4 to 1.6).
+
 ### 2026-10-17 · Phase 1 · Routing eval set
 
 - **Goal:** labelled questions for the router that sends each question to a specialist (step 1.8).
