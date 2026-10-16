@@ -1,0 +1,41 @@
+name,cik,ticker,sec_name,sector,fiscal_year_end,matched_by
+3M,66740,MMM,3M CO,Industrials,1231,name
+AES Corporation,874761,AES,AES CORP,Utilities,1231,name
+AMD,2488,AMD,ADVANCED MICRO DEVICES INC,Information Technology,1226,ticker override
+Activision Blizzard,718877,,"Activision Blizzard, Inc.",Communication Services,1231,CIK override
+Adobe,796343,ADBE,ADOBE INC.,Information Technology,1127,name
+Amazon,1018724,AMZN,AMAZON COM INC,Consumer Discretionary,1231,ticker override
+Amcor,1748790,AMCR,Amcor plc,Materials,1231,name
+American Express,4962,AXP,AMERICAN EXPRESS CO,Financials,1231,name
+American Water Works,1410636,AWK,"American Water Works Company, Inc.",Utilities,1231,name
+Apple,320193,AAPL,Apple Inc.,Information Technology,0926,name
+Best Buy,764478,BBY,BEST BUY CO INC,Consumer Discretionary,0130,name
+Block,1512673,XYZ,"Block, Inc.",Information Technology,1231,name
+Boeing,12927,BA,BOEING CO,Industrials,1231,name
+CVS Health,64803,CVS,CVS HEALTH Corp,Health Care,1231,name
+Coca-Cola,21344,KO,COCA COLA CO,Consumer Staples,1231,name
+Corning,24741,GLW,CORNING INC /NY,Information Technology,1231,name
+Costco,909832,COST,COSTCO WHOLESALE CORP /NEW,Consumer Staples,0830,ticker override
+FedEx,1048911,FDX,FEDEX CORP,Industrials,0531,name
+Foot Locker,850209,,"FOOT LOCKER, INC.",Consumer Discretionary,0201,CIK override
+General Mills,40704,GIS,GENERAL MILLS INC,Consumer Staples,0530,name
+Intel,50863,INTC,INTEL CORP,Information Technology,1227,name
+JPMorgan,19617,JPM,JPMORGAN CHASE & CO,Financials,1231,ticker override
+Johnson & Johnson,200406,JNJ,JOHNSON & JOHNSON,Health Care,0103,name
+Kraft Heinz,1637459,KHC,Kraft Heinz Co,Consumer Staples,1226,name
+Lockheed Martin,936468,LMT,LOCKHEED MARTIN CORP,Industrials,1231,name
+MGM Resorts,789570,MGM,MGM Resorts International,Consumer Discretionary,1231,ticker override
+McDonalds,63908,MCD,MCDONALDS CORP,Consumer Discretionary,1231,name
+Microsoft,789019,MSFT,MICROSOFT CORP,Information Technology,0630,name
+Netflix,1065280,NFLX,NETFLIX INC,Communication Services,1231,name
+Nike,320187,NKE,"NIKE, Inc.",Consumer Discretionary,0531,name
+Oracle,1341439,ORCL,ORACLE CORP,Information Technology,0531,name
+PG&E Corporation,1004980,PCG,PG&E Corp,Utilities,1231,name
+Paypal,1633917,PYPL,"PayPal Holdings, Inc.",Financials,1231,name
+PepsiCo,77476,PEP,PEPSICO INC,Consumer Staples,1226,name
+Pfizer,78003,PFE,PFIZER INC,Health Care,1231,name
+Salesforce,1108524,CRM,"Salesforce, Inc.",Information Technology,0131,name
+Ulta Beauty,1403568,ULTA,"Ulta Beauty, Inc.",Consumer Discretionary,0130,name
+Verizon,732712,VZ,VERIZON COMMUNICATIONS INC,Communication Services,1231,ticker override
+Walmart,104169,WMT,Walmart Inc.,Consumer Staples,0131,name
+eBay,1065088,EBAY,EBAY INC,Consumer Discretionary,1231,name
