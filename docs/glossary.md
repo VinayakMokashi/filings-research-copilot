@@ -24,7 +24,9 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Git blob id** | The SHA-1 hash git computes over a file's contents. Used here to check every downloaded file against a manifest. |
 | **Grouped split** | A split that keeps every item of a group (here, a company) on the same side, so nothing about the group leaks across. |
 | **Held-out test set** | Questions set aside while building and opened only at milestones, so the reported result isn't tuned to them. |
+| **Hit@k** | Whether at least one relevant item appears in the top k results: 1 or 0 for each question. |
 | **HNSW** | A graph-based index for fast approximate nearest-neighbour search. |
+| **Holm–Bonferroni correction** | Adjusts p-values when several comparisons are made at once, so the chance of any false win stays at the chosen level. |
 | **Hybrid search** | Combining keyword (BM25) and semantic (dense) search. |
 | **HyDE** | Hypothetical Document Embeddings: write a hypothetical answer, embed it, and search with that instead of the raw question. |
 | **LangGraph** | A library for building LLM workflows as state graphs with branches, loops and checkpoints. |
@@ -32,12 +34,14 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **LiteLLM** | A library and proxy that gives one interface to many LLM providers, with retries and fallbacks. |
 | **LLM-as-judge** | Using a model to grade answers. The judge itself has to be checked against human labels. |
 | **LoRA** | Low-Rank Adaptation: fine-tuning by training small low-rank adapter matrices instead of all the weights. |
+| **McNemar's test** | A paired test for two systems' right-or-wrong outcomes that looks only at the questions where they disagree. |
 | **MCP** | Model Context Protocol: a standard for connecting AI apps (hosts) to tools and data (servers). |
 | **MNRL** | MultipleNegativesRankingLoss: a contrastive loss that treats the other examples in a batch as negatives. |
 | **Model role** | A named job (`strong` or `fast`) that code asks for instead of a specific model; settings decide which model fills it. |
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions assume an AWS role with short-lived tokens, so no AWS keys are stored anywhere. |
 | **Paired test** | Comparing two systems on the same questions, so that question-to-question noise cancels out. |
+| **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **RRF** | Reciprocal Rank Fusion: merge ranked lists by summing 1/(k + rank) for each item. |

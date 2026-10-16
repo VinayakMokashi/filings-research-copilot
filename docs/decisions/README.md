@@ -8,5 +8,6 @@
 | [0004](0004-tooling-and-workflow.md) | Tooling, repository layout and Git workflow | Accepted | 2026-10-15 |
 | [0005](0005-llm-gateway.md) | One LLM gateway built on LiteLLM's router | Accepted | 2026-10-15 |
 | [0006](0006-evaluation-splits.md) | Split FinanceBench by company into dev and held-out test | Accepted | 2026-10-17 |
+| [0007](0007-evaluation-statistics.md) | Report bootstrap intervals and decide with paired permutation tests | Accepted | 2026-10-17 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
