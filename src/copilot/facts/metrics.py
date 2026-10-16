@@ -7,7 +7,10 @@ company and fiscal year, the annual value is:
 - taken from the 10-K for that fiscal year, using only its current-period facts (facts that
   end on the filing's period end), so comparatives from later filings are never used;
 - for duration metrics, a period of 350 to 380 days, which covers 52/53-week years;
-- from the highest-ranked tag that has such a value that year;
+- from the highest-ranked tag that has such a value that year, except for revenue, which
+  takes the largest figure among its tags: a company's total can't be smaller than a part
+  it also tags (General Mills tags a $2 billion `Revenues` figure beside $19 billion of
+  sales; American Express tags contract revenue beside its larger total);
 - the value as originally reported (the earliest filing), with the latest reported value for
   the same period kept alongside to show restatements.
 """
@@ -21,6 +24,7 @@ from typing import Literal
 from copilot.facts.normalise import ANNUAL_DAYS, ANNUAL_FORMS, Fact, Filing, duration_days
 
 Kind = Literal["duration", "instant"]
+Pick = Literal["priority", "largest"]
 Statement = Literal["income statement", "cash flow statement", "balance sheet"]
 
 
@@ -33,6 +37,7 @@ class Metric:
     unit: str
     statement: Statement
     tags: tuple[str, ...]
+    pick: Pick = "priority"
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,8 +64,9 @@ def _m(
     *tags: str,
     kind: Kind = "duration",
     unit: str = "USD",
+    pick: Pick = "priority",
 ) -> Metric:
-    return Metric(name, label, description, kind, unit, statement, tags)
+    return Metric(name, label, description, kind, unit, statement, tags, pick)
 
 
 IS: Statement = "income statement"
@@ -79,6 +85,7 @@ METRICS: tuple[Metric, ...] = (
         "SalesRevenueNet",
         "SalesRevenueGoodsNet",
         "RevenuesNetOfInterestExpense",
+        pick="largest",
     ),
     _m(
         "cost_of_revenue",
@@ -333,7 +340,10 @@ def annual_values(
 
     values = []
     for fiscal_year, candidates in sorted(current.items()):
-        best_tag = min((fact.tag for fact in candidates), key=rank.__getitem__)
+        if metric.pick == "largest":
+            best_tag = max(candidates, key=lambda fact: (fact.value, -rank[fact.tag])).tag
+        else:
+            best_tag = min((fact.tag for fact in candidates), key=rank.__getitem__)
         reports = sorted(
             (f for f in candidates if f.tag == best_tag), key=lambda f: (f.filed, f.accn)
         )
