@@ -15,6 +15,8 @@ One report per experiment, with these sections:
 |---|---|---|---|
 | FinanceBench dev | 100 questions, 20 companies | [`eval/financebench/splits.json`](../../eval/financebench/splits.json) | Used for all tuning and comparisons |
 | FinanceBench test | 50 questions, 12 companies | Same file | Held out: opened only at milestones, and each report says whether it was ([ADR-0006](../decisions/0006-evaluation-splits.md)) |
+| Routing dev | 138 questions, 46 seeds | [`eval/routing/queries.jsonl`](../../eval/routing/queries.jsonl) | Used for tuning routers ([data card](../data/routing-set.md)) |
+| Routing test | 60 questions, 20 seeds | Same file | Held out, like FinanceBench test |
 
 ## Runs
 
@@ -23,3 +25,5 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | Run | Suite | Split | Headline (95% interval) | What it is |
 |---|---|---|---|---|
 | [first-pages](../../eval/results/retrieval/first-pages/dev/summary.md) | Retrieval | Dev | hit@20 0.29 (0.20 to 0.38) | Floor: the first 20 pages of the correct document |
+| [majority](../../eval/results/routing/majority/dev/summary.md) | Routing | Dev | accuracy 0.217 (0.152 to 0.290) | Always the most common route |
+| [keyword](../../eval/results/routing/keyword/dev/summary.md) | Routing | Dev | accuracy 0.623 (0.543 to 0.703) | Floor: hand-written keyword rules |
