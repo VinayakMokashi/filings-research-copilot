@@ -6,7 +6,7 @@
 
 An agentic research copilot for public-company filings. Ask a question about a company and get an answer built from its 10-K and 10-Q text and its XBRL financial facts, with every claim cited to the page or query it came from.
 
-> **Status:** in active development, Phase 1 (data and evaluation sets), the second of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
+> **Status:** in active development. Phase 0 (foundations) and Phase 1 (data and evaluation sets) are done; Phase 2 (ingestion and retrieval baseline) is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
 >
 > **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/
 
