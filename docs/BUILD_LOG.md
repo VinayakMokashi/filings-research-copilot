@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 1 · SQL eval set
+
+- **Goal:** questions the data agent will be judged on, with verified gold SQL, including some it should decline (step 1.7).
+- **Done:**
+  - Wrote 42 questions by hand: 32 with gold SQL across lookups, rankings, ratios, aggregates, trends, provenance, comparisons and growth, and 10 that the database can't answer.
+  - Ran every gold query and compared its result with the companies' reported figures.
+  - `copilot.eval.sql`: building the set, a split by category, the held-out guard and checksums, a row comparator with text2sql-analyst's rules, and scoring on a read-only connection with a step limit; `poe build-sql-set` and `poe eval-sql`.
+  - Wrote the [SQL-set data card](data/sql-set.md).
+- **Commands:** `uv run poe build-sql-set`, `uv run poe eval-sql --baseline gold`, `uv run poe eval-sql --baseline decline-all`, `uv run pytest -m integration`, `uv run poe check`.
+- **Results:**
+  - Dev has 28 questions (21 answerable) and test has 14 (11 answerable).
+  - Gold SQL scores 1.000 on dev, which checks the scorer; declining everything scores 0.250 (95% interval 0.107 to 0.429).
+  - 209 tests pass offline, 20 of them new; the integration test re-runs every gold query against the real database and passes.
+- **Problems and fixes:**
+  - **A 127% net margin.** Reviewing the gold results showed General Mills earning more than its revenue. It tags a partial $2 billion `Revenues` figure beside $19 billion of sales, and `Revenues` ranked first. Revenue now takes the largest figure among its tags, which changed 12 company-years and fixed American Express too, whose contract revenue had been taken instead of its total. All 33 FinanceBench cross-checks still agree.
+  - **No operating income for Pfizer.** Pfizer's income statement has no operating-income line, so that question moved to Microsoft.
+- **Decisions:** none new; ADR-0008 records the revenue rule.
+- **Next:** close Phase 1: the plan, the project page, and a sheet of 20 random values for a manual spot-check against the filings.
+
 ### 2026-10-17 · Phase 1 · Facts database
 
 - **Goal:** turn SEC company facts into tables the SQL agent can query, with one trustworthy value per company, metric and fiscal year (steps 1.4 to 1.6).
