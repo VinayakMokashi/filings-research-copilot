@@ -49,6 +49,7 @@ models = { cmd = "python scripts/list_models.py", help = "List the models your G
 smoke = { cmd = "python scripts/smoke_llm.py", help = "One live call per model role through the gateway" }
 fetch-financebench = { cmd = "python scripts/fetch_financebench.py", help = "Download FinanceBench and verify every file (--pdfs all for every PDF)" }
 split-financebench = { cmd = "python scripts/split_financebench.py", help = "Make the FinanceBench dev/test split once, before any tuning" }
+compare-runs = { cmd = "python scripts/compare_runs.py", help = "Paired test of two eval runs on one metric" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
