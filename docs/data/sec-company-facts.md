@@ -41,6 +41,8 @@ For each company, the company-facts file holds every XBRL fact it has filed, gro
 
 **Cross-check.** `uv run poe check-facts` rewrites each of the 33 metrics questions in the FinanceBench dev split as a formula over the annual values. All 33 match the gold answers exactly at the precision the question asks for ([report](../../eval/results/facts/financebench-dev-checks.md)).
 
+**Spot check.** `uv run poe spot-check-facts` draws 20 random annual values with links to their filings, for checking by hand ([sheet](facts-spot-check.md)).
+
 ## Known issues
 
 - **The data moves.** Companies keep filing, so a refresh changes the files. The manifest records exactly what was used.

@@ -59,6 +59,7 @@ build-facts = { cmd = "python scripts/build_facts_db.py", help = "Build the SQLi
 check-facts = { cmd = "python scripts/check_facts.py", help = "Cross-check the facts database against FinanceBench dev answers" }
 build-sql-set = { cmd = "python scripts/build_sql_set.py", help = "Build the SQL eval set by running every gold query on the facts database" }
 eval-sql = { cmd = "python scripts/eval_sql.py", help = "Score SQL predictions (--baseline gold or decline-all, or --predictions FILE)" }
+spot-check-facts = { cmd = "python scripts/spot_check_facts.py", help = "Write a sheet of 20 random annual values to check by hand against the filings" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
