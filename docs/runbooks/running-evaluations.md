@@ -39,6 +39,15 @@ The file must cover exactly the questions in the split; a missing or extra id st
 | `summary.json` | The system, the split, and each metric's mean with its 95% interval, overall and by question type |
 | `summary.md` | The same summary as tables |
 
+## Score routing
+
+```bash
+uv run poe eval-routing --baseline keyword        # or --baseline majority
+uv run poe eval-routing --predictions routes.jsonl --run llm-router-v1
+```
+
+A routing predictions file has one line per dev question: `{"id": "r001", "route": "doc"}`. Runs land in `eval/results/routing/<run>/<split>/`, with accuracy overall, by route and by origin (seed or paraphrase). The set itself is fixed: rebuilding it needs `poe build-routing-set --force` and a note in the build log.
+
 ## Compare two runs
 
 ```bash

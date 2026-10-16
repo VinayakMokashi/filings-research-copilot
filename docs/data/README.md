@@ -15,3 +15,4 @@ Each card records:
 | Card | What it is | Added |
 |---|---|---|
 | [FinanceBench](financebench.md) | 150 questions over real filings, with answers and evidence pages; the evaluation benchmark | 2026-10-17 |
+| [Routing set](routing-set.md) | 198 questions labelled with the route the copilot should take | 2026-10-17 |
