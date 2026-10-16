@@ -48,6 +48,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Local Qdrant (vector store) and Postgres (app state), bound to 127.0.0.1 | `docker-compose.yml` |
 | CI: lint, format, strict types, tests, a full-history secret scan | `.github/workflows/ci.yml`, `.gitleaks.toml` |
 | Weekly dependency updates for Actions, `uv.lock` and pre-commit hooks | `.github/dependabot.yml` |
+| FinanceBench download checked against a pinned manifest; dev/test split by company, with the test set held out | `src/copilot/eval/`, `eval/financebench/` ([data card](docs/data/financebench.md)) |
 
 ## Local development
 
@@ -60,6 +61,7 @@ uv run poe services-up        # Qdrant on 127.0.0.1:6333, Postgres on 127.0.0.1:
 uv run poe check              # ruff, format check, mypy, pytest: the same steps as CI
 uv run poe secrets            # gitleaks over the full history, as CI does (needs Docker)
 uv run poe smoke              # one live call per model role (needs the key)
+uv run poe fetch-financebench # evaluation questions and the PDFs they cite (159 MB)
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).

@@ -15,6 +15,26 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 1 · FinanceBench data and splits
+
+- **Goal:** fix the benchmark questions and the held-out test set before writing any retrieval code (steps 1.1 and 1.2).
+- **Done:**
+  - `copilot.eval.financebench`: typed records for questions, evidence and documents; a manifest of the pinned commit's files with their sizes and git blob ids; downloads that are checked before anything is written, so a rerun resumes safely.
+  - Fetched the question files and the 84 PDFs the questions use (159 MB) into `data/raw/financebench/`.
+  - `copilot.eval.splits`: a dev/test split grouped by company and stratified by question type, chosen by a fixed seed search with exact arithmetic. The test side loads only with `allow_test=True`, and both sides are checked against recorded checksums ([ADR-0006](decisions/0006-evaluation-splits.md)).
+  - Wrote the [FinanceBench data card](data/financebench.md).
+- **Commands:** `uv run poe fetch-financebench --refresh-manifest`, `uv run poe fetch-financebench`, `uv run poe split-financebench`, `uv run poe check`.
+- **Results:**
+  - 150 questions (50 of each type), 84 documents and 32 companies. The manifest lists 370 files (706 MB) at commit `cc39aeb`.
+  - The split: dev has 100 questions from 20 companies and test has 50 from 12, with question types 33 / 34 / 33 and 17 / 16 / 17 (seed 14,793). Test-set SHA-256: `244383209a16…`.
+  - 62 tests pass offline, 23 of them new; mypy strict is clean.
+- **Problems and fixes:**
+  - **Page numbering.** FinanceBench doesn't say whether `evidence_page_num` counts from 0 or 1. Comparing evidence text with page text in three PDFs settled it: all 12 passages match page index *n* (similarity at least 0.98), so it counts from 0.
+  - **A split that hid a sector.** The first company-grouped split put every financials question in test. The search now also balances document types and sectors, and penalises any sector with several companies that lands entirely on one side.
+  - **Licence.** The GitHub repository has no licence file, and the Hugging Face card says CC BY-NC 4.0. The data is downloaded at run time and never committed.
+- **Decisions:** [ADR-0006](decisions/0006-evaluation-splits.md).
+- **Next:** the evaluation harness (step 1.9), then the routing set (1.8). The SEC steps (1.3 to 1.6) wait for the SEC contact in `.env`.
+
 ### 2026-10-17 · Phase 0 · Live model check
 
 - **Goal:** confirm the key and both model roles against the live API (step 0.8), the last Phase 0 exit criterion.
