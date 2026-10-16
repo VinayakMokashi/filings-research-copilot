@@ -15,6 +15,19 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 0 · Live model check
+
+- **Goal:** confirm the key and both model roles against the live API (step 0.8), the last Phase 0 exit criterion.
+- **Done:** listed the models available to the key, confirmed the strong and fast roles, and ran one live call per role.
+- **Commands:** `uv run poe models`, `uv run poe smoke`.
+- **Results:**
+  - The key can use 11 models, including both role models: `openai/gpt-oss-120b` (strong) and `qwen/qwen3.8-27b` (fast). Also available: `openai/gpt-oss-20b`, `openai/gpt-oss-safeguard-20b`, Llama Prompt Guard 2 (22M and 86M), Whisper and a few speech models.
+  - Fast role: replied in 0.68 s (19 tokens in, 2 out, $0.000023). Strong role: replied in 0.45 s (78 in, 46 out including its reasoning, $0.000039). Neither call needed a fallback, and both costs came from LiteLLM's bundled price map.
+  - Phase 0 is done: checks pass locally and in CI, the Compose services are healthy, the project page is live, and both roles answer.
+- **Problems and fixes:** none.
+- **Decisions:** none. Llama Prompt Guard 2 is noted as a candidate prompt-injection classifier for the Phase 6 guardrails.
+- **Next:** Phase 1. FinanceBench (steps 1.1 and 1.2) and the evaluation harness (1.9) first; the SEC steps (1.3 and 1.4) need the SEC contact in `.env`.
+
 ### 2026-10-15 · Phase 0 · Foundations
 
 - **Goal:** a repository where every later phase lands cleanly.

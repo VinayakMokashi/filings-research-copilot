@@ -31,7 +31,7 @@ Every model call goes through `copilot.llm.LLMGateway`, which wraps a LiteLLM `R
 ## Evidence
 
 - 39 unit tests, all offline, cover role routing, the real router's fallback path, replies shaped like live Groq responses, reasoning in `<think>` tags and in provider fields, empty replies, unknown prices, error mapping, key redaction and repeated failures. Network access is refused during tests.
-- The live smoke test (`uv run poe smoke`) runs once the Groq key is configured (Phase 0, step 0.8).
+- The live smoke test (`uv run poe smoke`) passed on 2026-10-17: both roles answered from their first-choice Groq models, with no fallback (Phase 0, step 0.8).
 
 ## Consequences
 

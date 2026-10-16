@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 0, Foundations (in progress) |
+| **Current phase** | Phase 1, Data and evaluation sets (in progress) |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -72,7 +72,7 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 |---|---|---|---|
 | Python 3.12, uv, git, Docker | Installed | Phase 0 | |
 | GitHub CLI, authenticated | Installed | Phase 0 | |
-| Groq API key | Pending | Phase 0 (step 0.8) | Goes in `.env` |
+| Groq API key | Added | Phase 0 (step 0.8) | In `.env`; verified live on 2026-10-17 |
 | SEC EDGAR contact for the User-Agent header | Pending | Phase 1 | Goes in `.env` |
 | Hugging Face account and token | Pending | Phases 1 and 7 | Datasets; publishing models |
 | Langfuse Cloud (free tier) | Pending | Phase 6 | Tracing |
@@ -149,7 +149,7 @@ Size is relative: S < M < L.
 - [x] 0.5 LLM gateway v0 on LiteLLM's router: model roles, retries, fallbacks, token and cost accounting, reasoning-tag splitting, and a fake LLM for tests.
 - [x] 0.6 Docker Compose with Qdrant and Postgres, bound to 127.0.0.1, with health checks.
 - [x] 0.7 CI on GitHub Actions (lint, format, types, tests, a full-history gitleaks scan), Dependabot updates, and a GitHub Pages deploy for the project page.
-- [ ] 0.8 Check which models the Groq key can use (`uv run poe models`), confirm the strong and fast roles, and run the live smoke test (`uv run poe smoke`).
+- [x] 0.8 Check which models the Groq key can use (`uv run poe models`), confirm the strong and fast roles, and run the live smoke test (`uv run poe smoke`).
 
 **Done when:** checks pass locally and in CI, the Compose services are healthy, the project page is live on GitHub Pages, and the smoke test gets a reply from each role.
 **Docs:** [ADR-0004](decisions/0004-tooling-and-workflow.md), [ADR-0005](decisions/0005-llm-gateway.md), guide [llm-gateway.md](concepts/llm-gateway.md), runbooks [local-setup.md](runbooks/local-setup.md) and [publishing-the-project-page.md](runbooks/publishing-the-project-page.md).
@@ -345,8 +345,8 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 
 | Phase | Status | Started | Finished |
 |---|---|---|---|
-| 0 Foundations | In progress | 2026-10-15 | |
-| 1 Data and evaluation sets | Planned | | |
+| 0 Foundations | Done | 2026-10-15 | 2026-10-17 |
+| 1 Data and evaluation sets | In progress | 2026-10-17 | |
 | 2 Ingestion and retrieval baseline | Planned | | |
 | 3 Doc agent | Planned | | |
 | 4 Data agent | Planned | | |

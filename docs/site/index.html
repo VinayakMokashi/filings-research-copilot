@@ -171,6 +171,7 @@ td.metric{font-weight:600;white-space:nowrap}
 .t-risk td:first-child{font-weight:600;width:38%}
 .pill{display:inline-block;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.04em;line-height:1.6;padding:0 .6em;border:1px solid var(--line);border-radius:999px;color:var(--muted);white-space:nowrap}
 .pill-now{background:var(--mark);border-color:var(--mark);color:var(--on-mark);font-weight:600}
+.pill-done{border-color:var(--ledger);color:var(--ledger);font-weight:600}
 .tnote{margin-top:14px;font-size:.88rem;color:var(--muted);max-width:76ch}
 
 /* Guardrails */
@@ -216,7 +217,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><dt>Sources</dt><dd>10-K and 10-Q text · XBRL company facts</dd></div>
     <div><dt>Benchmark</dt><dd>FinanceBench public sample</dd></div>
     <div><dt>Target platform</dt><dd>AWS ECS Fargate, on demand · Qdrant · open models on Groq</dd></div>
-    <div><dt>Status</dt><dd>Phase 0 (first of 11) in progress</dd></div>
+    <div><dt>Status</dt><dd>Phase 1 (second of 11) in progress</dd></div>
   </dl>
   <div class="actions">
     <a class="btn btn-primary" href="#architecture">See the architecture</a>
@@ -582,7 +583,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <p class="intro">Every phase ends with tests, an evaluation wherever quality changes, and documentation: a build log entry, decision records and concept guides.</p>
   </div>
   <div class="strip" aria-hidden="true">
-    <span class="seg now"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
+    <span class="seg done"></span><span class="seg now"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
   </div>
   <div class="strip-scale" aria-hidden="true"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
   <div class="legend"><span><i class="sw done"></i>Done</span><span><i class="sw now"></i>In progress</span><span><i class="sw"></i>Planned</span></div>
@@ -590,8 +591,8 @@ td.metric{font-weight:600;white-space:nowrap}
     <table class="t-road">
       <thead><tr><th>Phase</th><th>What ships</th><th>What it proves</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td><span class="ph">0</span>Foundations</td><td>Repo, CI, typed config, LLM gateway, local Qdrant and Postgres</td><td>Later phases land on tested ground</td><td><span class="pill pill-now">In progress</span></td></tr>
-        <tr><td><span class="ph">1</span>Data and eval sets</td><td>FinanceBench splits, XBRL facts tables, SQL and routing sets, eval harness</td><td>We know how we'll be judged before building</td><td><span class="pill">Planned</span></td></tr>
+        <tr><td><span class="ph">0</span>Foundations</td><td>Repo, CI, typed config, LLM gateway, local Qdrant and Postgres</td><td>Later phases land on tested ground</td><td><span class="pill pill-done">Done</span></td></tr>
+        <tr><td><span class="ph">1</span>Data and eval sets</td><td>FinanceBench splits, XBRL facts tables, SQL and routing sets, eval harness</td><td>We know how we'll be judged before building</td><td><span class="pill pill-now">In progress</span></td></tr>
         <tr><td><span class="ph">2</span>Retrieval baseline</td><td>PDF ingestion, chunkers, hybrid search, reranking</td><td>Retrieval settings are chosen by measurement</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">3</span>Doc agent</td><td>Query rewriting, cited answers, abstention, calculator</td><td>Answers are grounded in filing text</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">4</span>Data agent</td><td>text2sql-analyst over XBRL facts, with value linking</td><td>Reported numbers come from SQL queries</td><td><span class="pill">Planned</span></td></tr>
