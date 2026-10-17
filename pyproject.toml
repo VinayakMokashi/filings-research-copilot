@@ -15,6 +15,7 @@ dependencies = [
     "pydantic-settings>=2.16.0",
     "pypdfium2>=5.14.0",
     "structlog>=26.1.0",
+    "tokenizers>=0.23.3",
 ]
 
 [build-system]
@@ -63,6 +64,7 @@ eval-sql = { cmd = "python scripts/eval_sql.py", help = "Score SQL predictions (
 spot-check-facts = { cmd = "python scripts/spot_check_facts.py", help = "Write a sheet of 20 random annual values to check by hand against the filings" }
 parse-pdfs = { cmd = "python scripts/parse_pdfs.py", help = "Parse the FinanceBench PDFs into clean, section-tagged page text" }
 check-pages = { cmd = "python scripts/check_page_alignment.py", help = "Check parsed pages line up with FinanceBench evidence pages (dev)" }
+chunk-corpus = { cmd = "python scripts/chunk_corpus.py", help = "Chunk the parsed filings with one strategy (--strategy page, tokens-480 or tokens-256)" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
