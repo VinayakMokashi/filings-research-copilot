@@ -58,6 +58,10 @@ The split was made once, before any tuning, with `uv run poe split-financebench`
 - **Test-set checksum** (SHA-256 of the canonical records): `244383209a16e05763c27ed1d1f122e232d1ea9c6d9bc1fb827a4cf7370a64c0`.
 - Every sector with more than one company appears on both sides. Materials has a single company (Amcor), which is in dev.
 
+## Parsed pages
+
+`uv run poe parse-pdfs` turns the PDFs into clean page text ([ADR-0009](../decisions/0009-pdf-parsing.md)). The 84 question documents have 12,013 pages, 82 of them images with no text. Every dev evidence passage but one lines up with the parsed page of the same index, with a median word overlap of 0.99 ([report](../../eval/results/parsing/page-alignment-dev.md)); the exception is still the closest page.
+
 ## Known issues
 
 - **Page numbers start at 0.** `evidence_page_num` is a PDF page index counted from 0. On 12 evidence passages in three documents, the text of page index *n* matched the evidence (similarity at least 0.98) and page *n* − 1 didn't. Citations shown to people add 1.
@@ -67,6 +71,7 @@ The split was made once, before any tuning, with `uv run poe split-financebench`
 - **The test set is small.** At 50 questions, a 95% confidence interval on an accuracy near 50% spans about ±14 points. Decisions rest on paired comparisons on dev (Plan §2).
 - **Some fields are empty.** `question_reasoning` is empty for every novel-generated question, and `justification` is empty for 25 domain-relevant and 25 novel-generated questions.
 - Seven PDFs in the repository have no entry in the document file.
+- **39 of the 84 question PDFs are encrypted** (owner-password protected, readable without a password). pdfium opens them; some other parsers need extra packages.
 
 ## Citation
 

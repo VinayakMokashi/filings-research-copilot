@@ -5,6 +5,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | Term | Meaning |
 |---|---|
 | **10-K / 10-Q** | Annual and quarterly reports that US public companies file with the SEC. |
+| **10-K item** | A numbered section of an annual report, such as Item 1A (Risk Factors) or Item 7 (Management's Discussion and Analysis). |
 | **52/53-week fiscal year** | A fiscal year that ends on the same weekday each year (for example the last Saturday of December), so it runs 52 or 53 weeks. |
 | **Accession number** | SEC's unique id for one filing, such as `0000066740-24-000016`. |
 | **ADR** | Architecture Decision Record: a short note recording one decision, the options considered and why. |
@@ -45,11 +46,13 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions assume an AWS role with short-lived tokens, so no AWS keys are stored anywhere. |
 | **Paired test** | Comparing two systems on the same questions, so that question-to-question noise cancels out. |
+| **pdfium** | Google's PDF engine (used in Chrome); pypdfium2 is its Python binding and this project's parser. |
 | **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |
 | **RRF** | Reciprocal Rank Fusion: merge ranked lists by summing 1/(k + rank) for each item. |
+| **Running header** | Text repeated at the top or bottom of most pages, such as a "Table of Contents" link or a page number. The parser removes it. |
 | **Self-consistency** | Sample several reasoning paths and keep the majority answer. |
 | **Self-Discover** | The model selects, adapts and structures reasoning modules into a plan, then follows the plan. |
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
