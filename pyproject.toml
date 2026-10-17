@@ -61,6 +61,8 @@ check-facts = { cmd = "python scripts/check_facts.py", help = "Cross-check the f
 build-sql-set = { cmd = "python scripts/build_sql_set.py", help = "Build the SQL eval set by running every gold query on the facts database" }
 eval-sql = { cmd = "python scripts/eval_sql.py", help = "Score SQL predictions (--baseline gold or decline-all, or --predictions FILE)" }
 spot-check-facts = { cmd = "python scripts/spot_check_facts.py", help = "Write a sheet of 20 random annual values to check by hand against the filings" }
+parse-pdfs = { cmd = "python scripts/parse_pdfs.py", help = "Parse the FinanceBench PDFs into clean, section-tagged page text" }
+check-pages = { cmd = "python scripts/check_page_alignment.py", help = "Check parsed pages line up with FinanceBench evidence pages (dev)" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
