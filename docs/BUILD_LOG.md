@@ -15,6 +15,33 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 2 · Embeddings and the Qdrant index
+
+- **Goal:** index the chunks with dense and BM25 vectors in Qdrant, resumably, and add late chunking and the semantic chunker's embedder (step 2.3, and the rest of step 2.2).
+- **Done:**
+  - `copilot.ingest.embed`: bge-small-en-v1.5 through FastEmbed (bge's instruction on queries only) and `Qdrant/bm25` sparse vectors; hashing stand-ins for tests.
+  - `copilot.ingest.index`: one collection per strategy and model, with a named cosine vector, a BM25 sparse vector with Qdrant's IDF modifier, payload indexes and explicit HNSW settings. Point ids come from chunk content hashes, and only missing ids are embedded, so every run resumes.
+  - `copilot.ingest.jobs`: a local runner, one job per document, with a JSON Lines log; a failed document is recorded and the run moves on.
+  - `copilot.ingest.late_chunking`: jina-embeddings-v2-small-en through ONNX Runtime, 2,048-token windows overlapping by 512, each token taking its vector from the window it sits nearer the middle of.
+  - The semantic chunker now embeds sentences and paragraphs instead of PDF lines.
+  - `poe index-corpus` (with an index card per collection) and `poe check-hnsw`; [ADR-0010](decisions/0010-vector-store-and-embeddings.md), guides on [late chunking](concepts/late-chunking.md) and [HNSW and Qdrant](concepts/hnsw-and-qdrant.md), and an indexing section in the [ingestion runbook](runbooks/ingesting-filings.md).
+  - Parsing now reports and skips a PDF it can't open instead of stopping; all 368 FinanceBench PDFs were downloaded and 366 parsed (53,901 pages).
+- **Commands:** `uv run poe index-corpus --strategy tokens-480 --model bge-small --docs all`, `uv run poe check-hnsw`, `uv run poe parse-pdfs`, embedding benchmarks, `uv run poe check`.
+- **Results:**
+  - Main index: 21,899 `tokens-480` chunks of the 84 question documents in about 79 minutes, sharing the CPU with other work for part of the run.
+  - Embedding one chunk at a time ran at 9.0 chunks a second, against 5.5 in batches of 16; ONNX Runtime called directly gave the same speed and the same vectors.
+  - HNSW check, with every search forced through the graph: recall@10 against exact search 0.883 at ef = 8, 0.986 at 32 and 0.999 at 128. Exact search over all 21,899 vectors answers in about 20 ms, so the main collection's exact search costs nothing measurable.
+  - 252 tests pass offline; an integration test checks real late-chunked vectors.
+- **Problems and fixes:**
+  - **Batches were slower.** A batch is padded to its longest text and spills out of the CPU caches, so texts are embedded singly.
+  - **A chunk can outgrow the window overlap.** Chunks are counted in bge tokens and jina's tokenizer splits differently, so a design that needed each chunk inside one window could fail. Tokens, not chunks, are now assigned to windows.
+  - **PDF lines aren't sentences.** The semantic chunker had been embedding visual lines, mostly sentence fragments.
+  - **Two truncated PDFs.** Intel's 8-Ks of 2023-02-10 and 2023-08-16 end mid-file in FinanceBench's own repository (no end-of-file marker), so neither pdfium nor pypdf can open them; parsing reports and skips them.
+  - **"Indexed" didn't mean HNSW.** The collection counted every point as indexed, but those were the sparse vectors; the dense vectors sat in segments too small for an HNSW graph and were searched exactly.
+  - **A graph that isn't used.** The first HNSW check scored a perfect 1.000 at every ef: segments under Qdrant's full-scan threshold are searched exactly even when they have a graph. Lowering that threshold and confirming the search path in Qdrant's telemetry fixed the measurement.
+- **Decisions:** [ADR-0010](decisions/0010-vector-store-and-embeddings.md).
+- **Next:** retrieval variants and their evaluation (steps 2.4 and 2.5), then synthetic pairs (2.6).
+
 ### 2026-10-17 · Phase 2 · Chunking
 
 - **Goal:** pluggable chunkers whose chunks keep their pages, section and filing metadata (step 2.2, first part).

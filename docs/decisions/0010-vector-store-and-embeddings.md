@@ -45,7 +45,7 @@ The doc agent needs semantic search and keyword search over the filings, restric
 
 - **Batch size.** On 64 chunks of about 440 tokens, FastEmbed embedded 9.0 chunks a second one at a time and 5.5 in batches of 16. Short units (45 tokens) ran at 73 a second singly and 49 in sorted batches of 16. A batch is padded to its longest text, and larger batches spill out of the CPU caches.
 - **No hidden overhead.** Calling ONNX Runtime directly on FastEmbed's model file gave 8.2 chunks a second and the same vectors (largest difference 6e-8), so the library costs nothing worth removing. Setting the thread count changed nothing.
-- **Main index.** `tokens-480` over the 84 question documents: 21,899 chunks in about 47 minutes, BM25 and upserts included.
+- **Main index.** `tokens-480` over the 84 question documents: 21,899 chunks in about 79 minutes, BM25 and upserts included, with the CPU shared with other work for part of the run (about 8 chunks a second when alone).
 - **Tests** run the same hybrid query against Qdrant's in-memory mode, with deterministic hashing embedders in place of the models.
 - Retrieval quality, and the choice between chunking strategies, are measured in step 2.5 and recorded in the next ADR.
 
