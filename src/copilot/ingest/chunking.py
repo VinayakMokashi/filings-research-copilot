@@ -12,10 +12,12 @@ off by its 512-token limit:
 - `tokens`: windows of up to `max_tokens` that cross pages, with `overlap` tokens repeated
   between neighbours. A window ends at the strongest break near its end (a blank line, then
   a line end, then a sentence end), falling back to a hard cut inside very long paragraphs.
-- `semantic`: breaks where the meaning shifts, measured as the cosine distance between the
-  embeddings of consecutive lines or sentences; a distance above the document's 90th
-  percentile starts a new chunk. Pieces under `min_tokens` join the next one (otherwise every
-  table row would stand alone), and oversized pieces are split like `tokens`.
+- `semantic`: breaks where the meaning shifts. The text is cut into units (sentences and
+  paragraphs; a unit over `unit_max_tokens`, such as a table, is split at line ends, and
+  one under `unit_min_tokens` joins the next), each unit is embedded, and a cosine
+  distance between neighbours above the document's 90th percentile starts a new chunk.
+  Pieces under `min_tokens` join the next one, and oversized pieces are split like
+  `tokens`.
 
 Late chunking needs token embeddings from the model, so it lives with the embedders.
 """
@@ -45,7 +47,7 @@ _BREAKS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\n"),
     re.compile(r"(?<=[.!?;:])\s+"),
 )
-_UNIT_SPLIT = re.compile(r"\n+|(?<=[.!?])\s+(?=[A-Z0-9(\"'])")
+_UNIT_BREAK = re.compile(r"\n\s*\n|(?<=[.!?])\s+(?=[A-Z0-9(\"'])")
 
 
 class TokenOffsets(Protocol):
@@ -251,59 +253,93 @@ class SemanticChunker:
     max_tokens: int = 480
     min_tokens: int = 64
     percentile: float = 90.0
+    unit_min_tokens: int = 24
+    unit_max_tokens: int = 128
     name: str = "semantic"
 
     def chunk(self, doc: AssembledDocument) -> list[Chunk]:
-        units = [(m.start(), m.end()) for m in re.finditer(r"[^\n]+", doc.text)]
-        units = [span for unit in units for span in _sentences(doc.text, *unit)]
+        offsets = self.offsets(doc.text)
+        starts = [start for start, _ in offsets]
+        units = self._units(doc.text, offsets, starts)
         if not units:
             return []
-        vectors = self.embed([doc.text[start:end] for start, end in units])
+        cuts: list[int] = []
         if len(units) > 1:
+            vectors = self.embed([doc.text[start:end] for start, end in units])
             norms = np.linalg.norm(vectors, axis=1, keepdims=True)
             unit_vectors = vectors / np.maximum(norms, 1e-12)
             distances = 1.0 - np.sum(unit_vectors[:-1] * unit_vectors[1:], axis=1)
             threshold = float(np.percentile(distances, self.percentile))
             cuts = [i + 1 for i, distance in enumerate(distances) if distance > threshold]
-        else:
-            cuts = []
         groups = [
             (units[group_start][0], units[group_end - 1][1])
             for group_start, group_end in zip([0, *cuts], [*cuts, len(units)], strict=True)
         ]
         spans: list[tuple[int, int, int]] = []
-        for start, end in self._merge_small(doc.text, groups):
-            piece = doc.text[start:end]
-            spans += window_spans(piece, self.offsets(piece), self.max_tokens, 0, base=start)
+        for start, end in _join_small(groups, starts, self.min_tokens):
+            spans += _windows(doc.text, offsets, starts, start, end, self.max_tokens)
         return _make_chunks(doc, self.name, spans)
 
-    def _merge_small(self, text: str, groups: list[tuple[int, int]]) -> list[tuple[int, int]]:
-        """Join each group to the next until it holds at least `min_tokens` tokens."""
-        merged: list[tuple[int, int]] = []
-        current: tuple[int, int] | None = None
-        for start, end in groups:
-            if current is None:
-                current = (start, end)
-            elif len(self.offsets(text[current[0] : current[1]])) < self.min_tokens:
-                current = (current[0], end)
-            else:
-                merged.append(current)
-                current = (start, end)
-        if current is not None:
-            merged.append(current)
-        return merged
-
-
-def _sentences(text: str, start: int, end: int) -> list[tuple[int, int]]:
-    """A line split at sentence ends; short lines stay whole."""
-    pieces, cursor = [], start
-    for match in _UNIT_SPLIT.finditer(text, start, end):
-        if match.start() > cursor:
+    def _units(
+        self, text: str, offsets: Sequence[tuple[int, int]], starts: Sequence[int]
+    ) -> list[tuple[int, int]]:
+        """Sentences and paragraphs; long ones split at line ends, short ones joined to the next."""
+        pieces, cursor = [], 0
+        for match in _UNIT_BREAK.finditer(text):
             pieces.append((cursor, match.start()))
-        cursor = match.end()
-    if cursor < end:
-        pieces.append((cursor, end))
-    return pieces
+            cursor = match.end()
+        pieces.append((cursor, len(text)))
+        units: list[tuple[int, int]] = []
+        for start, end in pieces:
+            tokens = _count(starts, start, end)
+            if tokens > self.unit_max_tokens:
+                units += [
+                    (low, high)
+                    for low, high, _ in _windows(
+                        text, offsets, starts, start, end, self.unit_max_tokens
+                    )
+                ]
+            elif tokens:
+                units.append((start, end))
+        return _join_small(units, starts, self.unit_min_tokens)
+
+
+def _count(starts: Sequence[int], start: int, end: int) -> int:
+    """How many tokens start inside [start, end)."""
+    return bisect.bisect_left(starts, end) - bisect.bisect_left(starts, start)
+
+
+def _windows(
+    text: str,
+    offsets: Sequence[tuple[int, int]],
+    starts: Sequence[int],
+    start: int,
+    end: int,
+    max_tokens: int,
+) -> list[tuple[int, int, int]]:
+    """`window_spans` over text[start:end] without overlap, reusing the document's tokens."""
+    low, high = bisect.bisect_left(starts, start), bisect.bisect_left(starts, end)
+    local = [(s - start, e - start) for s, e in offsets[low:high]]
+    return window_spans(text[start:end], local, max_tokens, 0, base=start)
+
+
+def _join_small(
+    spans: Sequence[tuple[int, int]], starts: Sequence[int], min_tokens: int
+) -> list[tuple[int, int]]:
+    """Join each span to the next until it holds at least `min_tokens` tokens."""
+    joined: list[tuple[int, int]] = []
+    current: tuple[int, int] | None = None
+    for start, end in spans:
+        if current is None:
+            current = (start, end)
+        elif _count(starts, *current) < min_tokens:
+            current = (current[0], end)
+        else:
+            joined.append(current)
+            current = (start, end)
+    if current is not None:
+        joined.append(current)
+    return joined
 
 
 def write_chunks(chunks: Sequence[Chunk], path: Path) -> None:
