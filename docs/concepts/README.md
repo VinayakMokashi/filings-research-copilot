@@ -9,10 +9,10 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 3 | [evaluation-statistics.md](evaluation-statistics.md) | Bootstrap confidence intervals and paired tests | Efron and Tibshirani, *An Introduction to the Bootstrap* (1993) | 1 | Written |
 | 4 | `chunking.md` | Chunk size, overlap and section-aware chunking | LangChain text-splitter docs | 2 | Planned |
 | 5 | [late-chunking.md](late-chunking.md) | Embedding long stretches of the document before splitting it | Günther et al., *Late Chunking* (2024) | 2 | Written |
-| 6 | `hybrid-search-and-rrf.md` | BM25 plus dense search, and reciprocal rank fusion | Robertson and Zaragoza (2009); Cormack et al. (2009) | 2 | Planned |
-| 7 | `reranking.md` | Bi-encoders vs cross-encoders | Nogueira and Cho, *Passage Re-ranking with BERT* (2019) | 2 | Planned |
+| 6 | [hybrid-search-and-rrf.md](hybrid-search-and-rrf.md) | BM25 plus dense search, and reciprocal rank fusion | Robertson and Zaragoza (2009); Cormack et al. (2009) | 2 | Written |
+| 7 | [reranking.md](reranking.md) | Bi-encoders vs cross-encoders | Nogueira and Cho, *Passage Re-ranking with BERT* (2019) | 2 | Written |
 | 8 | [hnsw-and-qdrant.md](hnsw-and-qdrant.md) | How the vector index finds neighbours quickly, and when it doesn't need to | Malkov and Yashunin, HNSW (2018) | 2 | Written |
-| 9 | `retrieval-metrics.md` | Recall@k, precision@k, MRR, measuring each stage | Manning et al., *Introduction to Information Retrieval* (2008) | 2 | Planned |
+| 9 | [retrieval-metrics.md](retrieval-metrics.md) | Recall@k, hit@k, MRR, scored by page | Manning et al., *Introduction to Information Retrieval* (2008) | 2 | Written |
 | 10 | `query-rewriting.md` | Multi-query, HyDE, decomposition | Gao et al., HyDE (2022) | 3 | Planned |
 | 11 | `grounded-generation.md` | Citations, abstention, context budgets | Gao et al., *Enabling LLMs to Generate Text with Citations* (2023) | 3 | Planned |
 | 12 | `llm-as-judge.md` | Judging answers, and checking the judge | Zheng et al., *Judging LLM-as-a-Judge* (2023) | 3 | Planned |
