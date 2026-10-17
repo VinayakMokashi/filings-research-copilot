@@ -1,6 +1,6 @@
 # Ingesting filings
 
-How to turn the FinanceBench PDFs into searchable chunks. This runbook grows with Phase 2: parsing and chunking so far, indexing next.
+How to turn the FinanceBench PDFs into searchable chunks: parse, chunk, then index into Qdrant.
 
 ## Before you start
 
@@ -41,7 +41,36 @@ Each strategy writes `data/processed/chunks/<strategy>/<doc_name>.jsonl` and a `
 | `tokens-480` (64 overlap) | 21,899 | 462 | 52% | 40 s |
 | `tokens-256` (32 overlap) | 39,573 | 242 | 30% | 42 s |
 
-Rerunning a strategy rewrites its files. The semantic and late-chunking strategies need an embedding model and run as part of indexing.
+Rerunning a strategy rewrites its files. The semantic strategy needs the embedding model, so `poe index-corpus --strategy semantic` chunks and caches it; late chunking changes only the vectors, not the chunks.
+
+## Index
+
+```bash
+uv run poe services-up                                                          # Qdrant on 127.0.0.1:6333
+uv run poe index-corpus --strategy tokens-480 --model bge-small --docs all      # the main index
+uv run poe index-corpus --strategy page --docs dev                              # an experiment, dev documents only
+uv run poe index-corpus --strategy tokens-480 --model jina-small --late --docs dev
+```
+
+Each run fills the collection `fb_<strategy>_<model>` with one point per chunk: a bge-small dense vector, a BM25 sparse vector and the chunk as payload ([ADR-0010](../decisions/0010-vector-store-and-embeddings.md)). It reads the chunk files from `poe chunk-corpus` when they exist, and otherwise chunks the document and caches the result (`--rechunk` ignores the cache). `--docs dev` takes the 58 documents behind dev questions; `--docs all` adds the other 26 after them, so dev evaluation can start before the run ends. `--limit N` indexes only the first N documents, for a quick check.
+
+It writes, under `data/processed/indexes/`:
+
+- `<collection>.log.jsonl`: one line per document with its chunk count, how many were added, seconds taken and any error;
+- `<collection>.json`: the index card, with the models, query prefix, vector and HNSW settings, payload indexes and counts.
+
+Indexing is CPU-bound: about 8 chunks a second for 480-token chunks on an 8-core laptop, so the main index takes about 47 minutes and a dev-only experiment 20 to 90 minutes. **An interrupted run resumes**: run the same command again and it embeds only the chunks the collection doesn't hold yet.
+
+Useful while it runs:
+
+```bash
+tail -f data/processed/indexes/fb_tokens-480_bge-small.log.jsonl
+curl -s http://127.0.0.1:6333/collections/fb_tokens-480_bge-small   # points_count, status
+```
+
+The Qdrant dashboard is at <http://127.0.0.1:6333/dashboard>. To rebuild a collection from scratch, delete it first: `curl -X DELETE http://127.0.0.1:6333/collections/<name>`.
+
+`uv run poe check-hnsw` copies the main index into a scratch collection that builds an HNSW graph in every segment, and reports recall@10 and latency against exact search for the dev questions (`eval/results/indexing/`).
 
 ## Troubleshooting
 
@@ -50,3 +79,6 @@ Rerunning a strategy rewrites its files. The semantic and late-chunking strategi
 | A document has no section tags | Its PDF has no entry in FinanceBench's document file (7 of the 368 don't), or it is an earnings release, which has no items. Nothing to fix. |
 | A page has no text | The page is an image. pdfium can't read text from images, and the corpus has 82 such pages. |
 | `BrokenProcessPool` | A worker crashed, usually on a damaged PDF. Run `poe fetch-financebench` to re-verify the files, then parse again; finished documents are kept. |
+| `Connection refused` on port 6333 | Qdrant isn't running: `uv run poe services-up`. |
+| Indexing is much slower than 8 chunks a second | Another CPU-heavy job is running (only one indexing run at a time helps), or Windows is on a power-saving plan. Texts are embedded one at a time on purpose: batches were slower on this CPU. |
+| A model download fails | Hugging Face rate-limits anonymous downloads. Run the command again; models are cached in `data/models` (FastEmbed) and `~/.cache/huggingface` (jina). |
