@@ -15,6 +15,24 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 2 · Chunking
+
+- **Goal:** pluggable chunkers whose chunks keep their pages, section and filing metadata (step 2.2, first part).
+- **Done:**
+  - `copilot.ingest.chunking`: a document is its pages joined by blank lines, so every chunk is a character span with the pages it touches (the page holding most of it first), the section at its start, and the company, fiscal period and form.
+  - Three strategies, measured in the embedding model's own tokens: `page` (never crosses a page; long pages split within), `tokens` (windows that cross pages, with overlap, ending at the strongest break in reach: a blank line, then a line end, then a sentence end) and `semantic` (breaks where consecutive lines' embeddings drift apart, merging pieces under 64 tokens).
+  - Chunk ids are SHA-256 hashes of strategy, document, span and text; the vector store will use them as point ids, so re-indexing is idempotent.
+  - `poe chunk-corpus` for the page and token strategies; the semantic and late-chunking strategies need the embedder and arrive with indexing.
+- **Commands:** `uv run poe chunk-corpus --strategy page` (and `tokens-480`, `tokens-256`), `uv run poe check`.
+- **Results:**
+  - `page`: 23,585 chunks, median 448 tokens. `tokens-480`: 21,899 chunks, median 462 tokens, 52% crossing a page. `tokens-256`: 39,573 chunks, median 242 tokens, 30% crossing a page. Each strategy chunks the 84 documents in 20 to 42 seconds.
+  - 236 tests pass offline, 8 of them new.
+- **Problems and fixes:**
+  - **Long pages.** The median page is 699 tokens, and 72% of pages are longer than the embedder's 512-token window, so a pure one-chunk-per-page strategy would hide the bottom of most pages from dense search. The page strategy therefore splits long pages into windows that stay within the page.
+  - **Tiny semantic pieces.** Splitting on lines made every table row its own piece; pieces under 64 tokens now join the next one.
+- **Decisions:** none yet; the chunking ADR follows the retrieval experiments.
+- **Next:** embedders, the Qdrant index and late chunking (step 2.3).
+
 ### 2026-10-17 · Phase 2 · Parsing filings
 
 - **Goal:** page-accurate, clean text for every filing, tagged with the section each page is in (step 2.1).
