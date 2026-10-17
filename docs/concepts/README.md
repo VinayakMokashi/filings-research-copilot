@@ -7,7 +7,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 1 | [llm-gateway.md](llm-gateway.md) | Model roles, retries, fallbacks, token and cost accounting | LiteLLM router docs | 0 | Written |
 | 2 | [xbrl-and-financial-metrics.md](xbrl-and-financial-metrics.md) | What XBRL facts are and why their tags need normalising | SEC EDGAR API docs | 1 | Written |
 | 3 | [evaluation-statistics.md](evaluation-statistics.md) | Bootstrap confidence intervals and paired tests | Efron and Tibshirani, *An Introduction to the Bootstrap* (1993) | 1 | Written |
-| 4 | `chunking.md` | Chunk size, overlap and section-aware chunking | LangChain text-splitter docs | 2 | Planned |
+| 4 | [chunking.md](chunking.md) | Chunk size, overlap, page, token-window and semantic chunking | LangChain text-splitter docs | 2 | Written |
 | 5 | [late-chunking.md](late-chunking.md) | Embedding long stretches of the document before splitting it | Günther et al., *Late Chunking* (2024) | 2 | Written |
 | 6 | [hybrid-search-and-rrf.md](hybrid-search-and-rrf.md) | BM25 plus dense search, and reciprocal rank fusion | Robertson and Zaragoza (2009); Cormack et al. (2009) | 2 | Written |
 | 7 | [reranking.md](reranking.md) | Bi-encoders vs cross-encoders | Nogueira and Cho, *Passage Re-ranking with BERT* (2019) | 2 | Written |
