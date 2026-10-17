@@ -6,7 +6,7 @@
 
 An agentic research copilot for public-company filings. Ask a question about a company and get an answer built from its 10-K and 10-Q text and its XBRL financial facts, with every claim cited to the page or query it came from.
 
-> **Status:** in active development. Phase 0 (foundations) and Phase 1 (data and evaluation sets) are done; Phase 2 (ingestion and retrieval baseline) is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
+> **Status:** in active development. Phase 0 (foundations) and Phase 1 (data and evaluation sets) are done; Phase 2 (ingestion and retrieval baseline) is in progress, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
 >
 > **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/
 
@@ -54,6 +54,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | SEC EDGAR client (declared contact, rate limit, retries) and the 40-company universe matched to CIKs | `src/copilot/ingest/`, `data/reference/companies.csv` ([data card](docs/data/sec-company-facts.md)) |
 | Facts database: 1.06 million XBRL facts and 28 canonical metrics per company-year, matching all 33 FinanceBench dev metrics questions | `src/copilot/facts/` ([guide](docs/concepts/xbrl-and-financial-metrics.md), [dictionary](docs/data/facts-dictionary.md)) |
 | SQL eval set: 42 questions with verified gold SQL or a reason to decline, and a read-only scorer | `eval/sql/`, `src/copilot/eval/sql.py` ([data card](docs/data/sql-set.md)) |
+| PDF parsing: page text with running headers removed and 10-K/10-Q sections tagged | `src/copilot/ingest/pdf.py` ([ADR-0009](docs/decisions/0009-pdf-parsing.md), [runbook](docs/runbooks/ingesting-filings.md)) |
 
 ## Local development
 
@@ -72,6 +73,7 @@ uv run poe eval-routing --baseline keyword         # score a router
 uv run poe fetch-sec          # SEC company facts for the 40 companies (needs SEC_USER_AGENT)
 uv run poe build-facts        # the SQLite facts database; then `poe check-facts`
 uv run poe eval-sql --baseline gold   # score SQL against the facts database
+uv run poe parse-pdfs         # clean, section-tagged page text from the filing PDFs
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).

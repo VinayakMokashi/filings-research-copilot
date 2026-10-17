@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 2, Ingestion and retrieval baseline (next) |
+| **Current phase** | Phase 2, Ingestion and retrieval baseline (in progress) |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -174,13 +174,13 @@ Size is relative: S < M < L.
 
 **Done when:** every dataset has a data card and checksum, the facts tables pass their cross-checks, and the harness scores dummy predictions.
 **Docs:** ADRs on eval-first splits ([ADR-0006](decisions/0006-evaluation-splits.md)), evaluation statistics ([ADR-0007](decisions/0007-evaluation-statistics.md)) and XBRL normalisation ([ADR-0008](decisions/0008-xbrl-normalisation.md)); guides [xbrl-and-financial-metrics.md](concepts/xbrl-and-financial-metrics.md) and [evaluation-statistics.md](concepts/evaluation-statistics.md); data cards [financebench.md](data/financebench.md), [routing-set.md](data/routing-set.md), [sec-company-facts.md](data/sec-company-facts.md) and [sql-set.md](data/sql-set.md); runbook [running-evaluations.md](runbooks/running-evaluations.md).
-**Manual steps:** spot-check 20 random metric values against the filings ([sheet](data/facts-spot-check.md), waiting for the owner's check); add the SEC contact to `.env` (done).
+**Manual steps:** spot-check 20 random metric values against the filings ([sheet](data/facts-spot-check.md); done: the owner reported no discrepancies on 2026-10-17); add the SEC contact to `.env` (done).
 
 ### Phase 2: Ingestion and retrieval baseline (L)
 
 **Goal:** choose the retrieval setup by measurement.
 
-- [ ] 2.1 Parse PDFs to page text with page numbers; strip running headers and footers; tag pages with their 10-K item (1A, 7, 8 and so on).
+- [x] 2.1 Parse PDFs to page text with page numbers; strip running headers and footers; tag pages with their 10-K item (1A, 7, 8 and so on). pypdfium2 ([ADR-0009](decisions/0009-pdf-parsing.md)); 126 of 127 dev evidence pages line up.
 - [ ] 2.2 Pluggable chunkers: token-recursive with overlap, page-level, semantic, late chunking. Every chunk keeps company, year, form, section and page span.
 - [ ] 2.3 Index into Qdrant: dense and BM25 sparse vectors, payload indexes, recorded HNSW settings, idempotent upserts keyed by content hash. Ingestion runs as jobs (a local runner now, an SQS runner in Phase 8).
 - [ ] 2.4 Retrieval variants: dense, BM25, hybrid (RRF), then cross-encoder reranking, then neighbouring chunks.
@@ -188,7 +188,7 @@ Size is relative: S < M < L.
 - [ ] 2.6 Pick the baseline configuration. Generate synthetic question→chunk pairs from training documents only, for Phase 7.
 
 **Done when:** a retrieval report shows the chosen setup and its significant gain over dense-only search, or explains why there isn't one.
-**Docs:** ADRs on parser, chunking and vector store; guides `chunking.md`, `late-chunking.md`, `hybrid-search-and-rrf.md`, `reranking.md`, `hnsw-and-qdrant.md`, `retrieval-metrics.md`.
+**Docs:** ADRs on parser ([ADR-0009](decisions/0009-pdf-parsing.md)), chunking and vector store; guides `chunking.md`, `late-chunking.md`, `hybrid-search-and-rrf.md`, `reranking.md`, `hnsw-and-qdrant.md`, `retrieval-metrics.md`; runbook [ingesting-filings.md](runbooks/ingesting-filings.md).
 
 ### Phase 3: Doc agent with cited answers (M)
 
@@ -350,7 +350,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 |---|---|---|---|
 | 0 Foundations | Done | 2026-10-15 | 2026-10-17 |
 | 1 Data and evaluation sets | Done | 2026-10-17 | 2026-10-17 |
-| 2 Ingestion and retrieval baseline | Planned | | |
+| 2 Ingestion and retrieval baseline | In progress | 2026-10-17 | |
 | 3 Doc agent | Planned | | |
 | 4 Data agent | Planned | | |
 | 5 Orchestration | Planned | | |
