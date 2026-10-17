@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 2 · Retrieval variants
+
+- **Goal:** dense, BM25 and hybrid search, cross-encoder reranking and neighbouring chunks, each scored on FinanceBench dev evidence pages against plain dense search (step 2.4, and step 2.5 except chunking).
+- **Done:**
+  - `copilot.retrieval.search`: one Qdrant call per query, as dense, BM25 or hybrid (both rankings as prefetches fused with RRF, k = 60), with an optional document filter; neighbouring chunks; ranked chunks to ranked pages.
+  - `copilot.retrieval.rerank`: FastEmbed cross-encoders (MiniLM-L6 and L12, jina-turbo, bge-base) over the top candidates.
+  - `poe run-retrieval` (search, rerank, score and record latency in one step) and `poe compare-family` (paired tests against one baseline, Holm-adjusted across the variants tried).
+  - A [retrieval report](eval/retrieval-baseline.md); guides on [hybrid search and RRF](concepts/hybrid-search-and-rrf.md), [reranking](concepts/reranking.md) and [retrieval metrics](concepts/retrieval-metrics.md); the evaluations runbook covers both commands.
+- **Commands:** `uv run poe run-retrieval` for each configuration, `uv run poe compare-family`, `uv run poe check`.
+- **Results** (100 dev questions, `tokens-480` chunks, recall@10):
+  - Dense search within the question's filing: 0.608 (95% interval 0.52 to 0.70), hit@20 0.74, against the first-pages floor's 0.197.
+  - BM25 0.425 and hybrid with 2 : 1 weights 0.470, both significantly worse; equal-weight hybrid 0.540, not significantly different.
+  - Rerankers over dense search's top candidates: MiniLM-L6 0.510, jina-turbo 0.580. bge-base over the top 20 tied it (0.605): better on the human-written questions (0.773 against 0.697), worse on the templated domain questions (0.294 against 0.392). None of the three differs significantly after Holm's adjustment; MiniLM's loss (p = 0.033 alone) doesn't survive it.
+  - Neighbouring chunks: 0.575, not significantly different.
+  - Across all 84 filings: dense 0.345, BM25 0.155, hybrid 0.210; dense search loses 20 points of hit@20 when it must also find the filing.
+- **Problems and fixes:**
+  - **Templated questions.** Two thirds of FinanceBench's questions carry instructions ("Round your answer to two decimal places", "If operating margin is not a useful metric for a company like this, then state that and explain why"), which BM25 matches all over every filing. On the human-written questions BM25 beats dense search, 0.758 against 0.697. Rewriting questions before searching is Phase 3's job.
+  - **RRF weights aren't multipliers.** Probing Qdrant 1.19 showed weighted fusion orders matching `1 / (k + rank / w)`: a larger weight flattens a list's contribution, so a dense weight of 2 made results worse. Recorded in the hybrid search guide.
+  - **Rerankers trained on web search.** MS MARCO cross-encoders read short queries and paragraph-length passages; MiniLM also truncates question plus chunk at 512 tokens. jina-turbo, which reads everything, lost less.
+- **Decisions:** provisional baseline: dense search, no fusion, no reranker. The chunking comparison and ADR-0011 follow.
+- **Next:** the chunking and late-chunking comparisons as their indexes finish, latency on an idle machine, then the synthetic pairs.
+
 ### 2026-10-17 · Phase 2 · Embeddings and the Qdrant index
 
 - **Goal:** index the chunks with dense and BM25 vectors in Qdrant, resumably, and add late chunking and the semantic chunker's embedder (step 2.3, and the rest of step 2.2).
