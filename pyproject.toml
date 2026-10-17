@@ -70,6 +70,7 @@ check-pages = { cmd = "python scripts/check_page_alignment.py", help = "Check pa
 chunk-corpus = { cmd = "python scripts/chunk_corpus.py", help = "Chunk the parsed filings with one strategy (--strategy page, tokens-480 or tokens-256)" }
 index-corpus = { cmd = "python scripts/index_corpus.py", help = "Embed one chunking strategy into a Qdrant collection (--strategy, --model, --docs dev|all, --late)" }
 check-hnsw = { cmd = "python scripts/check_hnsw.py", help = "Measure HNSW recall and latency against exact search on a copy of an index" }
+compare-family = { cmd = "python scripts/compare_family.py", help = "Compare candidate runs with a baseline, Holm-adjusted across the family" }
 
 # ---------------------------------------------------------------------------
 # Lint and format

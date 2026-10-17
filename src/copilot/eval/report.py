@@ -13,13 +13,21 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from copilot.eval.stats import CONFIDENCE, RESAMPLES, PairedComparison, bootstrap_ci, paired_test
+from copilot.eval.stats import (
+    CONFIDENCE,
+    RESAMPLES,
+    PairedComparison,
+    bootstrap_ci,
+    holm,
+    paired_test,
+)
 
 RESULTS_DIR = Path("eval/results")
 
@@ -158,3 +166,24 @@ def compare_runs(
         )
     ids = sorted(a)
     return paired_test([a[i] for i in ids], [b[i] for i in ids], seed=seed)
+
+
+@dataclass(frozen=True, slots=True)
+class FamilyResult:
+    """One candidate's paired comparison with the baseline, and its Holm-adjusted p-value."""
+
+    run: str
+    comparison: PairedComparison
+    adjusted_p: float
+
+
+def compare_family(
+    baseline: Path, candidates: Sequence[Path], metric: str, *, seed: int = 0
+) -> list[FamilyResult]:
+    """`compare_runs` for each candidate, with p-values adjusted across the family (Holm)."""
+    comparisons = [compare_runs(baseline, candidate, metric, seed=seed) for candidate in candidates]
+    adjusted = holm([comparison.p_value for comparison in comparisons])
+    return [
+        FamilyResult(read_summary(candidate).run, comparison, p)
+        for candidate, comparison, p in zip(candidates, comparisons, adjusted, strict=True)
+    ]
