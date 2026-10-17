@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-17 · Phase 2 · Parsing filings
+
+- **Goal:** page-accurate, clean text for every filing, tagged with the section each page is in (step 2.1).
+- **Done:**
+  - Recorded the owner's review of the 20-value spot check from Phase 1: no discrepancies.
+  - `copilot.ingest.pdf`: pdfium text extraction, running header and footer removal, and section tagging (10-K items, 10-Q parts and items, 8-K items).
+  - `copilot.ingest.corpus`: resumable parsing in worker processes, with a manifest of parser version and PDF git blob ids.
+  - `poe parse-pdfs` and `poe check-pages`; [ADR-0009](decisions/0009-pdf-parsing.md) and the [ingestion runbook](runbooks/ingesting-filings.md).
+- **Commands:** `uv run poe parse-pdfs`, `uv run poe check-pages`, a pypdfium2 against pypdf benchmark, `uv run poe check`.
+- **Results:**
+  - 84 documents, 12,013 pages, parsed in 25 seconds with 8 processes; 82 pages are images with no text. 91% of 10-K pages carry a section tag; the rest are front matter.
+  - 126 of 127 dev evidence passages line up with the parsed page of the same index, with a median word overlap of 0.99.
+  - pypdfium2 parses 85 to 101 pages a second on one core against pypdf's 9, and matches FinanceBench's page text more closely (median overlap 1.000 against 0.987).
+  - 228 tests pass offline, 19 of them new; two integration tests parse a real filing.
+- **Problems and fixes:**
+  - **Diluted headers.** PepsiCo's 2021 10-K runs to 549 pages with its exhibits, so "Table of Contents" heads only 24% of them and slipped under a 25% threshold. The threshold is now 10% of pages, with a floor of 5 pages so that short 8-Ks keep table titles repeated on 3 pages.
+  - **What must never be stripped.** Lowering the threshold would have removed table rows from Johnson & Johnson's 8-K and Microsoft's running "Item 7" headers, which section tagging needs. Lines with more than two numbers, item and part headings, and unit lines such as "(dollars in millions)" are now always kept, with "Form 10-K" not counting as a number, so footers like "2019 FORM 10-K 45" still go.
+  - **Tables of contents.** Contents pages list every item, and some continue onto a second page. A page with two or more item lines ending in a page number, or four or more item headings, is treated as a table of contents.
+  - **Encrypted PDFs.** 39 of the 84 PDFs are AES-encrypted. pdfium opens them; pypdf needed an extra package just to read them.
+- **Decisions:** [ADR-0009](decisions/0009-pdf-parsing.md).
+- **Next:** chunking (step 2.2).
+
 ### 2026-10-17 · Phase 1 · Phase 1 complete
 
 - **Goal:** confirm Phase 1's exit criteria and publish the milestone.
