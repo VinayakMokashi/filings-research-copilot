@@ -34,18 +34,23 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Holm–Bonferroni correction** | Adjusts p-values when several comparisons are made at once, so the chance of any false win stays at the chosen level. |
 | **Hybrid search** | Combining keyword (BM25) and semantic (dense) search. |
 | **HyDE** | Hypothetical Document Embeddings: write a hypothetical answer, embed it, and search with that instead of the raw question. |
+| **IDF** | Inverse document frequency: how rare a term is across the collection. BM25 multiplies each term's weight by it, so a rare word like a ticker counts for more than "the". |
+| **Index card** | A JSON file kept beside each Qdrant collection, recording its models, query prefix, vector and HNSW settings, payload indexes, counts and timing. |
 | **LangGraph** | A library for building LLM workflows as state graphs with branches, loops and checkpoints. |
-| **Late chunking** | Run the whole document through a long-context embedding model, then average token vectors per chunk, so each chunk keeps document context. |
+| **Late chunking** | Run long stretches of a document through a long-context embedding model, then average each chunk's token vectors, so the chunk's vector keeps the surrounding context. |
 | **LiteLLM** | A library and proxy that gives one interface to many LLM providers, with retries and fallbacks. |
 | **LLM-as-judge** | Using a model to grade answers. The judge itself has to be checked against human labels. |
 | **LoRA** | Low-Rank Adaptation: fine-tuning by training small low-rank adapter matrices instead of all the weights. |
 | **McNemar's test** | A paired test for two systems' right-or-wrong outcomes that looks only at the questions where they disagree. |
 | **MCP** | Model Context Protocol: a standard for connecting AI apps (hosts) to tools and data (servers). |
+| **Mean pooling** | Turning a model's per-token vectors into one vector for the text by averaging them. |
 | **MNRL** | MultipleNegativesRankingLoss: a contrastive loss that treats the other examples in a batch as negatives. |
 | **Model role** | A named job (`strong` or `fast`) that code asks for instead of a specific model; settings decide which model fills it. |
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions assume an AWS role with short-lived tokens, so no AWS keys are stored anywhere. |
+| **ONNX Runtime** | An engine that runs neural networks exported in the ONNX format quickly on a CPU. FastEmbed runs its models with it. |
 | **Paired test** | Comparing two systems on the same questions, so that question-to-question noise cancels out. |
+| **Payload index** | An index on a field stored with each Qdrant point, such as `company`, that makes searches filtered on that field fast. |
 | **pdfium** | Google's PDF engine (used in Chrome); pypdfium2 is its Python binding and this project's parser. |
 | **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
@@ -57,6 +62,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Self-Discover** | The model selects, adapts and structures reasoning modules into a plan, then follows the plan. |
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
 | **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries. |
+| **Sparse vector** | A vector stored as its few non-zero dimensions, such as one weight for each word in a text. Qdrant stores BM25 this way. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
