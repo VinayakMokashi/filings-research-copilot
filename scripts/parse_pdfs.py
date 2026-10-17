@@ -37,8 +37,10 @@ def main(argv: list[str] | None = None) -> int:
     if summary["ten_k_pages"]:
         share = summary["ten_k_sectioned_pages"] / summary["ten_k_pages"]
         print(f"  10-K pages with a section: {share:.0%}")
+    for doc_name, error in sorted(report.failed.items()):
+        print(f"  could not parse {doc_name}: {error}")
     print(f"Wrote {out_dir}")
-    return 0
+    return 1 if report.failed else 0
 
 
 if __name__ == "__main__":

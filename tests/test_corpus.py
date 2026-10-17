@@ -93,3 +93,23 @@ def test_summary_counts_ten_k_sections(tmp_path: Path, parsed: list[str]) -> Non
         "ten_k_pages": 2,
         "ten_k_sectioned_pages": 0,
     }
+
+
+def test_a_pdf_that_fails_is_reported_and_the_rest_are_parsed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_parse(path: Path, doc_name: str, doc_type: str) -> list[Page]:
+        if doc_name == "ACME_2022_10K":
+            raise ValueError("Data format error")
+        return [Page(doc_name, 0, "Cover page of the Acme annual report", None, ())]
+
+    monkeypatch.setattr(corpus, "parse_document", fake_parse)
+    pdf_dir, out_dir = tmp_path / "pdfs", tmp_path / "pages"
+    pdf_dir.mkdir()
+    for name in _documents():
+        (pdf_dir / f"{name}.pdf").write_bytes(f"%PDF {name}".encode())
+
+    report = corpus.parse_corpus(pdf_dir, out_dir, _documents(), workers=1)
+
+    assert report.failed == {"ACME_2022_10K": "ValueError: Data format error"}
+    assert (report.parsed, list(report.manifest.docs)) == (1, ["ACME_2023_10K"])

@@ -3,7 +3,8 @@
 Each PDF becomes `data/processed/pages/<doc_name>.jsonl`. A manifest records the parser
 version and the git blob id of each PDF, so a rerun parses only documents that are new, have
 changed, or were parsed by an older parser. PDFs are parsed in separate worker processes,
-because pdfium isn't thread-safe.
+because pdfium isn't thread-safe. A PDF that can't be opened is reported and skipped; two
+in FinanceBench's repository are truncated.
 """
 
 from __future__ import annotations
@@ -44,6 +45,7 @@ class ParseReport:
     parsed: int
     skipped: int
     manifest: ParseManifest
+    failed: dict[str, str]
 
 
 def pages_path(out_dir: Path, doc_name: str) -> Path:
@@ -57,9 +59,13 @@ def load_manifest(out_dir: Path) -> ParseManifest:
     return ParseManifest.model_validate_json(path.read_text(encoding="utf-8"))
 
 
-def _parse_one(job: tuple[Path, Path, str, str, str]) -> tuple[str, ParsedDoc]:
+def _parse_one(job: tuple[Path, Path, str, str, str]) -> tuple[str, ParsedDoc | str]:
+    """One document's manifest entry, or the error that stopped it."""
     pdf, out_dir, doc_name, doc_type, sha1 = job
-    pages = parse_document(pdf, doc_name, doc_type)
+    try:
+        pages = parse_document(pdf, doc_name, doc_type)
+    except Exception as exc:  # a damaged PDF mustn't stop the corpus
+        return doc_name, f"{type(exc).__name__}: {exc}"
     write_pages(pages, pages_path(out_dir, doc_name))
     return doc_name, ParsedDoc(
         git_sha1=sha1,
@@ -94,18 +100,29 @@ def parse_corpus(
             continue
         doc_type = documents[doc_name].doc_type if doc_name in documents else "unknown"
         jobs.append((pdf, out_dir, doc_name, doc_type, sha1))
+    failed: dict[str, str] = {}
+
+    def record(doc_name: str, result: ParsedDoc | str) -> None:
+        if isinstance(result, str):
+            failed[doc_name] = result
+        else:
+            manifest.docs[doc_name] = result
+            _save(manifest, out_dir)  # after each document, so an interruption loses little
+
     if jobs and workers > 1:
         with ProcessPoolExecutor(max_workers=workers) as pool:
-            for doc_name, parsed in pool.map(_parse_one, jobs):
-                manifest.docs[doc_name] = parsed
-                _save(manifest, out_dir)  # after each document, so an interruption loses little
+            for doc_name, result in pool.map(_parse_one, jobs):
+                record(doc_name, result)
     else:
         for job in jobs:
-            doc_name, parsed = _parse_one(job)
-            manifest.docs[doc_name] = parsed
-            _save(manifest, out_dir)
+            record(*_parse_one(job))
     total = len(list(pdf_dir.glob("*.pdf")))
-    return ParseReport(parsed=len(jobs), skipped=total - len(jobs), manifest=manifest)
+    return ParseReport(
+        parsed=len(jobs) - len(failed),
+        skipped=total - len(jobs),
+        manifest=manifest,
+        failed=failed,
+    )
 
 
 def _save(manifest: ParseManifest, out_dir: Path) -> None:

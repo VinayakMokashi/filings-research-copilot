@@ -15,7 +15,7 @@ uv run poe fetch-financebench --pdfs all    # every PDF in the corpus (368 files
 uv run poe parse-pdfs
 ```
 
-Each PDF becomes `data/processed/pages/<doc_name>.jsonl`: one line per page with its 0-based page number, clean text, the section it starts in, and any section headings on it ([ADR-0009](../decisions/0009-pdf-parsing.md)). The 84 question documents take about 25 seconds with 8 worker processes; change that with `--workers`.
+Each PDF becomes `data/processed/pages/<doc_name>.jsonl`: one line per page with its 0-based page number, clean text, the section it starts in, and any section headings on it ([ADR-0009](../decisions/0009-pdf-parsing.md)). The 84 question documents take about 25 seconds with 8 worker processes (change that with `--workers`); all 368 give 366 documents and 53,901 pages.
 
 A rerun parses only PDFs that are new or have changed. Changing the parser's output means bumping `PARSER_VERSION` in `src/copilot/ingest/pdf.py`, which reparses everything on the next run.
 
@@ -78,7 +78,8 @@ The Qdrant dashboard is at <http://127.0.0.1:6333/dashboard>. To rebuild a colle
 |---|---|
 | A document has no section tags | Its PDF has no entry in FinanceBench's document file (7 of the 368 don't), or it is an earnings release, which has no items. Nothing to fix. |
 | A page has no text | The page is an image. pdfium can't read text from images, and the corpus has 82 such pages. |
-| `BrokenProcessPool` | A worker crashed, usually on a damaged PDF. Run `poe fetch-financebench` to re-verify the files, then parse again; finished documents are kept. |
+| `could not parse <document>` | The PDF can't be opened. Two FinanceBench PDFs, Intel's 8-Ks of 2023-02-10 and 2023-08-16, are truncated in the source repository itself, so this is expected for them; the run parses everything else and exits with status 1. For any other file, run `poe fetch-financebench` to re-verify it. |
+| `BrokenProcessPool` | A worker process crashed outright. Run `poe fetch-financebench` to re-verify the files, then parse again; finished documents are kept. |
 | `Connection refused` on port 6333 | Qdrant isn't running: `uv run poe services-up`. |
 | Indexing is much slower than 8 chunks a second | Another CPU-heavy job is running (only one indexing run at a time helps), or Windows is on a power-saving plan. Texts are embedded one at a time on purpose: batches were slower on this CPU. |
 | A model download fails | Hugging Face rate-limits anonymous downloads. Run the command again; models are cached in `data/models` (FastEmbed) and `~/.cache/huggingface` (jina). |
