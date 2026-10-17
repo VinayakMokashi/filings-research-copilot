@@ -1,0 +1,40 @@
+{
+  "metric": "recall@10",
+  "baseline": "tokens-480_bge-small-dense-oracle",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "tokens-480_bge-small-bm25-oracle",
+      "baseline": 0.6083,
+      "candidate": 0.425,
+      "difference": -0.1833,
+      "low": -0.28,
+      "high": -0.0883,
+      "p": 0.0004,
+      "holm_p": 0.0012,
+      "verdict": "worse"
+    },
+    {
+      "run": "tokens-480_bge-small-hybrid-oracle",
+      "baseline": 0.6083,
+      "candidate": 0.54,
+      "difference": -0.0683,
+      "low": -0.145,
+      "high": 0.0083,
+      "p": 0.1021,
+      "holm_p": 0.1021,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "tokens-480_bge-small-hybrid-w2-1-oracle",
+      "baseline": 0.6083,
+      "candidate": 0.47,
+      "difference": -0.1383,
+      "low": -0.2284,
+      "high": -0.05,
+      "p": 0.004,
+      "holm_p": 0.008,
+      "verdict": "worse"
+    }
+  ]
+}
