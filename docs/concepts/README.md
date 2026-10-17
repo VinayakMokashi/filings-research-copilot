@@ -11,7 +11,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 5 | [late-chunking.md](late-chunking.md) | Embedding long stretches of the document before splitting it | Günther et al., *Late Chunking* (2024) | 2 | Written |
 | 6 | `hybrid-search-and-rrf.md` | BM25 plus dense search, and reciprocal rank fusion | Robertson and Zaragoza (2009); Cormack et al. (2009) | 2 | Planned |
 | 7 | `reranking.md` | Bi-encoders vs cross-encoders | Nogueira and Cho, *Passage Re-ranking with BERT* (2019) | 2 | Planned |
-| 8 | `hnsw-and-qdrant.md` | How the vector index finds neighbours quickly | Malkov and Yashunin, HNSW (2018) | 2 | Planned |
+| 8 | [hnsw-and-qdrant.md](hnsw-and-qdrant.md) | How the vector index finds neighbours quickly, and when it doesn't need to | Malkov and Yashunin, HNSW (2018) | 2 | Written |
 | 9 | `retrieval-metrics.md` | Recall@k, precision@k, MRR, measuring each stage | Manning et al., *Introduction to Information Retrieval* (2008) | 2 | Planned |
 | 10 | `query-rewriting.md` | Multi-query, HyDE, decomposition | Gao et al., HyDE (2022) | 3 | Planned |
 | 11 | `grounded-generation.md` | Citations, abstention, context budgets | Gao et al., *Enabling LLMs to Generate Text with Citations* (2023) | 3 | Planned |

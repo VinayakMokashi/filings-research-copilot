@@ -1,0 +1,52 @@
+{
+  "collection": "fb_tokens-480_bge-small",
+  "points": 21899,
+  "queries": 100,
+  "hnsw": {
+    "m": 16,
+    "ef_construct": 100
+  },
+  "index_build_seconds": 1.0,
+  "segment_searches_by_path": {
+    "unfiltered_hnsw": 3500,
+    "unfiltered_exact": 700
+  },
+  "rows": [
+    {
+      "search": "exact",
+      "recall_at_10": 1.0,
+      "p50_ms": 21.61,
+      "p95_ms": 29.96
+    },
+    {
+      "search": "hnsw ef=8",
+      "recall_at_10": 0.883,
+      "p50_ms": 17.68,
+      "p95_ms": 24.96
+    },
+    {
+      "search": "hnsw ef=16",
+      "recall_at_10": 0.94,
+      "p50_ms": 20.01,
+      "p95_ms": 29.76
+    },
+    {
+      "search": "hnsw ef=32",
+      "recall_at_10": 0.986,
+      "p50_ms": 22.42,
+      "p95_ms": 33.78
+    },
+    {
+      "search": "hnsw ef=64",
+      "recall_at_10": 0.996,
+      "p50_ms": 19.75,
+      "p95_ms": 43.0
+    },
+    {
+      "search": "hnsw ef=128",
+      "recall_at_10": 0.999,
+      "p50_ms": 19.0,
+      "p95_ms": 30.05
+    }
+  ]
+}
