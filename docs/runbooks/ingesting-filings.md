@@ -1,6 +1,6 @@
 # Ingesting filings
 
-How to turn the FinanceBench PDFs into searchable chunks. This runbook grows with Phase 2: parsing comes first, then chunking and indexing.
+How to turn the FinanceBench PDFs into searchable chunks. This runbook grows with Phase 2: parsing and chunking so far, indexing next.
 
 ## Before you start
 
@@ -26,6 +26,22 @@ uv run poe check-pages
 ```
 
 This compares FinanceBench's text for every dev evidence page with the parsed page of the same index and with its neighbours. It writes `eval/results/parsing/page-alignment-dev.md`. Expect 126 of 127 to line up; a sudden drop means page numbering or text extraction has broken.
+
+## Chunk
+
+```bash
+uv run poe chunk-corpus --strategy tokens-480    # or page, tokens-256
+```
+
+Each strategy writes `data/processed/chunks/<strategy>/<doc_name>.jsonl` and a `_summary.json`. Chunks are measured in the embedding model's own tokens (BAAI/bge-small-en-v1.5, downloaded on first use), so none is cut off by its 512-token limit. On the 84 question documents:
+
+| Strategy | Chunks | Median tokens | Chunks crossing a page | Time |
+|---|---|---|---|---|
+| `page` | 23,585 | 448 | 0% | 20 s |
+| `tokens-480` (64 overlap) | 21,899 | 462 | 52% | 40 s |
+| `tokens-256` (32 overlap) | 39,573 | 242 | 30% | 42 s |
+
+Rerunning a strategy rewrites its files. The semantic and late-chunking strategies need an embedding model and run as part of indexing.
 
 ## Troubleshooting
 

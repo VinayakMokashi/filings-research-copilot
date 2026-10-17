@@ -55,6 +55,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Facts database: 1.06 million XBRL facts and 28 canonical metrics per company-year, matching all 33 FinanceBench dev metrics questions | `src/copilot/facts/` ([guide](docs/concepts/xbrl-and-financial-metrics.md), [dictionary](docs/data/facts-dictionary.md)) |
 | SQL eval set: 42 questions with verified gold SQL or a reason to decline, and a read-only scorer | `eval/sql/`, `src/copilot/eval/sql.py` ([data card](docs/data/sql-set.md)) |
 | PDF parsing: page text with running headers removed and 10-K/10-Q sections tagged | `src/copilot/ingest/pdf.py` ([ADR-0009](docs/decisions/0009-pdf-parsing.md), [runbook](docs/runbooks/ingesting-filings.md)) |
+| Chunking: page-level, token windows with overlap, and semantic, each chunk carrying its pages, section and filing metadata | `src/copilot/ingest/chunking.py` |
 
 ## Local development
 
@@ -74,6 +75,7 @@ uv run poe fetch-sec          # SEC company facts for the 40 companies (needs SE
 uv run poe build-facts        # the SQLite facts database; then `poe check-facts`
 uv run poe eval-sql --baseline gold   # score SQL against the facts database
 uv run poe parse-pdfs         # clean, section-tagged page text from the filing PDFs
+uv run poe chunk-corpus --strategy tokens-480     # chunk the parsed pages
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).
