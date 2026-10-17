@@ -8,12 +8,15 @@ license-files = ["LICENSE"]
 authors = [{ name = "Vinayak Mokashi" }]
 requires-python = ">=3.12"
 dependencies = [
+    "fastembed>=0.9.0",
     "httpx>=0.28.1",
     "litellm>=1.105.1",
     "numpy>=2.5.4",
+    "onnxruntime>=1.31.0",
     "pydantic>=2.14.1",
     "pydantic-settings>=2.16.0",
     "pypdfium2>=5.14.0",
+    "qdrant-client>=1.19.1",
     "structlog>=26.1.0",
     "tokenizers>=0.23.3",
 ]
@@ -92,7 +95,7 @@ plugins = ["pydantic.mypy"]
 
 # Libraries without type information.
 [[tool.mypy.overrides]]
-module = ["pypdfium2", "pypdfium2.*"]
+module = ["pypdfium2", "pypdfium2.*", "onnxruntime", "onnxruntime.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]
@@ -112,4 +115,6 @@ markers = [
 filterwarnings = [
     # Raised inside LiteLLM's own type definitions; nothing in this project triggers it.
     "ignore:Item .* is using the `ReadOnly` qualifier:UserWarning",
+    # Tests use Qdrant's in-memory mode, which accepts payload indexes but doesn't need them.
+    "ignore:Payload indexes have no effect in the local Qdrant:UserWarning",
 ]
