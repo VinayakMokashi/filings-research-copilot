@@ -126,7 +126,7 @@ def test_semantic_chunks_break_where_the_topic_changes() -> None:
     doc = chunking.assemble([Page("ACME_2022_10K", 0, f"{revenue}\n{litigation}", None, ())], META)
 
     chunks = SemanticChunker(
-        words, _topic_embed, max_tokens=100, min_tokens=1, percentile=50
+        words, _topic_embed, max_tokens=100, min_tokens=1, percentile=50, unit_min_tokens=1
     ).chunk(doc)
 
     assert [chunk.text for chunk in chunks] == [revenue, litigation]
@@ -137,10 +137,30 @@ def test_semantic_chunker_merges_tiny_pieces() -> None:
     doc = chunking.assemble([Page("ACME_2022_10K", 0, lines, None, ())], META)
 
     chunks = SemanticChunker(
-        words, _topic_embed, max_tokens=100, min_tokens=8, percentile=10
+        words, _topic_embed, max_tokens=100, min_tokens=8, percentile=10, unit_min_tokens=1
     ).chunk(doc)
 
     assert all(chunk.tokens >= 8 for chunk in chunks[:-1])
+
+
+def test_semantic_units_join_short_sentences_and_split_long_blocks() -> None:
+    seen: list[str] = []
+
+    def record(texts: list[str]) -> NDArray[np.float32]:
+        seen.extend(texts)
+        return np.ones((len(texts), 2), dtype=np.float32)
+
+    table = "\n".join(f"row{i} {i} {i}" for i in range(20))
+    prose = "Short one. Short two.\nShort three."
+    text = f"{prose}\n\n{table}"
+    doc = chunking.assemble([Page("ACME_2022_10K", 0, text, None, ())], META)
+
+    SemanticChunker(words, record, unit_min_tokens=4, unit_max_tokens=12).chunk(doc)
+
+    assert seen[0] == "Short one. Short two."
+    assert seen[1].startswith("Short three.\n\nrow0 0 0")
+    assert all(len(words(unit)) <= 12 + 4 - 1 for unit in seen)
+    assert re.sub(r"\s", "", "".join(seen)) == re.sub(r"\s", "", text)
 
 
 def test_blank_spans_are_skipped(tmp_path: Path) -> None:
