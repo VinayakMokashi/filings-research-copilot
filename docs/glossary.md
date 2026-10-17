@@ -9,6 +9,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **52/53-week fiscal year** | A fiscal year that ends on the same weekday each year (for example the last Saturday of December), so it runs 52 or 53 weeks. |
 | **Accession number** | SEC's unique id for one filing, such as `0000066740-24-000016`. |
 | **ADR** | Architecture Decision Record: a short note recording one decision, the options considered and why. |
+| **Bi-encoder** | A model that embeds the query and each passage separately, so passage vectors can be computed ahead of time and searched quickly. The embedding models here are bi-encoders. |
 | **BM25** | A keyword-ranking formula that scores documents by term frequency, term rarity and document length. Strong for exact terms such as tickers and line items. |
 | **Bootstrap confidence interval** | Resample the eval questions with replacement many times, recompute the metric each time, and take percentiles to see how uncertain the number is. |
 | **Chunk** | A piece of a document that gets its own embedding and can be retrieved on its own. |
@@ -49,6 +50,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions assume an AWS role with short-lived tokens, so no AWS keys are stored anywhere. |
 | **ONNX Runtime** | An engine that runs neural networks exported in the ONNX format quickly on a CPU. FastEmbed runs its models with it. |
+| **Oracle-document setting** | A retrieval evaluation in which each question searches only the filing its evidence is in, isolating finding the page from finding the filing. |
 | **Paired test** | Comparing two systems on the same questions, so that question-to-question noise cancels out. |
 | **Payload index** | An index on a field stored with each Qdrant point, such as `company`, that makes searches filtered on that field fast. |
 | **pdfium** | Google's PDF engine (used in Chrome); pypdfium2 is its Python binding and this project's parser. |

@@ -39,6 +39,25 @@ The file must cover exactly the questions in the split; a missing or extra id st
 | `summary.json` | The system, the split, and each metric's mean with its 95% interval, overall and by question type |
 | `summary.md` | The same summary as tables |
 
+### Run the project's own retrievers
+
+With an index built (`poe index-corpus`, see the [ingestion runbook](ingesting-filings.md)), `poe run-retrieval` searches for every dev question and scores the result in one step:
+
+```bash
+uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode dense
+uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode hybrid --setting corpus
+uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode dense --rerank jina-turbo --rerank-top 30
+```
+
+| Option | Meaning |
+|---|---|
+| `--mode dense`, `bm25` or `hybrid` | Which vectors to search; hybrid fuses both with RRF (k = 60), `--rrf-weights 2,1` weights the lists |
+| `--setting oracle` or `corpus` | Search only the question's own filing (default), or every filing in the collection |
+| `--rerank KEY` and `--rerank-top N` | Reorder the top N candidates with a cross-encoder: `minilm-l6`, `minilm-l12`, `jina-turbo` or `bge-base` |
+| `--neighbours 1` and `--neighbours-top 5` | Follow each of the top 5 hits with its neighbouring chunks |
+
+The run name is built from the options (for example `tokens-480_bge-small-hybrid-corpus`), and the summary records the configuration, the index's models and each question's latency. Searching is cheap; reranking runs a model for every candidate, so on a laptop CPU a reranked run takes 10 minutes to an hour.
+
 ## Score routing
 
 ```bash
@@ -66,7 +85,18 @@ Each line of a predictions file is `{"id": "s01", "sql": "SELECT ..."}`, or `{"i
 uv run poe compare-runs eval/results/retrieval/first-pages/dev eval/results/retrieval/hybrid-v1/dev --metric recall@10
 ```
 
-The output gives both means, the difference with its 95% interval, the p-value from a paired permutation test, and a verdict at α = 0.05 ([ADR-0007](../decisions/0007-evaluation-statistics.md)). A change ships when the verdict is "significant improvement". When one experiment tries several variants against the same baseline, adjust their p-values together with `copilot.eval.stats.holm` before reading the verdicts.
+The output gives both means, the difference with its 95% interval, the p-value from a paired permutation test, and a verdict at α = 0.05 ([ADR-0007](../decisions/0007-evaluation-statistics.md)). A change ships when the verdict is "significant improvement".
+
+When one experiment tries several variants against the same baseline, compare them as a family, so their p-values are adjusted together (Holm):
+
+```bash
+R=eval/results/retrieval
+uv run poe compare-family $R/tokens-480_bge-small-dense-oracle/dev \
+  $R/tokens-480_bge-small-bm25-oracle/dev $R/tokens-480_bge-small-hybrid-oracle/dev \
+  --metric recall@10 --title "Search mode" --out $R/_comparisons/mode-oracle
+```
+
+Include every variant that was tried, including the ones that did badly; leaving them out would understate the chance of a false win.
 
 ## Milestone evaluations on the test split
 
