@@ -10,5 +10,6 @@
 | [0006](0006-evaluation-splits.md) | Split FinanceBench by company into dev and held-out test | Accepted | 2026-10-17 |
 | [0007](0007-evaluation-statistics.md) | Report bootstrap intervals and decide with paired permutation tests | Accepted | 2026-10-17 |
 | [0008](0008-xbrl-normalisation.md) | Normalise XBRL company facts into annual values as first reported | Accepted | 2026-10-17 |
+| [0009](0009-pdf-parsing.md) | Parse filings with pdfium, page by page | Accepted | 2026-10-17 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
