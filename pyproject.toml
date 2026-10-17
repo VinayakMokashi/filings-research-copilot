@@ -72,6 +72,7 @@ index-corpus = { cmd = "python scripts/index_corpus.py", help = "Embed one chunk
 check-hnsw = { cmd = "python scripts/check_hnsw.py", help = "Measure HNSW recall and latency against exact search on a copy of an index" }
 run-retrieval = { cmd = "python scripts/run_retrieval.py", help = "Run and score one retrieval configuration on FinanceBench (--collection, --mode, --rerank, --setting)" }
 compare-family = { cmd = "python scripts/compare_family.py", help = "Compare candidate runs with a baseline, Holm-adjusted across the family" }
+generate-pairs = { cmd = "python scripts/generate_pairs.py", help = "Generate synthetic question-to-chunk pairs from training filings with the LLM" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
