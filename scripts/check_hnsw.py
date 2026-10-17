@@ -1,11 +1,13 @@
 """Measure what HNSW gives up against exact search, on a copy of an index (ADR-0010).
 
 At this project's scale Qdrant searches by brute force: a segment builds its HNSW graph only
-once its vectors pass the indexing threshold (10 MB), and the main collection's 34 MB of
-dense vectors are spread over 8 segments. This script copies a collection's dense vectors
-into a scratch collection whose segments all build the graph, runs the dev questions through
-exact search and through HNSW at several `hnsw_ef` values, and reports recall@10 against
-exact search and the latency of each. The scratch collection is deleted afterwards.
+once its vectors pass the indexing threshold (10 MB), and even then searches a segment
+exactly while it is under the full-scan threshold (also 10 MB). The main collection's 34 MB
+of dense vectors are spread over 8 segments of about 4 MB. This script copies a collection's
+dense vectors into a scratch collection with both thresholds lowered, so every search walks
+the graph, runs the dev questions through exact search and through HNSW at several
+`hnsw_ef` values, and reports recall@10 against exact search and the latency of each. It
+checks Qdrant's telemetry to confirm which search path ran, then deletes the collection.
 
 Usage: uv run poe check-hnsw   (after `poe index-corpus --docs all`)
 """
@@ -18,6 +20,7 @@ import statistics
 import time
 from pathlib import Path
 
+import httpx
 import numpy as np
 from qdrant_client import QdrantClient, models
 
@@ -41,7 +44,9 @@ def copy_vectors(client: QdrantClient, source: str, dim: int) -> int:
         vectors_config={
             index.DENSE: models.VectorParams(size=dim, distance=models.Distance.COSINE)
         },
-        hnsw_config=models.HnswConfigDiff(m=index.HNSW_M, ef_construct=index.HNSW_EF_CONSTRUCT),
+        hnsw_config=models.HnswConfigDiff(
+            m=index.HNSW_M, ef_construct=index.HNSW_EF_CONSTRUCT, full_scan_threshold=10
+        ),
         optimizers_config=models.OptimizersConfigDiff(indexing_threshold=1),
     )
     offset: models.ExtendedPointId | None = None
@@ -74,6 +79,22 @@ def wait_for_index(client: QdrantClient, points: int, timeout_s: float = 600) ->
     raise TimeoutError("The scratch collection did not finish indexing.")
 
 
+def search_paths(url: str) -> dict[str, int]:
+    """How many segment searches the scratch collection has served, by search path."""
+    telemetry = httpx.get(f"{url}/telemetry", params={"details_level": 4}, timeout=60).json()
+    counts: dict[str, int] = {}
+    for collection in telemetry["result"]["collections"]["collections"]:
+        if collection.get("id") != SCRATCH:
+            continue
+        for shard in collection.get("shards") or []:
+            for segment in (shard.get("local") or {}).get("segments") or []:
+                for searches in segment.get("vector_index_searches") or []:
+                    for path, stats in searches.items():
+                        if isinstance(stats, dict) and stats.get("count"):
+                            counts[path] = counts.get(path, 0) + int(stats["count"])
+    return counts
+
+
 def search(
     client: QdrantClient, vectors: list[list[float]], params: models.SearchParams
 ) -> tuple[list[list[str]], list[float]]:
@@ -101,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
 
     points = copy_vectors(client, args.collection, dense.dim)
     build_s = wait_for_index(client, points)
+    before = search_paths(settings.qdrant_url)
     exact, exact_ms = search(client, vectors, models.SearchParams(exact=True))
     rows = [{"search": "exact", "recall_at_10": 1.0, **_latency(exact_ms)}]
     for ef in EF_VALUES:
@@ -109,6 +131,8 @@ def main(argv: list[str] | None = None) -> int:
             len(set(hnsw) & set(truth)) / K for hnsw, truth in zip(found, exact, strict=True)
         )
         rows.append({"search": f"hnsw ef={ef}", "recall_at_10": round(recall, 4), **_latency(ms)})
+    after = search_paths(settings.qdrant_url)
+    paths = {path: after[path] - before.get(path, 0) for path in after}
     client.delete_collection(SCRATCH)
 
     result = {
@@ -117,6 +141,7 @@ def main(argv: list[str] | None = None) -> int:
         "queries": len(vectors),
         "hnsw": {"m": index.HNSW_M, "ef_construct": index.HNSW_EF_CONSTRUCT},
         "index_build_seconds": round(build_s, 1),
+        "segment_searches_by_path": paths,
         "rows": rows,
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -130,7 +155,8 @@ def main(argv: list[str] | None = None) -> int:
         f"{points:,} dense vectors, {len(vectors)} dev questions, top {K}; "
         f"HNSW m = {index.HNSW_M}, ef_construct = {index.HNSW_EF_CONSTRUCT}; "
         f"graph built in {build_s:.0f} s. "
-        "Latency is measured from the client, HTTP included.",
+        "Latency is measured from the client, HTTP included. Segment searches by path "
+        f"(Qdrant telemetry): {', '.join(f'{k} {v:,}' for k, v in sorted(paths.items()))}.",
         "",
         "| Search | Recall@10 against exact | p50 ms | p95 ms |",
         "|---|---|---|---|",
