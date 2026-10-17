@@ -181,14 +181,14 @@ Size is relative: S < M < L.
 **Goal:** choose the retrieval setup by measurement.
 
 - [x] 2.1 Parse PDFs to page text with page numbers; strip running headers and footers; tag pages with their 10-K item (1A, 7, 8 and so on). pypdfium2 ([ADR-0009](decisions/0009-pdf-parsing.md)); 126 of 127 dev evidence pages line up.
-- [ ] 2.2 Pluggable chunkers: token-recursive with overlap, page-level, semantic, late chunking. Every chunk keeps company, year, form, section and page span.
-- [ ] 2.3 Index into Qdrant: dense and BM25 sparse vectors, payload indexes, recorded HNSW settings, idempotent upserts keyed by content hash. Ingestion runs as jobs (a local runner now, an SQS runner in Phase 8).
+- [x] 2.2 Pluggable chunkers: token-recursive with overlap, page-level, semantic, late chunking. Every chunk keeps company, year, form, section and page span.
+- [x] 2.3 Index into Qdrant: dense and BM25 sparse vectors, payload indexes, recorded HNSW settings, idempotent upserts keyed by content hash. Ingestion runs as jobs (a local runner now, an SQS runner in Phase 8). [ADR-0010](decisions/0010-vector-store-and-embeddings.md).
 - [ ] 2.4 Retrieval variants: dense, BM25, hybrid (RRF), then cross-encoder reranking, then neighbouring chunks.
 - [ ] 2.5 Evaluate on FinanceBench dev evidence pages: page recall@5/10/20 and MRR, changing one thing at a time, with confidence intervals and latency.
 - [ ] 2.6 Pick the baseline configuration. Generate synthetic question→chunk pairs from training documents only, for Phase 7.
 
 **Done when:** a retrieval report shows the chosen setup and its significant gain over dense-only search, or explains why there isn't one.
-**Docs:** ADRs on parser ([ADR-0009](decisions/0009-pdf-parsing.md)), chunking and vector store; guides `chunking.md`, `late-chunking.md`, `hybrid-search-and-rrf.md`, `reranking.md`, `hnsw-and-qdrant.md`, `retrieval-metrics.md`; runbook [ingesting-filings.md](runbooks/ingesting-filings.md).
+**Docs:** ADRs on parser ([ADR-0009](decisions/0009-pdf-parsing.md)), vector store ([ADR-0010](decisions/0010-vector-store-and-embeddings.md)) and chunking; guides `chunking.md`, [late-chunking.md](concepts/late-chunking.md), `hybrid-search-and-rrf.md`, `reranking.md`, [hnsw-and-qdrant.md](concepts/hnsw-and-qdrant.md), `retrieval-metrics.md`; runbook [ingesting-filings.md](runbooks/ingesting-filings.md).
 
 ### Phase 3: Doc agent with cited answers (M)
 
