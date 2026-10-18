@@ -1,0 +1,28 @@
+{
+  "pairs": 1006,
+  "rejected": {
+    "copied": 128,
+    "format": 4
+  },
+  "filings": 195,
+  "companies": 27,
+  "by_model": {
+    "groq/openai/gpt-oss-120b": 391,
+    "groq/openai/gpt-oss-20b": 158,
+    "groq/qwen/qwen3.8-27b": 457
+  },
+  "by_form": {
+    "10k": 748,
+    "10k_annualreport": 21,
+    "10q": 66,
+    "8k": 77,
+    "Earnings": 94
+  },
+  "question_words": {
+    "min": 9,
+    "median": 22,
+    "max": 44
+  },
+  "prompt_version": "1",
+  "pairs_sha256": "33100b0b7cc08e15de045ddfa675c5c4d4ded1ee8e7f9205c065609fd072848f"
+}
