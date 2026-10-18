@@ -12,7 +12,7 @@ An agentic research copilot for public-company filings. Ask a question about a c
 
 ## What it does (when finished)
 
-- **Cited answers from filing text.** Hybrid BM25 and dense retrieval over 10-K and 10-Q filings, query rewriting, cross-encoder reranking, page-level citations, and a refusal when the evidence isn't there.
+- **Cited answers from filing text.** Retrieval over 10-K and 10-Q filings chosen by measurement (dense search over page chunks so far, with hybrid search and reranking re-tested after query rewriting), page-level citations, and a refusal when the evidence isn't there.
 - **Numbers from structured data.** Text-to-SQL over XBRL company facts, built on [text2sql-analyst](https://github.com/VinayakMokashi/text2sql-analyst), with read-only guardrails and a calculator for arithmetic.
 - **Research briefs.** A planner, parallel section writers, an editor and a critic, with every claim validated against its source.
 - **Tools for other AI apps.** An MCP server exposing search, financial queries and the copilot itself.
@@ -25,7 +25,7 @@ An agentic research copilot for public-company filings. Ask a question about a c
 flowchart LR
     C["Clients<br/>web · MCP"] --> A["API<br/>quotas · cache"]
     A --> R{Router}
-    R --> D["Doc agent<br/>hybrid RAG + rerank"]
+    R --> D["Doc agent<br/>RAG over filings"]
     R --> T["Tools<br/>calculator · fetchers"]
     R --> B["Brief crew"]
     R --> S["Data agent<br/>Text-to-SQL"]
@@ -56,6 +56,8 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | SQL eval set: 42 questions with verified gold SQL or a reason to decline, and a read-only scorer | `eval/sql/`, `src/copilot/eval/sql.py` ([data card](docs/data/sql-set.md)) |
 | PDF parsing: page text with running headers removed and 10-K/10-Q sections tagged | `src/copilot/ingest/pdf.py` ([ADR-0009](docs/decisions/0009-pdf-parsing.md), [runbook](docs/runbooks/ingesting-filings.md)) |
 | Chunking: page-level, token windows with overlap, and semantic, each chunk carrying its pages, section and filing metadata | `src/copilot/ingest/chunking.py` |
+| Qdrant index: bge-small dense and BM25 sparse vectors per chunk, payload indexes, resumable per-document jobs, and late chunking with jina-v2-small | `src/copilot/ingest/` ([ADR-0010](docs/decisions/0010-vector-store-and-embeddings.md), [HNSW guide](docs/concepts/hnsw-and-qdrant.md)) |
+| Retrieval: dense, BM25 and hybrid search with client-side rank fusion, cross-encoder reranking and neighbouring chunks, each measured on FinanceBench dev; the baseline is dense search over page chunks | `src/copilot/retrieval/` ([report](docs/eval/retrieval-baseline.md), [ADR-0011](docs/decisions/0011-retrieval-baseline.md)) |
 
 ## Local development
 
@@ -76,6 +78,8 @@ uv run poe build-facts        # the SQLite facts database; then `poe check-facts
 uv run poe eval-sql --baseline gold   # score SQL against the facts database
 uv run poe parse-pdfs         # clean, section-tagged page text from the filing PDFs
 uv run poe chunk-corpus --strategy tokens-480     # chunk the parsed pages
+uv run poe index-corpus --strategy page --docs all   # embed chunks into Qdrant (resumable)
+uv run poe run-retrieval --collection fb_page_bge-small --mode dense   # search and score on dev
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).

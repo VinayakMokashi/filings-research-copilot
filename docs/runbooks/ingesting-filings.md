@@ -47,19 +47,19 @@ Rerunning a strategy rewrites its files. The semantic strategy needs the embeddi
 
 ```bash
 uv run poe services-up                                                          # Qdrant on 127.0.0.1:6333
-uv run poe index-corpus --strategy tokens-480 --model bge-small --docs all      # the main index
-uv run poe index-corpus --strategy page --docs dev                              # an experiment, dev documents only
+uv run poe index-corpus --strategy page --model bge-small --docs all            # the baseline index (ADR-0011)
+uv run poe index-corpus --strategy tokens-480 --docs dev                        # an experiment, dev documents only
 uv run poe index-corpus --strategy tokens-480 --model jina-small --late --docs dev
 ```
 
-Each run fills the collection `fb_<strategy>_<model>` with one point per chunk: a bge-small dense vector, a BM25 sparse vector and the chunk as payload ([ADR-0010](../decisions/0010-vector-store-and-embeddings.md)). It reads the chunk files from `poe chunk-corpus` when they exist, and otherwise chunks the document and caches the result (`--rechunk` ignores the cache). `--docs dev` takes the 58 documents behind dev questions; `--docs all` adds the other 26 after them, so dev evaluation can start before the run ends. `--limit N` indexes only the first N documents, for a quick check.
+Each run fills the collection `fb_<strategy>_<model>` with one point per chunk: a bge-small dense vector, a BM25 sparse vector and the chunk as payload ([ADR-0010](../decisions/0010-vector-store-and-embeddings.md)). It reads the chunk files from `poe chunk-corpus` when they exist, and otherwise chunks the document and caches the result (`--rechunk` ignores the cache). `--docs dev` takes the 58 documents behind dev questions; `--docs all` adds the other 26 behind FinanceBench's questions after them, so dev evaluation can start before the run ends; `--docs corpus` takes every parsed filing (366), for a product index rather than evaluation. `--limit N` indexes only the first N documents, for a quick check.
 
 It writes, under `data/processed/indexes/`:
 
 - `<collection>.log.jsonl`: one line per document with its chunk count, how many were added, seconds taken and any error;
 - `<collection>.json`: the index card, with the models, query prefix, vector and HNSW settings, payload indexes and counts.
 
-Indexing is CPU-bound: about 8 chunks a second for 480-token chunks on an 8-core laptop, so the main index takes about 47 minutes and a dev-only experiment 20 to 90 minutes. **An interrupted run resumes**: run the same command again and it embeds only the chunks the collection doesn't hold yet.
+Indexing is CPU-bound: about 8 chunks a second for 480-token chunks on an 8-core laptop, so an 84-filing index takes 45 to 80 minutes and a dev-only experiment 20 to 90 minutes. **An interrupted run resumes**: run the same command again and it embeds only the chunks the collection doesn't hold yet.
 
 Useful while it runs:
 

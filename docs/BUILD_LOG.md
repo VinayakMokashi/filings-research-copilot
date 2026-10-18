@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-18 · Phase 2 · Chunking comparison and the retrieval baseline
+
+- **Goal:** compare chunking strategies and late chunking, re-check search modes and reranking on the winner, measure latency, and choose the baseline (steps 2.5 and the first half of 2.6).
+- **Done:**
+  - Indexed `page`, `tokens-256`, `semantic` and the jina-v2-small pair (chunk by chunk and late-chunked) for the 58 dev filings, and `page` for all 84 question filings; scored each with dense search.
+  - Moved rank fusion into `copilot.retrieval.search` (`reciprocal_rank_fusion`): each ranking is put in a fixed order (score, then point id) and fused with `w / (k + rank)`.
+  - Re-ran every BM25 and hybrid configuration on complete indexes, re-measured latency with the machine idle, and regenerated the [retrieval report](eval/retrieval-baseline.md) from the result files.
+  - [ADR-0011](decisions/0011-retrieval-baseline.md); measured results added to the chunking, late-chunking, hybrid search, reranking and retrieval-metrics guides.
+- **Commands:** `uv run poe index-corpus` for each strategy, `uv run poe run-retrieval`, `uv run poe compare-family`, `uv run poe check`.
+- **Results** (100 dev questions, dense search within the question's filing):
+  - Chunking, recall@10 / MRR@10: `tokens-480` 0.608 / 0.307, `page` 0.630 / **0.423**, `tokens-256` **0.640** / 0.377, `semantic` 0.610 / 0.364. No strategy differs significantly on recall@10; page chunks (p = 0.003) and `tokens-256` (p = 0.037) are significantly better on MRR@10 after Holm's adjustment.
+  - Across all 84 filings, page chunks doubled MRR@10 (0.230 against 0.115, p = 0.0001).
+  - Late chunking against the same model chunk by chunk: recall@10 0.613 against 0.593, not significant.
+  - On page chunks, hybrid search and bge-reranker-base both lowered MRR@10 significantly (0.334 and 0.335 against 0.423).
+  - Dense search answers in about 50 ms a question; rerankers add 2.6 to 8.7 seconds.
+- **Problems and fixes:**
+  - **Results that changed between runs.** The first BM25 and hybrid runs were made while the main index was still being built, and BM25's IDF depends on the whole collection (BM25 recall@10 0.425 then, 0.440 on the complete index). Separately, Qdrant's server-side fusion returned a different order on 35 of 40 identical calls: RRF makes tied scores common, and Qdrant ranks tied chunks in no fixed order. Fusing in our own code made every run repeatable; the report was corrected, and no conclusion changed.
+  - **`--docs all` grew.** After all 368 PDFs were parsed for the synthetic pairs, `--docs all` meant every parsed filing, and an overnight page-index run put 228 training filings into the evaluation collection. The selection now lives in `copilot.ingest.jobs.select_documents` with a test (`all` is the 84 question filings, `corpus` every filing), and the extra 63,934 points were deleted.
+  - **Docker stopped overnight.** Docker Desktop's engine was gone at 00:12 UTC, so the page index and two runs failed with "connection refused". Restarting it and the services brought every collection back intact, and the resumable index job finished the rest.
+- **Decisions:** [ADR-0011](decisions/0011-retrieval-baseline.md): dense search over page chunks, without fusion, reranking or late chunking.
+- **Next:** finish the synthetic pairs when the model quotas reset, then close Phase 2.
+
 ### 2026-10-17 · Phase 2 · Retrieval variants
 
 - **Goal:** dense, BM25 and hybrid search, cross-encoder reranking and neighbouring chunks, each scored on FinanceBench dev evidence pages against plain dense search (step 2.4, and step 2.5 except chunking).
