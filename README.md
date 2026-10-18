@@ -6,7 +6,7 @@
 
 An agentic research copilot for public-company filings. Ask a question about a company and get an answer built from its 10-K and 10-Q text and its XBRL financial facts, with every claim cited to the page or query it came from.
 
-> **Status:** in active development. Phase 0 (foundations) and Phase 1 (data and evaluation sets) are done; Phase 2 (ingestion and retrieval baseline) is in progress, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
+> **Status:** in active development. Phases 0 to 2 are done (foundations, data and evaluation sets, and the retrieval baseline); Phase 3, the doc agent, is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
 >
 > **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/
 
@@ -58,6 +58,8 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Chunking: page-level, token windows with overlap, and semantic, each chunk carrying its pages, section and filing metadata | `src/copilot/ingest/chunking.py` |
 | Qdrant index: bge-small dense and BM25 sparse vectors per chunk, payload indexes, resumable per-document jobs, and late chunking with jina-v2-small | `src/copilot/ingest/` ([ADR-0010](docs/decisions/0010-vector-store-and-embeddings.md), [HNSW guide](docs/concepts/hnsw-and-qdrant.md)) |
 | Retrieval: dense, BM25 and hybrid search with client-side rank fusion, cross-encoder reranking and neighbouring chunks, each measured on FinanceBench dev; the baseline is dense search over page chunks | `src/copilot/retrieval/` ([report](docs/eval/retrieval-baseline.md), [ADR-0011](docs/decisions/0011-retrieval-baseline.md)) |
+| Synthetic training pairs: 1,006 LLM-written questions paired with the chunks that answer them, from filings kept apart from evaluation | `src/copilot/training/` ([data card](docs/data/synthetic-pairs.md)) |
+| Synthetic training pairs: 1,006 LLM-written questions paired with the chunks that answer them, from filings kept apart from evaluation | `src/copilot/training/` ([data card](docs/data/synthetic-pairs.md)) |
 
 ## Local development
 
@@ -80,6 +82,8 @@ uv run poe parse-pdfs         # clean, section-tagged page text from the filing 
 uv run poe chunk-corpus --strategy tokens-480     # chunk the parsed pages
 uv run poe index-corpus --strategy page --docs all   # embed chunks into Qdrant (resumable)
 uv run poe run-retrieval --collection fb_page_bge-small --mode dense   # search and score on dev
+uv run poe generate-pairs --per-doc 6   # synthetic question-to-chunk pairs (needs the key)
+uv run poe generate-pairs --per-doc 6   # synthetic question-to-chunk pairs (needs the key)
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).
