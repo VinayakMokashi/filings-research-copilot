@@ -15,7 +15,13 @@ from copilot.ingest import index
 from copilot.ingest.chunking import Chunk
 from copilot.ingest.embed import HashingDense, HashingSparse
 from copilot.retrieval.rerank import OverlapReranker, rerank
-from copilot.retrieval.search import Hit, Searcher, ranked_pages, with_neighbours
+from copilot.retrieval.search import (
+    Hit,
+    Searcher,
+    ranked_pages,
+    reciprocal_rank_fusion,
+    with_neighbours,
+)
 
 SPEC = index.IndexSpec("tokens-12", "hashing", 64)
 DOCS = {
@@ -128,8 +134,51 @@ def test_weighted_fusion_can_favour_one_ranking(searcher: Searcher) -> None:
     from dataclasses import replace
 
     dense_heavy = replace(searcher, rrf_weights=(1.0, 0.0))
-    dense_only = searcher.search("revenue pump prices", "dense", limit=3)
+    dense_only = searcher.search("revenue pump prices", "dense", limit=6)
 
-    hits = dense_heavy.search("revenue pump prices", "hybrid", limit=3)
+    hits = dense_heavy.search("revenue pump prices", "hybrid", limit=6)
 
     assert [h.point_id for h in hits] == [h.point_id for h in dense_only]
+
+
+def test_fusion_sums_weighted_reciprocal_ranks() -> None:
+    a, b, c = (Hit(name, 0.0, "ACME_2022_10K", 0, (0,), None, "") for name in "abc")
+
+    fused = reciprocal_rank_fusion([[a, b], [b, c]], k=60, weights=[1.0, 2.0])
+
+    assert [hit.point_id for hit in fused] == ["b", "c", "a"]
+    assert fused[0].score == pytest.approx(1 / 62 + 2 / 61)
+    assert fused[1].score == pytest.approx(2 / 62)
+
+
+def test_tied_scores_come_back_in_the_same_order_every_time() -> None:
+    client = QdrantClient(":memory:")
+    index.ensure_collection(client, SPEC)
+    twins = [
+        Chunk(
+            chunk_id=hashlib.sha256(f"twin|{n}".encode()).hexdigest(),
+            strategy="tokens-12",
+            doc_name="ACME_2022_10K",
+            chunk_index=n,
+            text="Goodwill impairment testing is performed annually",
+            char_start=n * 100,
+            char_end=n * 100 + 49,
+            pages=(n,),
+            section="8",
+            company="Acme",
+            doc_period=2022,
+            doc_type="10k",
+            tokens=7,
+        )
+        for n in range(6)
+    ]
+
+    def embed(batch: Sequence[Chunk]) -> NDArray[np.float32]:
+        return HashingDense().embed_documents([chunk.text for chunk in batch])
+
+    index.index_chunks(client, SPEC.collection, twins, embed, HashingSparse())
+    searcher = Searcher(client, SPEC.collection, HashingDense(), HashingSparse())
+
+    hits = searcher.search("goodwill impairment", "hybrid", limit=4)
+
+    assert [h.point_id for h in hits] == sorted(chunk.point_id for chunk in twins)[:4]

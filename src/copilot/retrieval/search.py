@@ -1,10 +1,15 @@
 """Search one collection: dense, BM25 or hybrid, optionally within given documents (step 2.4).
 
-Hybrid search asks Qdrant for the top candidates by the dense vector and by BM25 in one
-call, and fuses the two rankings with reciprocal rank fusion (RRF): a chunk scores the sum
-of w / (k + rank) over the lists it appears in, where w is the list's weight (1 unless set).
-k = 60 follows Cormack et al. (2009); Qdrant's own default, k = 2, lets the first few ranks
-of either list dominate.
+Hybrid search takes the top candidates by the dense vector and by BM25 and fuses the two
+rankings with reciprocal rank fusion (RRF): a chunk scores the sum of w / (k + rank) over
+the rankings it appears in, with rank counted from 1 and w the ranking's weight (1 unless
+set). k = 60 follows Cormack et al. (2009).
+
+The fusion runs here rather than in Qdrant, for two measured reasons. Qdrant ranks tied
+scores in no fixed order, and RRF turns those arbitrary ranks into different fused scores,
+so the same query could return a different order on every call. And Qdrant's RRF weights
+rescale ranks instead of multiplying scores (see the hybrid search guide). Each ranking is
+put in a fixed order first: by score, then by point id.
 
 Retrieval is scored by page, so `ranked_pages` turns ranked chunks into ranked pages: each
 chunk's pages in order of how much of the chunk they hold, first appearance wins.
@@ -13,7 +18,7 @@ chunk's pages in order of how much of the chunk they hold, first appearance wins
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Literal
 
 from qdrant_client import QdrantClient, models
@@ -26,6 +31,7 @@ Mode = Literal["dense", "bm25", "hybrid"]
 MODES: tuple[Mode, ...] = ("dense", "bm25", "hybrid")
 RRF_K = 60
 CANDIDATES = 50  # per ranking, before fusion
+TIE_MARGIN = 20  # extra results fetched, so ties at the cut-off are settled the same way each time
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,49 +88,34 @@ class Searcher:
         """The top `limit` chunks for `query`, searching only `doc_names` if given."""
         where = document_filter(doc_names)
         if mode == "dense":
-            response = self.client.query_points(
-                self.collection,
-                query=self.dense.embed_query(query).tolist(),
-                using=DENSE,
-                query_filter=where,
-                limit=limit,
-                with_payload=True,
-            )
-        elif mode == "bm25":
-            response = self.client.query_points(
-                self.collection,
-                query=self._sparse_query(query),
-                using=SPARSE,
-                query_filter=where,
-                limit=limit,
-                with_payload=True,
-            )
-        else:
-            depth = max(limit, self.candidates)
-            response = self.client.query_points(
-                self.collection,
-                prefetch=[
-                    models.Prefetch(
-                        query=self.dense.embed_query(query).tolist(),
-                        using=DENSE,
-                        filter=where,
-                        limit=depth,
-                    ),
-                    models.Prefetch(
-                        query=self._sparse_query(query), using=SPARSE, filter=where, limit=depth
-                    ),
-                ],
-                query=models.RrfQuery(
-                    rrf=models.Rrf(
-                        k=self.rrf_k,
-                        weights=list(self.rrf_weights) if self.rrf_weights else None,
-                    )
-                ),
-                query_filter=where,
-                limit=limit,
-                with_payload=True,
-            )
-        return [Hit.from_point(point) for point in response.points]
+            return self._ranking(self.dense.embed_query(query).tolist(), DENSE, where, limit)
+        if mode == "bm25":
+            return self._ranking(self._sparse_query(query), SPARSE, where, limit)
+        depth = max(limit, self.candidates)
+        rankings = [
+            self._ranking(self.dense.embed_query(query).tolist(), DENSE, where, depth),
+            self._ranking(self._sparse_query(query), SPARSE, where, depth),
+        ]
+        return reciprocal_rank_fusion(rankings, self.rrf_k, self.rrf_weights)[:limit]
+
+    def _ranking(
+        self,
+        query: list[float] | models.SparseVector,
+        using: str,
+        where: models.Filter | None,
+        limit: int,
+    ) -> list[Hit]:
+        """One vector's top `limit` hits, ties broken by point id."""
+        response = self.client.query_points(
+            self.collection,
+            query=query,
+            using=using,
+            query_filter=where,
+            limit=limit + TIE_MARGIN,
+            with_payload=True,
+        )
+        hits = [Hit.from_point(point) for point in response.points]
+        return sorted(hits, key=lambda hit: (-round(hit.score, 9), hit.point_id))[:limit]
 
     def neighbours(self, hit: Hit, window: int = 1) -> list[Hit]:
         """The chunks up to `window` places before and after `hit` in its document."""
@@ -151,6 +142,20 @@ class Searcher:
     def _sparse_query(self, query: str) -> models.SparseVector:
         vector = self.sparse.embed_query(query)
         return models.SparseVector(indices=vector.indices, values=vector.values)
+
+
+def reciprocal_rank_fusion(
+    rankings: Sequence[Sequence[Hit]], k: int = RRF_K, weights: Sequence[float] | None = None
+) -> list[Hit]:
+    """Hits from all rankings by the sum of weight / (k + rank), ties broken by point id."""
+    scores: dict[str, float] = {}
+    first_seen: dict[str, Hit] = {}
+    for ranking, weight in zip(rankings, weights or [1.0] * len(rankings), strict=True):
+        for rank, hit in enumerate(ranking, start=1):
+            scores[hit.point_id] = scores.get(hit.point_id, 0.0) + weight / (k + rank)
+            first_seen.setdefault(hit.point_id, hit)
+    order = sorted(scores, key=lambda point_id: (-round(scores[point_id], 12), point_id))
+    return [replace(first_seen[point_id], score=scores[point_id]) for point_id in order]
 
 
 def with_neighbours(
