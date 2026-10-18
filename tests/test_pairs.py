@@ -162,3 +162,45 @@ def test_summarise_counts_pairs_and_rejections(tmp_path: Path) -> None:
     assert summary["rejected"] == {"copied": 1}
     assert summary["by_model"] == {"a": 1, "b": 1}
     assert len(str(summary["pairs_sha256"])) == 64
+
+
+def test_interleave_spreads_every_prefix_over_companies_and_filings() -> None:
+    def chunk(company: str, doc: str, index: int) -> Chunk:
+        return Chunk(
+            chunk_id=f"{doc}|{index}",
+            strategy="tokens-480",
+            doc_name=doc,
+            chunk_index=index,
+            text=PROSE,
+            char_start=index,
+            char_end=index + 1,
+            pages=(index,),
+            section=None,
+            company=company,
+            doc_period=2022,
+            doc_type="10k",
+            tokens=300,
+        )
+
+    chunks = [
+        chunk("Acme", "ACME_2021_10K", 0),
+        chunk("Acme", "ACME_2021_10K", 1),
+        chunk("Acme", "ACME_2022_10K", 0),
+        chunk("Acme", "ACME_2022_10K", 1),
+        chunk("Bolt", "BOLT_2022_10K", 0),
+        chunk("Bolt", "BOLT_2022_10K", 1),
+        chunk("Bolt", "BOLT_2022_10K", 2),
+    ]
+
+    order = [c.chunk_id for c in pairs.interleave(chunks)]
+
+    assert order == [
+        "ACME_2021_10K|0",
+        "BOLT_2022_10K|0",
+        "ACME_2022_10K|0",
+        "BOLT_2022_10K|1",
+        "ACME_2021_10K|1",
+        "BOLT_2022_10K|2",
+        "ACME_2022_10K|1",
+    ]
+    assert [c.chunk_id for c in pairs.interleave(list(reversed(chunks)))] == order
