@@ -54,8 +54,8 @@ On the 100 dev questions ([report](../eval/retrieval-baseline.md)):
 | System | recall@5 | recall@10 | recall@20 | hit@20 | MRR@10 |
 |---|---|---|---|---|---|
 | First 20 pages of the right filing (floor) | 0.140 | 0.197 | 0.290 | 0.290 | 0.075 |
-| Dense search within the right filing | 0.485 | 0.608 | 0.713 | 0.740 | 0.307 |
-| Dense search across all 84 filings | 0.170 | 0.345 | 0.500 | 0.540 | 0.115 |
+| Dense search over page chunks, within the right filing | 0.530 | 0.630 | 0.760 | 0.770 | 0.423 |
+| Dense search over page chunks, across all 84 filings | 0.305 | 0.415 | 0.495 | 0.520 | 0.230 |
 
 The gap between the second and third rows is what finding the right filing is worth; Phase 3's query understanding (company, period and form as filters) aims to close it.
 

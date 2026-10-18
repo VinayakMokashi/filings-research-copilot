@@ -26,7 +26,7 @@ The document is its pages joined by blank lines (`assemble`), so chunks can cros
 | `page` | One chunk per page; a page over 480 tokens is split into windows within the page | 23,585 | 448 |
 | `tokens-480` | Windows of up to 480 tokens that cross pages, 64 tokens of overlap | 21,899 | 462 |
 | `tokens-256` | The same with 256 tokens and 32 of overlap | 39,573 | 242 |
-| `semantic` | Breaks where the meaning shifts between sentences | Indexed for the 58 dev filings | |
+| `semantic` | Breaks where the meaning shifts between sentences | 17,743 for the 58 dev filings | 375 |
 
 **Where a window ends** (`window_spans`). A window never ends mid-word. Within its second half, it ends at the strongest break available: a blank line, then a line end, then the end of a sentence, and the latest such break. Only a paragraph with no break at all is cut hard. The overlap also starts at a break, so a repeated sentence is repeated whole.
 
@@ -46,7 +46,16 @@ The document is its pages joined by blank lines (`assemble`), so chunks can cros
 
 ## How we measured it
 
-The four strategies are compared with dense search inside each question's own filing, scored on FinanceBench dev evidence pages; see the [retrieval baseline report](../eval/retrieval-baseline.md).
+Dense search with bge-small inside each question's own filing, on the 100 FinanceBench dev questions ([report](../eval/retrieval-baseline.md)):
+
+| Strategy | recall@10 | MRR@10 | Against `tokens-480` (Holm-adjusted) |
+|---|---|---|---|
+| `tokens-480` | 0.608 | 0.307 | (baseline) |
+| `page` | 0.630 | **0.423** | MRR significantly better (p = 0.003) |
+| `tokens-256` | **0.640** | 0.377 | MRR significantly better (p = 0.037) |
+| `semantic` | 0.610 | 0.364 | no significant difference |
+
+No strategy found significantly more evidence pages in the top 10, but page chunks ranked the first one significantly higher, and they became the baseline ([ADR-0011](../decisions/0011-retrieval-baseline.md)). The gain is largest on questions about financial statements (MRR 0.604 against 0.423): a statement fits on a page, so a page chunk holds all of it with its title, and its page is the evidence page by construction. Semantic chunking helped the generic domain questions most (MRR 0.303 against 0.158) but lost on the human-written ones.
 
 ## Pitfalls we hit
 

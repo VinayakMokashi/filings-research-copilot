@@ -61,12 +61,12 @@ Dense search's top candidates on the 100 dev questions, each question searching 
 | jina-turbo | 30 | 0.380 | 0.580 | 0.304 |
 | bge-base | 20 | 0.435 | 0.605 | 0.284 |
 
-No reranker beat the bi-encoder; after Holm's adjustment none differed significantly from it. MiniLM did worst, consistent with reading only 512 tokens of question plus chunk: jina-turbo reads all of it and lost less. bge-base tied (0.605), better on the human-written questions (0.773 against 0.697) and worse on the templated domain questions (0.294 against 0.392). Both were trained on MS MARCO, whose queries are short web searches and whose passages are a paragraph long; FinanceBench's questions are long and full of template instructions, and its chunks are mostly financial prose and tables. On the human-written questions, which carry no template, MiniLM *raised* recall@10 from 0.697 to 0.758.
+No reranker beat the bi-encoder; after Holm's adjustment none differed significantly from it on `tokens-480`, and on page chunks bge-base lowered MRR@10 significantly (0.335 against 0.423). MiniLM did worst, consistent with reading only 512 tokens of question plus chunk: jina-turbo reads all of it and lost less. bge-base tied (0.605), better on the human-written questions (0.773 against 0.697) and worse on the templated domain questions (0.294 against 0.392). Both were trained on MS MARCO, whose queries are short web searches and whose passages are a paragraph long; FinanceBench's questions are long and full of template instructions, and its chunks are mostly financial prose and tables. On the human-written questions, which carry no template, MiniLM *raised* recall@10 from 0.697 to 0.758.
 
 ## Pitfalls we hit
 
 - **Reranking can only reorder.** If the evidence page isn't among the 30 candidates, no reranker can find it, so first-stage recall at 30 caps what reranking can achieve.
-- **Latency grows with the candidate count.** Every extra candidate is another model run; the candidate count is a latency budget. On the build laptop, while it was also indexing, MiniLM over 30 candidates took 7 seconds a question, jina-turbo 14 and bge-base over 20 about 25.
+- **Latency grows with the candidate count.** Every extra candidate is another model run; the candidate count is a latency budget. On the build laptop, otherwise idle, MiniLM over 30 candidates took 2.6 seconds a question (p50), jina-turbo 3.4 and bge-base over 20 8.7, against about 50 ms for dense search alone.
 - **A reranker can make things worse.** It is easy to assume a cross-encoder only helps. Here every one tried lowered recall@5, which is why rerankers are measured like any other change.
 
 ## Review questions

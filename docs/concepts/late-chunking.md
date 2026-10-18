@@ -46,9 +46,16 @@ FastEmbed returns only pooled vectors, so this model runs through ONNX Runtime d
 
 ## How we measured it
 
-The two jina collections index the 58 documents behind dev questions with the same `tokens-480` chunks. Step 2.5 compares them on FinanceBench dev evidence pages with paired tests, in the retrieval report.
+The two jina collections index the 58 dev filings with the same `tokens-480` chunks, scored with dense search inside each question's own filing ([report](../eval/retrieval-baseline.md)):
 
-Speed on the build laptop: the model reads a 512-token input at about 5,000 tokens a second and a 2,048-token window at about 1,600, so late chunking costs about four times as much compute per token as embedding the chunks one by one.
+| Embedding | recall@5 | recall@10 | recall@20 | MRR@10 |
+|---|---|---|---|---|
+| jina-v2-small, chunk by chunk | **0.475** | 0.593 | 0.767 | **0.337** |
+| jina-v2-small, late-chunked | 0.453 | **0.613** | **0.770** | 0.328 |
+
+Neither difference is significant (recall@10 +0.020, p = 0.68; MRR −0.009, p = 0.75). The effect has the expected shape, though: late chunking helped the generic domain questions, where surrounding context should matter most (recall@10 0.304 to 0.377), and slightly hurt the metrics questions, whose evidence is a self-contained table. With 100 questions, a gain of that size can't be told from noise, so late chunking isn't adopted ([ADR-0011](../decisions/0011-retrieval-baseline.md)). jina-v2-small itself scored about the same as bge-small (0.593 against 0.608).
+
+Speed on the build laptop: the model reads a 512-token input at about 5,000 tokens a second and a 2,048-token window at about 1,600. With the window overlap, late chunking does about four times the model work per token; end to end, with BM25 and storage included, indexing the 58 dev filings took 51 minutes late-chunked against 22 chunk by chunk.
 
 ## Pitfalls we hit
 
