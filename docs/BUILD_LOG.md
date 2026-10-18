@@ -15,6 +15,34 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-18 · Phase 2 · Phase 2 complete
+
+- **Goal:** confirm Phase 2's exit criterion and publish the milestone.
+- **Done:**
+  - **The exit criterion is met in its second form:** the [retrieval report](eval/retrieval-baseline.md) shows the chosen setup and explains why nothing beat dense-only search significantly on recall@10: FinanceBench's templated questions mislead BM25 and the MS MARCO rerankers. Page chunks, the chosen setup, rank the evidence significantly higher than 480-token windows on MRR@10.
+  - Updated the plan (status tracker, technology table, change log), the README and the project page.
+- **Commands:** `uv run poe check`.
+- **Results:** on dev, dense search over page chunks: recall@10 0.630 and MRR@10 0.423 within the question's filing; recall@10 0.415 and MRR@10 0.230 across all 84 filings. Floors for Phase 3: an evidence page in the top 20 for 77% of questions within the filing and 52% across filings.
+- **Problems and fixes:** none new.
+- **Decisions:** [ADR-0011](decisions/0011-retrieval-baseline.md).
+- **Next:** Phase 3, the doc agent: query understanding (company, period and form as filters, aimed at the corpus-wide gap), query rewriting, grounded answers with page citations, and an LLM judge checked against human labels.
+
+### 2026-10-18 · Phase 2 · Synthetic pairs
+
+- **Goal:** question-to-chunk pairs from training filings only, for fine-tuning the embedder in Phase 7 (step 2.6, second half).
+- **Done:**
+  - `copilot.training.pairs`: training filings (no test company, no dev-question filing), chunk sampling (at least 200 tokens and mostly letters, up to 6 per filing, a fixed seed per filing), the prompt, the checks, question normalisation, and an interleaved order across companies and filings.
+  - `poe generate-pairs`: writes each kept pair or rejected reply as it arrives, resumes, alternates the fast and strong models, paces calls under the per-minute limit, and lets a role whose daily quota runs out drop out while the others continue; a committed manifest records counts and the file's checksum.
+  - A [data card](data/synthetic-pairs.md).
+- **Commands:** `uv run poe fetch-financebench --pdfs all`, `uv run poe parse-pdfs`, `uv run poe generate-pairs --per-doc 6`, `uv run poe generate-pairs --manifest-only`, `uv run poe check`.
+- **Results:** 1,006 pairs from 195 filings of 27 companies; 132 of 1,138 replies rejected (128 copied, 4 format).
+- **Problems and fixes:**
+  - **Daily token caps.** Groq's free tier allows each model about 200,000 tokens a day, so the 1,138 calls took two days. A capped model now drops out of the rotation instead of ending the run, and `gpt-oss-20b` serves as the gateway's fallback.
+  - **An alphabetical bias.** The first day's run worked through filings in order and stopped at the quota with nine companies (JPMorgan to Walmart) still uncovered. Chunks are now dealt round-robin across companies and filings, so every prefix of a run is balanced.
+  - **Typography.** About half of one model's questions used curly quotes, non-breaking hyphens and narrow spaces; questions are normalised when parsed and when loaded.
+- **Decisions:** training filings exclude dev-question filings as well as test companies, so a fine-tuned model can still be compared fairly on dev.
+- **Next:** close Phase 2.
+
 ### 2026-10-18 · Phase 2 · Chunking comparison and the retrieval baseline
 
 - **Goal:** compare chunking strategies and late chunking, re-check search modes and reranking on the winner, measure latency, and choose the baseline (steps 2.5 and the first half of 2.6).

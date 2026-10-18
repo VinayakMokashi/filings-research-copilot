@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 2, Ingestion and retrieval baseline (in progress) |
+| **Current phase** | Phase 3, Doc agent with cited answers (next) |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -91,12 +91,12 @@ Starting points, each confirmed by an ADR when its phase lands.
 | Packaging and tasks | uv with a lockfile, hatchling, `src/` layout, Python 3.12; `poethepoet` tasks | Fast, reproducible, same commands on every OS | [ADR-0004](decisions/0004-tooling-and-workflow.md) |
 | Config | `pydantic-settings`; `.env` locally, Secrets Manager on AWS | Typed config, no keys in code | Phase 0 |
 | LLM access | LiteLLM router behind one gateway: model roles, fallbacks, cost tracking | Provider-agnostic; one place for retries and accounting | [ADR-0005](decisions/0005-llm-gateway.md) |
-| PDF parsing | `pypdfium2` page text; a table-aware parser (Docling) as an experiment | Permissive licence (PyMuPDF is AGPL) | Phase 2 |
-| Chunking | Token-based recursive with about 15–20% overlap; semantic and late chunking as experiments | Measured, not assumed | Phase 2 |
+| PDF parsing | `pypdfium2` page text; table-aware parsing deferred, since numbers come from XBRL | Permissive licence (PyMuPDF is AGPL); 126 of 127 dev evidence pages line up | [ADR-0009](decisions/0009-pdf-parsing.md) |
+| Chunking | One chunk per page, long pages split within the page; token windows, semantic and late chunking measured against it | Ranks the evidence page first most often, and citations are exact pages | [ADR-0011](decisions/0011-retrieval-baseline.md) |
 | Embeddings | `BAAI/bge-small-en-v1.5` via FastEmbed (ONNX, CPU) | Runs on a laptop CPU; fine-tuned in Phase 7 | Phase 2 |
 | Keyword search | BM25 sparse vectors (FastEmbed `Qdrant/bm25`) | Exact terms such as tickers and line items | Phase 2 |
-| Vector database | Qdrant: dense and sparse named vectors, RRF fusion, payload indexes | Native hybrid search; free cloud tier | Phase 2 |
-| Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2`; `bge-reranker-base` as a candidate | Small and fast on CPU | Phase 2 |
+| Vector database | Qdrant: dense and sparse named vectors, payload indexes; rank fusion done in our code | Dense and keyword search on one point; free cloud tier | [ADR-0010](decisions/0010-vector-store-and-embeddings.md) |
+| Reranker | None in the baseline: MiniLM-L6, jina-turbo and bge-reranker-base didn't beat dense search; re-tested after query rewriting | Measured on FinanceBench dev | [ADR-0011](decisions/0011-retrieval-baseline.md); Phase 3 |
 | Numbers | SEC company facts → SQLite for the curated companies; Postgres in production | text2sql-analyst runs on SQLite as-is | [ADR-0008](decisions/0008-xbrl-normalisation.md); Phase 8 |
 | App state | Postgres: the Compose container locally (127.0.0.1:5433), RDS on AWS. LangGraph checkpoints (Phase 5), feedback (Phases 6 and 9), and testing the Postgres executor for the facts tables (Phase 8). No code uses it in Phase 0 | One engine locally and in production | Phases 5, 6 and 8 |
 | Data agent | text2sql-analyst, an earlier project, as a pinned dependency | Reuses a tested pipeline | Phase 4 |
@@ -185,7 +185,7 @@ Size is relative: S < M < L.
 - [x] 2.3 Index into Qdrant: dense and BM25 sparse vectors, payload indexes, recorded HNSW settings, idempotent upserts keyed by content hash. Ingestion runs as jobs (a local runner now, an SQS runner in Phase 8). [ADR-0010](decisions/0010-vector-store-and-embeddings.md).
 - [x] 2.4 Retrieval variants: dense, BM25, hybrid (RRF), then cross-encoder reranking, then neighbouring chunks. None beat dense search on FinanceBench dev ([report](eval/retrieval-baseline.md)).
 - [x] 2.5 Evaluate on FinanceBench dev evidence pages: page recall@5/10/20 and MRR, changing one thing at a time, with confidence intervals and latency ([report](eval/retrieval-baseline.md)).
-- [ ] 2.6 Pick the baseline configuration. Generate synthetic question→chunk pairs from training documents only, for Phase 7. Baseline chosen: dense search over page chunks ([ADR-0011](decisions/0011-retrieval-baseline.md)); synthetic pairs in progress.
+- [x] 2.6 Pick the baseline configuration. Generate synthetic question→chunk pairs from training documents only, for Phase 7. Baseline: dense search over page chunks ([ADR-0011](decisions/0011-retrieval-baseline.md)); 1,006 pairs from 195 training filings ([data card](data/synthetic-pairs.md)).
 
 **Done when:** a retrieval report shows the chosen setup and its significant gain over dense-only search, or explains why there isn't one.
 **Docs:** ADRs on parser ([ADR-0009](decisions/0009-pdf-parsing.md)), vector store ([ADR-0010](decisions/0010-vector-store-and-embeddings.md)) and the retrieval baseline ([ADR-0011](decisions/0011-retrieval-baseline.md)); guides [chunking.md](concepts/chunking.md), [late-chunking.md](concepts/late-chunking.md), [hybrid-search-and-rrf.md](concepts/hybrid-search-and-rrf.md), [reranking.md](concepts/reranking.md), [hnsw-and-qdrant.md](concepts/hnsw-and-qdrant.md), [retrieval-metrics.md](concepts/retrieval-metrics.md); runbook [ingesting-filings.md](runbooks/ingesting-filings.md); [retrieval report](eval/retrieval-baseline.md).
@@ -343,6 +343,10 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-15 | Definition of done item 4: fine-tuned components are adopted only on a significant gain | Matches the rule that every change must earn its place |
 | 2026-10-15 | Local services bound to 127.0.0.1; Postgres documented as app state | Pre-push review |
 | 2026-10-17 | FinanceBench split grouped by company as well as stratified by question type | Keeps every test company's filings out of tuning and Phase 7 training ([ADR-0006](decisions/0006-evaluation-splits.md)) |
+| 2026-10-17 | Table-aware PDF parsing deferred | Reported numbers come from XBRL; pdfium's page text lines up with the evidence pages ([ADR-0009](decisions/0009-pdf-parsing.md)) |
+| 2026-10-18 | Retrieval baseline is dense search over page chunks; hybrid search and reranking are re-tested in Phase 3 after query rewriting | Neither beat dense search on FinanceBench's templated questions ([ADR-0011](decisions/0011-retrieval-baseline.md)) |
+| 2026-10-17 | Table-aware PDF parsing deferred | Reported numbers come from XBRL; pdfium's page text lines up with the evidence pages ([ADR-0009](decisions/0009-pdf-parsing.md)) |
+| 2026-10-18 | Retrieval baseline is dense search over page chunks; hybrid search and reranking are re-tested in Phase 3 after query rewriting | Neither beat dense search on FinanceBench's templated questions ([ADR-0011](decisions/0011-retrieval-baseline.md)) |
 
 ## 11. Status tracker
 
@@ -350,7 +354,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 |---|---|---|---|
 | 0 Foundations | Done | 2026-10-15 | 2026-10-17 |
 | 1 Data and evaluation sets | Done | 2026-10-17 | 2026-10-17 |
-| 2 Ingestion and retrieval baseline | In progress | 2026-10-17 | |
+| 2 Ingestion and retrieval baseline | Done | 2026-10-17 | 2026-10-18 |
 | 3 Doc agent | Planned | | |
 | 4 Data agent | Planned | | |
 | 5 Orchestration | Planned | | |
