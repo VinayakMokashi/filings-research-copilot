@@ -1,6 +1,6 @@
 # retrieval: tokens-480_bge-small-dense-corpus (dev)
 
-100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 15:34 UTC
+100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-18 00:26 UTC
 
 | Metric | Mean | 95% interval |
 |---|---|---|
@@ -30,9 +30,9 @@
   "index_documents": 84,
   "late_chunking": false,
   "latency_ms": {
-    "mean": 374.9,
-    "p50": 338.8,
-    "p95": 585.7
+    "mean": 42.6,
+    "p50": 41.4,
+    "p95": 57.7
   },
   "mode": "dense",
   "setting": "corpus",

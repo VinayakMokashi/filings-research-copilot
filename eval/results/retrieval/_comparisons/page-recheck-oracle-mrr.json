@@ -1,0 +1,40 @@
+{
+  "metric": "mrr@10",
+  "baseline": "page_bge-small-dense-oracle",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-bm25-oracle",
+      "baseline": 0.4226,
+      "candidate": 0.2429,
+      "difference": -0.1797,
+      "low": -0.2668,
+      "high": -0.094,
+      "p": 0.0002,
+      "holm_p": 0.0006,
+      "verdict": "worse"
+    },
+    {
+      "run": "page_bge-small-hybrid-oracle",
+      "baseline": 0.4226,
+      "candidate": 0.3338,
+      "difference": -0.0888,
+      "low": -0.1557,
+      "high": -0.0258,
+      "p": 0.0092,
+      "holm_p": 0.0184,
+      "verdict": "worse"
+    },
+    {
+      "run": "page_bge-small-dense-rerank-bge-base-oracle",
+      "baseline": 0.4226,
+      "candidate": 0.335,
+      "difference": -0.0876,
+      "low": -0.1539,
+      "high": -0.0216,
+      "p": 0.01,
+      "holm_p": 0.0184,
+      "verdict": "worse"
+    }
+  ]
+}

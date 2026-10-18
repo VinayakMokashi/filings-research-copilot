@@ -1,0 +1,40 @@
+{
+  "metric": "recall@10",
+  "baseline": "page_bge-small-dense-oracle",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-bm25-oracle",
+      "baseline": 0.63,
+      "candidate": 0.43,
+      "difference": -0.2,
+      "low": -0.3,
+      "high": -0.105,
+      "p": 0.0002,
+      "holm_p": 0.0006,
+      "verdict": "worse"
+    },
+    {
+      "run": "page_bge-small-hybrid-oracle",
+      "baseline": 0.63,
+      "candidate": 0.585,
+      "difference": -0.045,
+      "low": -0.115,
+      "high": 0.02,
+      "p": 0.2494,
+      "holm_p": 0.4988,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "page_bge-small-dense-rerank-bge-base-oracle",
+      "baseline": 0.63,
+      "candidate": 0.615,
+      "difference": -0.015,
+      "low": -0.08,
+      "high": 0.05,
+      "p": 0.767,
+      "holm_p": 0.767,
+      "verdict": "no significant difference"
+    }
+  ]
+}

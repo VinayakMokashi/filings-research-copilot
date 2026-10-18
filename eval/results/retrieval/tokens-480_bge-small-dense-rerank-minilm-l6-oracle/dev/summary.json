@@ -2,7 +2,7 @@
   "suite": "retrieval",
   "run": "tokens-480_bge-small-dense-rerank-minilm-l6-oracle",
   "split": "dev",
-  "created": "2026-10-17T14:58:06.904403Z",
+  "created": "2026-10-17T20:01:46.447450Z",
   "questions": 100,
   "test_split_opened": false,
   "system": {
@@ -10,14 +10,14 @@
     "strategy": "tokens-480",
     "dense_model": "BAAI/bge-small-en-v1.5",
     "late_chunking": false,
-    "index_documents": 1,
+    "index_documents": 84,
     "mode": "dense",
     "setting": "oracle",
     "fetched_chunks": 60,
     "latency_ms": {
-      "p50": 7281.6,
-      "p95": 10349.4,
-      "mean": 7744.8
+      "p50": 2576.3,
+      "p95": 3258.5,
+      "mean": 2602.4
     },
     "reranker": "Xenova/ms-marco-MiniLM-L-6-v2",
     "rerank_top": 30

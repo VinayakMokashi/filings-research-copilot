@@ -1,0 +1,18 @@
+{
+  "metric": "mrr@10",
+  "baseline": "tokens-480_jina-small-dense-oracle",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "tokens-480_jina-small-late-dense-oracle",
+      "baseline": 0.3371,
+      "candidate": 0.3276,
+      "difference": -0.0094,
+      "low": -0.0678,
+      "high": 0.0476,
+      "p": 0.7537,
+      "holm_p": 0.7537,
+      "verdict": "no significant difference"
+    }
+  ]
+}
