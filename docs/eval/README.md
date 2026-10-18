@@ -31,9 +31,10 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | Run | Suite | Split | Headline (95% interval) | What it is |
 |---|---|---|---|---|
 | [first-pages](../../eval/results/retrieval/first-pages/dev/summary.md) | Retrieval | Dev | hit@20 0.29 (0.20 to 0.38) | Floor: the first 20 pages of the correct document |
-| [tokens-480_bge-small-dense-oracle](../../eval/results/retrieval/tokens-480_bge-small-dense-oracle/dev/summary.md) | Retrieval | Dev | recall@10 0.608 (0.52 to 0.70); hit@20 0.74 | Dense search within the question's filing: the current baseline |
-| [tokens-480_bge-small-dense-corpus](../../eval/results/retrieval/tokens-480_bge-small-dense-corpus/dev/summary.md) | Retrieval | Dev | recall@10 0.345 (0.26 to 0.43); hit@20 0.54 | The same across all 84 filings |
-| [Other retrieval runs](../../eval/results/retrieval/) | Retrieval | Dev | See the [report](retrieval-baseline.md) | BM25, hybrid, rerankers, neighbouring chunks |
+| [page_bge-small-dense-oracle](../../eval/results/retrieval/page_bge-small-dense-oracle/dev/summary.md) | Retrieval | Dev | recall@10 0.630 (0.54 to 0.72); MRR@10 0.423 | Dense search over page chunks within the question's filing: the baseline ([ADR-0011](../decisions/0011-retrieval-baseline.md)) |
+| [page_bge-small-dense-corpus](../../eval/results/retrieval/page_bge-small-dense-corpus/dev/summary.md) | Retrieval | Dev | recall@10 0.415 (0.33 to 0.51); MRR@10 0.230 | The same across all 84 filings |
+| [tokens-480_bge-small-dense-oracle](../../eval/results/retrieval/tokens-480_bge-small-dense-oracle/dev/summary.md) | Retrieval | Dev | recall@10 0.608 (0.52 to 0.70); MRR@10 0.307 | Dense search over 480-token chunks, the comparison point for the variants |
+| [Other retrieval runs](../../eval/results/retrieval/) | Retrieval | Dev | See the [report](retrieval-baseline.md) | BM25, hybrid, rerankers, neighbouring chunks, chunking, late chunking |
 | [majority](../../eval/results/routing/majority/dev/summary.md) | Routing | Dev | accuracy 0.217 (0.152 to 0.290) | Always the most common route |
 | [keyword](../../eval/results/routing/keyword/dev/summary.md) | Routing | Dev | accuracy 0.623 (0.543 to 0.703) | Floor: hand-written keyword rules |
 | [financebench-dev-checks](../../eval/results/facts/financebench-dev-checks.md) | Facts database | Dev | 33 of 33 agree exactly | FinanceBench metrics questions as formulas over annual values |
