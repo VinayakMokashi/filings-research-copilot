@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from copilot.ingest.jobs import Job, JobResult, LocalRunner
+from copilot.ingest.jobs import Job, JobResult, LocalRunner, select_documents
 
 
 def test_the_runner_logs_every_result_and_survives_a_failure(tmp_path: Path) -> None:
@@ -32,3 +32,17 @@ def test_a_rerun_appends_to_the_log(tmp_path: Path) -> None:
     runner.run([Job("a")], lambda job: JobResult(job.doc_name))
 
     assert len(log_path.read_text(encoding="utf-8").splitlines()) == 2
+
+
+def test_select_documents_never_strays_beyond_question_filings_unless_asked() -> None:
+    parsed = ["APPLE_2022_10K", "BOLT_2022_10K", "ACME_2022_10K", "CRANE_2021_10K"]
+    dev, questions = {"BOLT_2022_10K"}, {"BOLT_2022_10K", "ACME_2022_10K"}
+
+    assert select_documents(parsed, dev, questions, "dev") == ["BOLT_2022_10K"]
+    assert select_documents(parsed, dev, questions, "all") == ["BOLT_2022_10K", "ACME_2022_10K"]
+    assert select_documents(parsed, dev, questions, "corpus") == [
+        "BOLT_2022_10K",
+        "ACME_2022_10K",
+        "APPLE_2022_10K",
+        "CRANE_2021_10K",
+    ]
