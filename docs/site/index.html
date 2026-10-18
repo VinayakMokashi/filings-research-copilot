@@ -248,7 +248,7 @@ td.metric{font-weight:600;white-space:nowrap}
           <li><span class="k"><span>1</span>Understand</span><p>Company 3M (CIK <span class="mono">0000066740</span>), fiscal years 2018 to 2022, annual reports (10-K).</p></li>
           <li><span class="k"><span>2</span>Route</span><p>The question needs numbers and narrative, so it goes to both the data agent and the doc agent.</p></li>
           <li><span class="k"><span>3</span>Data agent</span><p>Read-only SQL over XBRL facts tagged <span class="tag">us-gaap:PaymentsToAcquirePropertyPlantAndEquipment</span>, one value per fiscal year.</p></li>
-          <li><span class="k"><span>4</span>Doc agent</span><p>Hybrid search over Item 7, management's discussion, for passages about capital spending. Results are reranked and neighbouring paragraphs are added.</p></li>
+          <li><span class="k"><span>4</span>Doc agent</span><p>Dense search over page-sized chunks of Item 7, management's discussion, for passages about capital spending, with neighbouring paragraphs added for context.</p></li>
           <li><span class="k"><span>5</span>Validate</span><p>Each sentence is checked against its cited page or query result. Unsupported claims trigger a retry or are dropped.</p></li>
           <li><span class="k"><span>6</span>Respond</span><p>An answer with numbered citations, a five-year chart, and the SQL one click away.</p></li>
         </ol>
@@ -297,7 +297,7 @@ td.metric{font-weight:600;white-space:nowrap}
           <path class="edge" d="M832 208H878" marker-end="url(#a1)"/>
           <text class="lbl" x="855" y="200" text-anchor="middle">pass</text>
           <path class="edge" d="M579 104V70" marker-end="url(#a1)"/>
-          <text class="lbl" x="588" y="91">hybrid search</text>
+          <text class="lbl" x="588" y="91">dense search</text>
           <path class="edge" d="M579 332V362" marker-end="url(#a1)"/>
           <text class="lbl" x="588" y="351">read-only SQL</text>
           <path class="edge" d="M436 44H492" marker-end="url(#a1)"/>
@@ -330,7 +330,7 @@ td.metric{font-weight:600;white-space:nowrap}
           <g class="node" data-node="doc" tabindex="0" role="button" aria-pressed="true" aria-label="Doc agent">
             <rect class="box" x="494" y="104" width="170" height="48" rx="3"/>
             <text class="t" x="579" y="124" text-anchor="middle">Doc agent</text>
-            <text class="s" x="579" y="141" text-anchor="middle">hybrid RAG + rerank</text>
+            <text class="s" x="579" y="141" text-anchor="middle">RAG over page chunks</text>
           </g>
           <g class="node" data-node="tools" tabindex="0" role="button" aria-pressed="false" aria-label="Tools">
             <rect class="box" x="494" y="164" width="170" height="48" rx="3"/>
@@ -641,7 +641,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><h3>Serving</h3><div class="chips"><span class="chip">FastAPI</span><span class="chip">SSE</span><span class="chip">Streamlit</span><span class="chip">MCP Python SDK</span><span class="chip">Langfuse</span></div></div>
     <div><h3>Infrastructure</h3><div class="chips"><span class="chip">Docker</span><span class="chip">Terraform</span><span class="chip">GitHub Actions</span><span class="chip">ECS Fargate</span><span class="chip">RDS</span><span class="chip">S3</span><span class="chip">SQS</span><span class="chip">DynamoDB</span><span class="chip">Secrets Manager</span><span class="chip">CloudWatch</span></div></div>
   </div>
-  <p class="tnote">In use after Phases 0 and 1: LiteLLM with Groq, Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts and the evaluation harness. The rest is confirmed in a decision record when its phase lands.</p>
+  <p class="tnote">In use after Phases 0 to 2: LiteLLM with Groq, Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts, the evaluation harness, pypdfium2, and FastEmbed's bge-small, BM25 and cross-encoder models on ONNX Runtime. The rest is confirmed in a decision record when its phase lands.</p>
 </section>
 </main>
 
