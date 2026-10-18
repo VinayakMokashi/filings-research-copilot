@@ -7,7 +7,8 @@ that the chunk answers. Phase 7 trains bge-small on these pairs with in-batch ne
 Training filings leave out every filing of a test company (ADR-0006) and every filing a dev
 question uses, so a model trained on the pairs can still be compared fairly on dev. Chunks
 are sampled evenly across filings, skipping ones too short to hold an answer and ones that
-are mostly figures, such as tables and exhibit lists.
+are mostly figures, such as tables and exhibit lists, and asked about in an interleaved
+order, so a run cut short by a quota still covers every company.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ import re
 import unicodedata
 from collections import Counter
 from collections.abc import Collection, Mapping, Sequence
+from itertools import zip_longest
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -115,6 +117,27 @@ def sample_chunks(chunks: Sequence[Chunk], per_document: int, seed: int = 0) -> 
         sample = rng.sample(pool, min(per_document, len(pool)))
         picked += sorted(sample, key=lambda chunk: chunk.chunk_index)
     return picked
+
+
+def interleave(chunks: Sequence[Chunk]) -> list[Chunk]:
+    """The chunks in an order whose every prefix is spread evenly over companies and filings.
+
+    Each company's chunks are dealt round-robin across its filings, and then the companies
+    are dealt round-robin, so a run that stops early (on a daily quota, say) has covered
+    every company about equally instead of the first ones in the alphabet.
+    """
+    filings: dict[str, dict[str, list[Chunk]]] = {}
+    for chunk in chunks:
+        filings.setdefault(chunk.company, {}).setdefault(chunk.doc_name, []).append(chunk)
+    keyed: list[tuple[int, str, Chunk]] = []
+    for company, by_filing in filings.items():
+        columns = [
+            sorted(by_filing[name], key=lambda chunk: chunk.chunk_index)
+            for name in sorted(by_filing)
+        ]
+        dealt = [chunk for row in zip_longest(*columns) for chunk in row if chunk is not None]
+        keyed += [(position, company, chunk) for position, chunk in enumerate(dealt)]
+    return [chunk for _, _, chunk in sorted(keyed, key=lambda item: (item[0], item[1]))]
 
 
 def question_messages(chunk: Chunk) -> list[Message]:

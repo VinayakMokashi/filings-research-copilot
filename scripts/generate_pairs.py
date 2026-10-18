@@ -8,7 +8,10 @@ rejected.jsonl. A rerun skips chunks already tried, so an interrupted or rate-li
 just continues. Calls alternate between the fast and strong models, which have separate
 quotas and phrase questions differently; a pause between calls keeps each model under its
 per-minute limit. When a model's daily quota runs out (gpt-oss-120b allows 200,000 tokens a
-day on Groq's free tier), the run stops cleanly; `--roles fast` continues with one model.
+day on Groq's free tier), that role drops out and the run continues with the others; it
+stops cleanly when none is left. A fallback model in `FRC_LLM_FALLBACK_MODELS` takes over a
+role's calls when its own model is refused. Chunks are asked about in an interleaved order
+(`pairs.interleave`), so a run that stops early still covers every company.
 
 Usage: uv run poe generate-pairs --per-doc 6        (needs GROQ_API_KEY in .env)
        uv run poe generate-pairs --limit 5          (a quick check)
@@ -115,7 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     }
-    todo = [chunk for chunk in sample if chunk.chunk_id not in tried][: args.limit]
+    todo = [chunk for chunk in pairs.interleave(sample) if chunk.chunk_id not in tried]
+    todo = todo[: args.limit]
     print(f"{len(names)} training filings, {len(sample)} chunks sampled, {len(todo)} to ask")
 
     gateway = LLMGateway(settings)
@@ -124,14 +128,21 @@ def main(argv: list[str] | None = None) -> int:
         kept_path.open("a", encoding="utf-8", newline="\n") as kept,
         rejected_path.open("a", encoding="utf-8", newline="\n") as rejected,
     ):
+        active = list(roles)
         for number, chunk in enumerate(todo, start=1):
-            role = roles[number % len(roles)]
-            try:
-                response = ask(gateway, chunk, role)
-            except LLMError as exc:
-                if not exc.rate_limited:
-                    raise
-                print(f"The {role} model's quota is used up; run again later to continue.")
+            response = None
+            while response is None and active:
+                role = active[number % len(active)]
+                try:
+                    response = ask(gateway, chunk, role)
+                except LLMError as exc:
+                    if not exc.rate_limited:
+                        raise
+                    active.remove(role)
+                    left = ", ".join(active) or "none"
+                    print(f"The {role} model's quota is used up; roles left: {left}.")
+            if response is None:
+                print("Every model's quota is used up; run again later to continue.")
                 write_manifest(kept_path, rejected_path)
                 return QUOTA_EXHAUSTED
             question = pairs.parse_question(response.text)
