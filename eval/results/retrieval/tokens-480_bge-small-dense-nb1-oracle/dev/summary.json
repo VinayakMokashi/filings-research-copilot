@@ -2,7 +2,7 @@
   "suite": "retrieval",
   "run": "tokens-480_bge-small-dense-nb1-oracle",
   "split": "dev",
-  "created": "2026-10-17T15:10:36.906094Z",
+  "created": "2026-10-17T19:56:49.837170Z",
   "questions": 100,
   "test_split_opened": false,
   "system": {
@@ -10,14 +10,14 @@
     "strategy": "tokens-480",
     "dense_model": "BAAI/bge-small-en-v1.5",
     "late_chunking": false,
-    "index_documents": 1,
+    "index_documents": 84,
     "mode": "dense",
     "setting": "oracle",
     "fetched_chunks": 60,
     "latency_ms": {
-      "p50": 574.0,
-      "p95": 1181.9,
-      "mean": 636.4
+      "p50": 78.5,
+      "p95": 115.0,
+      "mean": 81.3
     },
     "neighbours": 1,
     "neighbours_top": 5

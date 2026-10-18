@@ -2,7 +2,7 @@
   "suite": "retrieval",
   "run": "tokens-480_bge-small-bm25-corpus",
   "split": "dev",
-  "created": "2026-10-17T15:34:53.717380Z",
+  "created": "2026-10-18T00:26:37.116086Z",
   "questions": 100,
   "test_split_opened": false,
   "system": {
@@ -15,9 +15,9 @@
     "setting": "corpus",
     "fetched_chunks": 60,
     "latency_ms": {
-      "p50": 120.1,
-      "p95": 305.8,
-      "mean": 142.6
+      "p50": 20.4,
+      "p95": 40.2,
+      "mean": 22.7
     }
   },
   "confidence": 0.95,

@@ -1,6 +1,6 @@
 # retrieval: tokens-480_bge-small-dense-rerank-minilm-l6-oracle (dev)
 
-100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 14:58 UTC
+100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 20:01 UTC
 
 | Metric | Mean | 95% interval |
 |---|---|---|
@@ -27,12 +27,12 @@
   "collection": "fb_tokens-480_bge-small",
   "dense_model": "BAAI/bge-small-en-v1.5",
   "fetched_chunks": 60,
-  "index_documents": 1,
+  "index_documents": 84,
   "late_chunking": false,
   "latency_ms": {
-    "mean": 7744.8,
-    "p50": 7281.6,
-    "p95": 10349.4
+    "mean": 2602.4,
+    "p50": 2576.3,
+    "p95": 3258.5
   },
   "mode": "dense",
   "rerank_top": 30,

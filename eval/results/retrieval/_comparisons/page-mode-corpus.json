@@ -1,0 +1,29 @@
+{
+  "metric": "recall@10",
+  "baseline": "page_bge-small-dense-corpus",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-bm25-corpus",
+      "baseline": 0.415,
+      "candidate": 0.185,
+      "difference": -0.23,
+      "low": -0.335,
+      "high": -0.125,
+      "p": 0.0002,
+      "holm_p": 0.0004,
+      "verdict": "worse"
+    },
+    {
+      "run": "page_bge-small-hybrid-corpus",
+      "baseline": 0.415,
+      "candidate": 0.315,
+      "difference": -0.1,
+      "low": -0.18,
+      "high": -0.02,
+      "p": 0.0206,
+      "holm_p": 0.0206,
+      "verdict": "worse"
+    }
+  ]
+}

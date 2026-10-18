@@ -1,6 +1,6 @@
 # retrieval: tokens-480_bge-small-bm25-corpus (dev)
 
-100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 15:34 UTC
+100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-18 00:26 UTC
 
 | Metric | Mean | 95% interval |
 |---|---|---|
@@ -30,9 +30,9 @@
   "index_documents": 84,
   "late_chunking": false,
   "latency_ms": {
-    "mean": 142.6,
-    "p50": 120.1,
-    "p95": 305.8
+    "mean": 22.7,
+    "p50": 20.4,
+    "p95": 40.2
   },
   "mode": "bm25",
   "setting": "corpus",

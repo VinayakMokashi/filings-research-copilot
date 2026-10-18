@@ -1,6 +1,6 @@
 # retrieval: tokens-480_bge-small-dense-rerank-bge-base-oracle (dev)
 
-100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 16:11 UTC
+100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 20:22 UTC
 
 | Metric | Mean | 95% interval |
 |---|---|---|
@@ -30,9 +30,9 @@
   "index_documents": 84,
   "late_chunking": false,
   "latency_ms": {
-    "mean": 25428.2,
-    "p50": 25582.0,
-    "p95": 30511.9
+    "mean": 8506.2,
+    "p50": 8675.1,
+    "p95": 9050.0
   },
   "mode": "dense",
   "rerank_top": 20,

@@ -1,6 +1,6 @@
 # retrieval: tokens-480_bge-small-dense-nb1-oracle (dev)
 
-100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 15:10 UTC
+100 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-17 19:56 UTC
 
 | Metric | Mean | 95% interval |
 |---|---|---|
@@ -27,12 +27,12 @@
   "collection": "fb_tokens-480_bge-small",
   "dense_model": "BAAI/bge-small-en-v1.5",
   "fetched_chunks": 60,
-  "index_documents": 1,
+  "index_documents": 84,
   "late_chunking": false,
   "latency_ms": {
-    "mean": 636.4,
-    "p50": 574.0,
-    "p95": 1181.9
+    "mean": 81.3,
+    "p50": 78.5,
+    "p95": 115.0
   },
   "mode": "dense",
   "neighbours": 1,

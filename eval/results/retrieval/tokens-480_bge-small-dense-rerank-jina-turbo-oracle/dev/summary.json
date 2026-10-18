@@ -2,7 +2,7 @@
   "suite": "retrieval",
   "run": "tokens-480_bge-small-dense-rerank-jina-turbo-oracle",
   "split": "dev",
-  "created": "2026-10-17T15:22:48.552327Z",
+  "created": "2026-10-17T20:07:42.384652Z",
   "questions": 100,
   "test_split_opened": false,
   "system": {
@@ -10,14 +10,14 @@
     "strategy": "tokens-480",
     "dense_model": "BAAI/bge-small-en-v1.5",
     "late_chunking": false,
-    "index_documents": 1,
+    "index_documents": 84,
     "mode": "dense",
     "setting": "oracle",
     "fetched_chunks": 60,
     "latency_ms": {
-      "p50": 13630.8,
-      "p95": 20282.3,
-      "mean": 13781.9
+      "p50": 3392.1,
+      "p95": 4728.4,
+      "mean": 3483.5
     },
     "reranker": "jinaai/jina-reranker-v1-turbo-en",
     "rerank_top": 30

@@ -1,0 +1,18 @@
+{
+  "metric": "recall@10",
+  "baseline": "tokens-480_bge-small-dense-corpus",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-dense-corpus",
+      "baseline": 0.345,
+      "candidate": 0.415,
+      "difference": 0.07,
+      "low": -0.01,
+      "high": 0.155,
+      "p": 0.11,
+      "holm_p": 0.11,
+      "verdict": "no significant difference"
+    }
+  ]
+}

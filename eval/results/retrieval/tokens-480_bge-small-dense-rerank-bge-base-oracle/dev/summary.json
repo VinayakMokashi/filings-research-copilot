@@ -2,7 +2,7 @@
   "suite": "retrieval",
   "run": "tokens-480_bge-small-dense-rerank-bge-base-oracle",
   "split": "dev",
-  "created": "2026-10-17T16:11:02.008458Z",
+  "created": "2026-10-17T20:22:02.999100Z",
   "questions": 100,
   "test_split_opened": false,
   "system": {
@@ -15,9 +15,9 @@
     "setting": "oracle",
     "fetched_chunks": 60,
     "latency_ms": {
-      "p50": 25582.0,
-      "p95": 30511.9,
-      "mean": 25428.2
+      "p50": 8675.1,
+      "p95": 9050.0,
+      "mean": 8506.2
     },
     "reranker": "BAAI/bge-reranker-base",
     "rerank_top": 20
