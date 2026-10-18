@@ -3,7 +3,9 @@
 Each document is one job: load its chunks (from `poe chunk-corpus`, or chunked here and
 cached), embed the chunks the collection lacks, and upsert them with their BM25 vectors.
 A rerun skips what is already stored, so an interrupted run just starts again. With
-`--docs all`, documents behind dev questions go first, so dev evaluation can start early.
+`--docs all` (the 84 filings behind FinanceBench's questions), documents behind dev
+questions go first, so dev evaluation can start early; `--docs corpus` takes every parsed
+filing.
 
 Writes the collection fb_<strategy>_<model> (model `jina-small-late` with `--late`), a job
 log and an index card under data/processed/indexes/.
@@ -50,7 +52,7 @@ from copilot.ingest.embed import (
     FastEmbedBM25,
     FastEmbedDense,
 )
-from copilot.ingest.jobs import Job, JobResult, LocalRunner
+from copilot.ingest.jobs import Job, JobResult, LocalRunner, select_documents
 from copilot.ingest.late_chunking import JINA_REPO, WINDOW_OVERLAP, WINDOW_TOKENS, JinaEmbedder
 from copilot.ingest.pdf import read_pages
 from copilot.logs import configure_logging
@@ -74,19 +76,17 @@ def make_chunker(strategy: str, units: DenseEmbedder | None, cache_dir: Path) ->
     raise ValueError(f"Unknown strategy {strategy!r}; choose from {', '.join(STRATEGIES)}.")
 
 
-def ordered_docs(documents: Sequence[str], dev: set[str], which: str) -> list[str]:
-    """Dev documents first (sorted), then, for `all`, the rest (sorted)."""
-    first = sorted(name for name in documents if name in dev)
-    rest = sorted(name for name in documents if name not in dev)
-    return first if which == "dev" else first + rest
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--strategy", choices=STRATEGIES, required=True)
     parser.add_argument("--model", choices=MODELS, default="bge-small")
     parser.add_argument("--late", action="store_true", help="late chunking (jina-small only)")
-    parser.add_argument("--docs", choices=("dev", "all"), default="dev")
+    parser.add_argument(
+        "--docs",
+        choices=("dev", "all", "corpus"),
+        default="dev",
+        help="dev filings, all question filings, or every parsed filing",
+    )
     parser.add_argument("--limit", type=int, help="index only the first N documents")
     parser.add_argument("--rechunk", action="store_true", help="ignore cached chunk files")
     args = parser.parse_args(argv)
@@ -104,7 +104,8 @@ def main(argv: list[str] | None = None) -> int:
     documents = fb.load_documents(fb_root)
     parsed = [path.stem for path in pages_dir.glob("*.jsonl") if path.stem in documents]
     dev = {question.doc_name for question in load_split("dev", fb_root)}
-    names = ordered_docs(parsed, dev, args.docs)[: args.limit]
+    questions = {question.doc_name for question in fb.load_questions(fb_root)}
+    names = select_documents(parsed, dev, questions, args.docs)[: args.limit]
 
     jina = JinaEmbedder() if args.model == "jina-small" else None
     dense: DenseEmbedder = jina if jina is not None else FastEmbedDense(cache_dir=cache_dir)

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import time
 import traceback
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol
@@ -73,3 +73,17 @@ class LocalRunner:
                 with self.log_path.open("a", encoding="utf-8", newline="\n") as out:
                     out.write(json.dumps(asdict(result)) + "\n")
         return results
+
+
+def select_documents(
+    parsed: Sequence[str], dev: Collection[str], questions: Collection[str], which: str
+) -> list[str]:
+    """The filings to index, dev filings first so dev evaluation can start early.
+
+    `dev` is the filings behind dev questions, `all` every filing behind a FinanceBench
+    question (the evaluation corpus), and `corpus` every parsed filing.
+    """
+    chosen = [name for name in parsed if which == "corpus" or name in questions]
+    if which == "dev":
+        chosen = [name for name in chosen if name in dev]
+    return sorted(chosen, key=lambda name: (name not in dev, name))
