@@ -1,10 +1,13 @@
 """Pacing for batch jobs on free model tiers: space out calls, retry rate limits, add up usage.
 
 Groq's free tier allows about 8,000 tokens a minute per model. A batch of a hundred calls
-sent back to back runs into that limit within seconds, so `PacedLLM` waits a fixed pause
-after every call that actually reached the model (cache hits cost nothing and don't
-wait), retries a rate-limited call after a growing pause, and adds up the latency and
-tokens of the calls it makes, so a run can report what it cost.
+sent back to back runs into that limit within seconds, so `PacedLLM` waits after every
+call that actually reached the model (cache hits cost nothing and don't wait): a fixed
+pause, or, when it knows the limit, the time the limit takes to earn back the tokens the
+call used, whichever is longer. An answer call of 4,000 tokens under a limit of 8,000 a
+minute waits 30 seconds; a short rewrite waits the fixed pause. It also retries a
+rate-limited call after a growing pause, and adds up the latency and tokens of the calls
+it makes, so a run can report what it cost.
 """
 
 from __future__ import annotations
@@ -23,9 +26,12 @@ RETRY_PAUSE_S = 30.0
 class PacedLLM:
     """Wraps a client for batch work; see the module docstring."""
 
-    def __init__(self, client: LLMClient, pause_s: float = 3.0) -> None:
+    def __init__(
+        self, client: LLMClient, pause_s: float = 3.0, tokens_per_minute: int | None = None
+    ) -> None:
         self._client = client
         self._pause_s = pause_s
+        self._tokens_per_minute = tokens_per_minute
         self.calls = 0
         self.latency_s = 0.0
         self.prompt_tokens = 0
@@ -33,6 +39,14 @@ class PacedLLM:
 
     def reset(self) -> None:
         self.calls, self.latency_s, self.prompt_tokens, self.completion_tokens = 0, 0.0, 0, 0
+
+    def pause_after(self, response: LLMResponse) -> float:
+        """Seconds to wait after a call; see the module docstring."""
+        if response.cached:
+            return 0.0
+        tokens = (response.prompt_tokens or 0) + (response.completion_tokens or 0)
+        limit = self._tokens_per_minute
+        return max(self._pause_s, 60.0 * tokens / limit if limit else 0.0)
 
     def _count(self, response: LLMResponse) -> None:
         self.calls += 1
@@ -60,8 +74,8 @@ class PacedLLM:
                     raise
                 time.sleep(RETRY_PAUSE_S * attempt)
         self._count(response)
-        if not response.cached:
-            time.sleep(self._pause_s)
+        if pause := self.pause_after(response):
+            time.sleep(pause)
         return response
 
     async def acomplete(
@@ -84,6 +98,6 @@ class PacedLLM:
                     raise
                 await asyncio.sleep(RETRY_PAUSE_S * attempt)
         self._count(response)
-        if not response.cached:
-            await asyncio.sleep(self._pause_s)
+        if pause := self.pause_after(response):
+            await asyncio.sleep(pause)
         return response

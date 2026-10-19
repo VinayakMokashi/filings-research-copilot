@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     llm_timeout_s: float = Field(default=60.0, gt=0)
     llm_max_retries: int = Field(default=2, ge=0)
     llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    llm_tokens_per_minute: int | None = Field(
+        default=8000,
+        gt=0,
+        description="Tokens a minute each model allows; batch jobs pause to stay under it.",
+    )
 
     # Local data: downloads under data/raw, built databases under data/processed
     data_dir: Path = Path("data")
