@@ -12,6 +12,12 @@ Usage:
   uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode hybrid --rerank minilm-l6
   uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode hybrid --setting corpus
   uv run poe run-retrieval --collection fb_page_bge-small --mode dense --setting understood
+  uv run poe run-retrieval --collection fb_page_bge-small --mode dense --setting understood \
+      --rewrite multi    # also search model-written rewrites
+
+Rewrites (`multi`, `hyde`, `decompose`, or `all`) call the fast model through a disk cache
+(data/cache/llm.jsonl), so a rerun spends no quota; uncached calls are paced for the free
+tier.
 """
 
 from __future__ import annotations
@@ -20,6 +26,7 @@ import argparse
 import json
 import statistics
 import time
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -42,12 +49,25 @@ from copilot.eval.splits import HeldOutError, load_split
 from copilot.ingest.embed import DenseEmbedder, FastEmbedBM25, FastEmbedDense
 from copilot.ingest.late_chunking import JinaEmbedder
 from copilot.ingest.universe import read_companies
+from copilot.llm import LLMGateway, ModelRole
+from copilot.llm.cache import CachedLLM
+from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
 from copilot.retrieval.query import CompanyMatcher, filings_from, resolve, understand
 from copilot.retrieval.rerank import RERANKERS, FastEmbedReranker, rerank
-from copilot.retrieval.search import MODES, Searcher, ranked_pages, with_neighbours
+from copilot.retrieval.rewrite import PROMPT_VERSION as REWRITE_PROMPT_VERSION
+from copilot.retrieval.rewrite import REWRITES, Rewrite, Search, expand
+from copilot.retrieval.search import (
+    MODES,
+    RRF_K,
+    Searcher,
+    ranked_pages,
+    reciprocal_rank_fusion,
+    with_neighbours,
+)
 
 FETCH = 60  # chunks per question: enough for 20 distinct pages with small chunks
+REWRITE_PAUSE_S = 3.0  # between uncached model calls, to stay under 8,000 tokens a minute
 PAGES = max(retrieval.KS)
 
 
@@ -70,9 +90,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--rerank", choices=sorted(RERANKERS), help="cross-encoder to rerank with")
     parser.add_argument("--rerank-top", type=int, default=30, help="candidates the reranker sees")
+    parser.add_argument(
+        "--rerank-query",
+        choices=("question", "rewrite"),
+        default="question",
+        help="rerank against the question, or against the first multi-query rewrite",
+    )
     parser.add_argument("--neighbours", type=int, default=0, help="chunks added on each side")
     parser.add_argument("--neighbours-top", type=int, default=5, help="hits that get neighbours")
     parser.add_argument("--setting", choices=("oracle", "corpus", "understood"), default="oracle")
+    parser.add_argument(
+        "--rewrite", help="rewrites to search too: multi, hyde, decompose (comma-separated) or all"
+    )
     parser.add_argument("--run", help="run name (derived from the configuration by default)")
     parser.add_argument("--split", choices=("dev", "test"), default="dev")
     parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
@@ -104,6 +133,22 @@ def main(argv: list[str] | None = None) -> int:
     )
     reranker = FastEmbedReranker(args.rerank, cache_dir=cache_dir) if args.rerank else None
 
+    kinds: tuple[Rewrite, ...] = ()
+    if args.rewrite:
+        asked = REWRITES if args.rewrite == "all" else tuple(args.rewrite.split(","))
+        kinds = tuple(kind for kind in REWRITES if kind in asked)
+        if not kinds or len(kinds) != len(set(asked)):
+            parser.error(f"--rewrite takes {', '.join(REWRITES)} or all")
+    llm: PacedLLM | None = None
+    cache: CachedLLM | None = None
+    if kinds:
+        models: dict[ModelRole, str] = {
+            "fast": settings.llm_fast_model,
+            "strong": settings.llm_strong_model,
+        }
+        cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
+        llm = PacedLLM(cache, pause_s=REWRITE_PAUSE_S)
+
     corpus = {q.doc_name for q in fb.load_questions(root)}
     filings = filings_from(doc for name, doc in fb.load_documents(root).items() if name in corpus)
     companies = read_companies()
@@ -112,7 +157,17 @@ def main(argv: list[str] | None = None) -> int:
     predictions: dict[str, list[retrieval.PageRef]] = {}
     latency: dict[str, float] = {}
     searched: dict[str, list[str] | None] = {}
+    rewrite_ms: dict[str, float] = {}
+    sources: dict[str, dict[str, int]] = {}
+    tokens = 0
     for question in questions:
+        searches = [Search(question.question)]
+        if llm is not None:
+            llm.reset()
+            searches = expand(llm, question.question, kinds)
+            rewrite_ms[question.id] = llm.latency_s * 1000
+            tokens += llm.prompt_tokens + llm.completion_tokens
+        sources[question.id] = dict(Counter(search.source for search in searches))
         started = time.perf_counter()
         documents: list[str] | None = None
         if args.setting == "oracle":
@@ -120,18 +175,30 @@ def main(argv: list[str] | None = None) -> int:
         elif args.setting == "understood":
             documents = resolve(understand(question.question, matcher), filings)
         searched[question.id] = documents
-        hits = searcher.search(question.question, args.mode, FETCH, documents)
+        rankings = [
+            searcher.search(search.text, args.mode, FETCH, documents, passage=search.passage)
+            for search in searches
+        ]
+        hits = rankings[0] if len(rankings) == 1 else reciprocal_rank_fusion(rankings)[:FETCH]
         if reranker is not None:
-            hits = rerank(reranker, question.question, hits, args.rerank_top)
+            rewrites = [search.text for search in searches if search.source == "multi"]
+            focus = (
+                rewrites[0] if args.rerank_query == "rewrite" and rewrites else question.question
+            )
+            hits = rerank(reranker, focus, hits, args.rerank_top)
         if args.neighbours:
             hits = with_neighbours(searcher, hits, args.neighbours_top, args.neighbours)
         predictions[question.id] = ranked_pages(hits, PAGES)
-        latency[question.id] = (time.perf_counter() - started) * 1000
+        search_ms = (time.perf_counter() - started) * 1000
+        latency[question.id] = search_ms + rewrite_ms.get(question.id, 0.0)
 
     rows = retrieval.score(questions, predictions)
     for row in rows:
         row["latency_ms"] = round(latency[row["id"]], 1)
         row["searched_filings"] = searched[row["id"]]
+        if kinds:
+            row["searches"] = sources[row["id"]]
+            row["rewrite_ms"] = round(rewrite_ms[row["id"]], 1)
     names = retrieval.metric_names()
     times = list(latency.values())
     system: dict[str, Any] = {
@@ -162,12 +229,28 @@ def main(argv: list[str] | None = None) -> int:
                 ),
             }
         }
+    if kinds and cache is not None:
+        system |= {
+            "rewrite": {
+                "kinds": list(kinds),
+                "prompt_version": REWRITE_PROMPT_VERSION,
+                "model": settings.llm_fast_model,
+                "fusion": f"RRF, k = {RRF_K}, over the question and every rewrite",
+                "tokens": tokens,
+                "cache": {"hits": cache.hits, "misses": cache.misses},
+                "latency_ms_p50": round(float(np.percentile(list(rewrite_ms.values()), 50)), 1),
+            }
+        }
     if args.mode == "hybrid":
         system |= {"rrf_k": searcher.rrf_k, "candidates_per_ranking": searcher.candidates}
         if weights:
             system |= {"rrf_weights": {"dense": weights[0], "bm25": weights[1]}}
     if reranker is not None:
-        system |= {"reranker": reranker.model_id, "rerank_top": args.rerank_top}
+        system |= {
+            "reranker": reranker.model_id,
+            "rerank_top": args.rerank_top,
+            "rerank_query": args.rerank_query,
+        }
     if args.neighbours:
         system |= {"neighbours": args.neighbours, "neighbours_top": args.neighbours_top}
 
@@ -178,7 +261,9 @@ def main(argv: list[str] | None = None) -> int:
             args.mode,
             f"w{args.rrf_weights.replace(',', '-')}" if args.rrf_weights else "",
             f"rerank-{args.rerank}" if args.rerank else "",
+            "rq" if args.rerank and args.rerank_query == "rewrite" else "",
             f"nb{args.neighbours}" if args.neighbours else "",
+            f"rw-{'-'.join(kinds)}" if kinds else "",
             args.setting,
         )
         if part
