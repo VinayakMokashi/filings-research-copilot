@@ -1,0 +1,18 @@
+{
+  "metric": "recall@10",
+  "baseline": "page_bge-small-dense-oracle",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-dense-understood",
+      "baseline": 0.63,
+      "candidate": 0.57,
+      "difference": -0.06,
+      "low": -0.11,
+      "high": -0.02,
+      "p": 0.0311,
+      "holm_p": 0.0311,
+      "verdict": "worse"
+    }
+  ]
+}
