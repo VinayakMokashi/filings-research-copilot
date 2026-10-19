@@ -40,6 +40,7 @@ class LLMResponse:
     cost_usd: float | None = None
     reasoning: str | None = None
     fallback_used: bool = False
+    cached: bool = False  # answered from `CachedLLM`'s file, with no model call
 
 
 class LLMError(RuntimeError):
