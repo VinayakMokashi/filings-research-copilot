@@ -15,6 +15,24 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-19 · Phase 3 · Query rewriting
+
+- **Goal:** search for what each question needs, not for how it was asked (step 3.2), and re-test hybrid search and reranking once the template text is gone.
+- **Done:**
+  - `copilot.llm.cache.CachedLLM`: a JSON Lines cache of model calls keyed by model, messages and parameters; `copilot.llm.pacing.PacedLLM`: pauses after uncached calls, retries rate limits, and adds up tokens and latency.
+  - `copilot.retrieval.rewrite`: multi-query, HyDE and decomposition prompts, parsing, and `expand`/`aexpand` (the question first, then the rewrites; `aexpand` requests them in parallel). `Searcher.search(passage=True)` embeds a HyDE passage as a document.
+  - `poe run-retrieval --rewrite` and `--rerank-query rewrite`; [ADR-0012](decisions/0012-query-understanding-and-rewriting.md) and a [query rewriting guide](concepts/query-rewriting.md).
+- **Commands:** `uv run poe run-retrieval --collection fb_page_bge-small --mode dense --setting understood --rewrite all` (and each rewrite alone), the hybrid and reranker re-tests, `uv run poe compare-family`, `uv run poe check`.
+- **Results** (100 dev questions, dense search over page chunks inside the resolved filings):
+  - recall@10 / MRR@10: no rewriting 0.570 / 0.381; multi-query 0.682 / 0.454; HyDE 0.682 / 0.388; decomposition 0.662 / 0.415; all three 0.722 / 0.476. Every rewrite is significantly better on recall@10; all three is also significantly better on MRR (p = 0.018).
+  - All three rewrites cost 62,700 tokens for 100 questions on the fast model, once; every rerun since came from the cache.
+  - Re-tests on the rewrites: hybrid 0.697 / 0.436 and bge-reranker-base against a rewritten query 0.692 / 0.436, neither significantly different; the reranker against the original question 0.650 / 0.335, significantly worse on MRR.
+- **Problems and fixes:**
+  - **Quota.** A hundred uncached calls back to back would exceed 8,000 tokens a minute within seconds; `PacedLLM` spaces them three seconds apart and retries refusals.
+  - **Benchmark text in results.** Rewrites paraphrase FinanceBench questions, so run files record how many searches of each kind ran, never their text.
+- **Decisions:** [ADR-0012](decisions/0012-query-understanding-and-rewriting.md): resolve the filings, search all three rewrites in parallel, keep dense search alone.
+- **Next:** context building, grounded answers with citations, and the calculator (steps 3.3 to 3.5).
+
 ### 2026-10-19 · Phase 3 · Query understanding
 
 - **Goal:** turn the company, period and form a question mentions into the filings to search (step 3.1), to close the gap Phase 2 found between searching the right filing and searching all of them.

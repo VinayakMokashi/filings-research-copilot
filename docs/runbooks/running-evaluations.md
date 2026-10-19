@@ -55,6 +55,8 @@ uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode dense --rer
 | `--setting oracle`, `corpus` or `understood` | Search only the question's own filing (default), every filing in the collection, or the filings resolved from the question's company, period and form |
 | `--rerank KEY` and `--rerank-top N` | Reorder the top N candidates with a cross-encoder: `minilm-l6`, `minilm-l12`, `jina-turbo` or `bge-base` |
 | `--neighbours 1` and `--neighbours-top 5` | Follow each of the top 5 hits with its neighbouring chunks |
+| `--rewrite multi`, `hyde`, `decompose` or `all` | Also search model-written rewrites and fuse every ranking; calls go through the cache in `data/cache/llm.jsonl` and are paced for the free tier |
+| `--rerank-query rewrite` | Rerank against the first multi-query rewrite instead of the question |
 
 The run name is built from the options (for example `tokens-480_bge-small-hybrid-corpus`), and the summary records the configuration, the index's models and each question's latency. Searching is cheap; reranking runs a model for every candidate, so on a laptop CPU a reranked run takes 10 minutes to an hour.
 

@@ -195,7 +195,7 @@ Size is relative: S < M < L.
 **Goal:** correct, cited answers from filing text, or an honest refusal.
 
 - [x] 3.1 Query understanding: company, fiscal period and form become Qdrant filters. Rule-based; across all filings, recall@10 rises from 0.415 to 0.570 ([guide](concepts/query-understanding.md)).
-- [ ] 3.2 Query rewriting: multi-query, HyDE and decomposition, run in parallel and fused.
+- [x] 3.2 Query rewriting: multi-query, HyDE and decomposition, run in parallel and fused. All three: recall@10 0.722 against 0.570 without ([ADR-0012](decisions/0012-query-understanding-and-rewriting.md)).
 - [ ] 3.3 Context building: rerank, add neighbouring chunks, pack to a token budget.
 - [ ] 3.4 Grounded generation with numbered sources and inline citations; a relevance check first, and abstention when evidence is missing.
 - [ ] 3.5 Calculator tool: the model writes the expression and a safe evaluator computes it.
