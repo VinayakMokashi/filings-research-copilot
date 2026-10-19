@@ -1,0 +1,51 @@
+{
+  "metric": "recall@10",
+  "baseline": "page_bge-small-dense-understood",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-dense-rw-multi-understood",
+      "baseline": 0.57,
+      "candidate": 0.6817,
+      "difference": 0.1117,
+      "low": 0.035,
+      "high": 0.1917,
+      "p": 0.0064,
+      "holm_p": 0.0128,
+      "verdict": "better"
+    },
+    {
+      "run": "page_bge-small-dense-rw-hyde-understood",
+      "baseline": 0.57,
+      "candidate": 0.6817,
+      "difference": 0.1117,
+      "low": 0.045,
+      "high": 0.18,
+      "p": 0.0024,
+      "holm_p": 0.0072,
+      "verdict": "better"
+    },
+    {
+      "run": "page_bge-small-dense-rw-decompose-understood",
+      "baseline": 0.57,
+      "candidate": 0.6617,
+      "difference": 0.0917,
+      "low": 0.015,
+      "high": 0.1717,
+      "p": 0.0293,
+      "holm_p": 0.0293,
+      "verdict": "better"
+    },
+    {
+      "run": "page_bge-small-dense-rw-multi-hyde-decompose-understood",
+      "baseline": 0.57,
+      "candidate": 0.7217,
+      "difference": 0.1517,
+      "low": 0.0767,
+      "high": 0.23,
+      "p": 0.0005,
+      "holm_p": 0.002,
+      "verdict": "better"
+    }
+  ]
+}
