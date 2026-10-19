@@ -6,9 +6,12 @@ any client: a call whose model, messages and parameters have been seen before re
 stored response (marked `cached=True`) instead of calling the model.
 
 Entries are appended to a JSON Lines file as they arrive, so an interrupted run keeps
-everything it has paid for. The key includes the model the role resolves to, so changing
-a role's model never returns another model's answer. Sampling at a non-zero temperature
-is still cached: a cached run replays the same sample, which is what makes it repeatable.
+everything it has paid for. A line that can't be read, such as one cut short when a run
+was killed mid-write, is skipped and counted, and the call it held is made again.
+
+The key includes the model the role resolves to, so changing a role's model never returns
+another model's answer. Sampling at a non-zero temperature is still cached: a cached run
+replays the same sample, which is what makes it repeatable.
 """
 
 from __future__ import annotations
@@ -45,12 +48,18 @@ class CachedLLM:
         self._entries: dict[str, dict[str, Any]] = {}
         self.hits = 0
         self.misses = 0
+        self.skipped = 0
         if path.exists():
             with path.open(encoding="utf-8") as lines:
                 for line in lines:
-                    if line.strip():
+                    if not line.strip():
+                        continue
+                    try:
                         record = json.loads(line)
-                        self._entries[record["key"]] = record["response"]
+                    except json.JSONDecodeError:
+                        self.skipped += 1
+                        continue
+                    self._entries[record["key"]] = record["response"]
 
     def _key(
         self,
