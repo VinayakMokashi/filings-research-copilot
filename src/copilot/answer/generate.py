@@ -33,6 +33,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from copilot.answer.calculator import Calculation, run
 from copilot.answer.context import Source
 from copilot.llm import LLMClient, LLMResponse, Message, ModelRole, system, user
+from copilot.llm.parsing import json_object
 
 PROMPT_VERSION = "2"
 ROLE: ModelRole = "strong"
@@ -107,7 +108,6 @@ def answer_messages(question: str, sources: Sequence[Source]) -> list[Message]:
     return [system(SYSTEM_PROMPT), user(f"Question: {question}\n\nSources:\n\n{blocks}")]
 
 
-_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
 _CITATION = re.compile(r"\[(\d+(?:\s*,\s*\d+)*)\]")
 _LENTICULAR = re.compile(
     r"\N{LEFT BLACK LENTICULAR BRACKET}\s*(\d+(?:\s*,\s*\d+)*)\s*"
@@ -118,12 +118,8 @@ _PLACEHOLDER = re.compile(r"\{\s*(c\d+)\s*\}")
 
 def parse_draft(text: str) -> _Draft:
     """The JSON object in a model reply, checked against the schema."""
-    body = _FENCE.sub("", text.strip())
-    start, end = body.find("{"), body.rfind("}")
-    if start < 0 or end <= start:
-        raise ValueError("The reply has no JSON object.")
     try:
-        return _Draft.model_validate(json.loads(body[start : end + 1]))
+        return _Draft.model_validate(json_object(text))
     except (json.JSONDecodeError, ValidationError) as exc:
         raise ValueError(f"The reply isn't a valid answer object: {exc}") from exc
 
