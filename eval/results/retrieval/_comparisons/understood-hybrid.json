@@ -1,0 +1,18 @@
+{
+  "metric": "recall@10",
+  "baseline": "page_bge-small-dense-understood",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-hybrid-understood",
+      "baseline": 0.57,
+      "candidate": 0.525,
+      "difference": -0.045,
+      "low": -0.115,
+      "high": 0.02,
+      "p": 0.2387,
+      "holm_p": 0.2387,
+      "verdict": "no significant difference"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "metric": "mrr@10",
+  "baseline": "page_bge-small-dense-corpus",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-dense-understood",
+      "baseline": 0.23,
+      "candidate": 0.3812,
+      "difference": 0.1512,
+      "low": 0.1039,
+      "high": 0.2029,
+      "p": 0.0001,
+      "holm_p": 0.0001,
+      "verdict": "better"
+    }
+  ]
+}
