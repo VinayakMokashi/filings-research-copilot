@@ -44,9 +44,11 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **LoRA** | Low-Rank Adaptation: fine-tuning by training small low-rank adapter matrices instead of all the weights. |
 | **McNemar's test** | A paired test for two systems' right-or-wrong outcomes that looks only at the questions where they disagree. |
 | **MCP** | Model Context Protocol: a standard for connecting AI apps (hosts) to tools and data (servers). |
+| **Model-call cache** | A file of model responses keyed by model, messages and parameters, so repeated experiment runs replay answers instead of spending quota. |
 | **Mean pooling** | Turning a model's per-token vectors into one vector for the text by averaging them. |
 | **MNRL** | MultipleNegativesRankingLoss: a contrastive loss that treats the other examples in a batch as negatives. |
 | **Model role** | A named job (`strong` or `fast`) that code asks for instead of a specific model; settings decide which model fills it. |
+| **Multi-query retrieval** | Asking a model for several rewordings of a question, searching each, and fusing the rankings. |
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions assume an AWS role with short-lived tokens, so no AWS keys are stored anywhere. |
 | **ONNX Runtime** | An engine that runs neural networks exported in the ONNX format quickly on a CPU. FastEmbed runs its models with it. |
@@ -58,6 +60,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |
+| **Query decomposition** | Splitting a question into the separate facts it needs (both parts of a ratio, both years of a change) and searching for each. |
 | **Query understanding** | Reading the company, period and form out of a question and searching only the filings that match. |
 | **RRF** | Reciprocal Rank Fusion: merge ranked lists by summing 1/(k + rank) for each item. |
 | **Running header** | Text repeated at the top or bottom of most pages, such as a "Table of Contents" link or a page number. The parser removes it. |
