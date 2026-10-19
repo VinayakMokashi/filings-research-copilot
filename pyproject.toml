@@ -73,6 +73,8 @@ check-hnsw = { cmd = "python scripts/check_hnsw.py", help = "Measure HNSW recall
 run-retrieval = { cmd = "python scripts/run_retrieval.py", help = "Run and score one retrieval configuration on FinanceBench (--collection, --mode, --rerank, --setting)" }
 compare-family = { cmd = "python scripts/compare_family.py", help = "Compare candidate runs with a baseline, Holm-adjusted across the family" }
 generate-pairs = { cmd = "python scripts/generate_pairs.py", help = "Generate synthetic question-to-chunk pairs from training filings with the LLM" }
+eval-context = { cmd = "python scripts/eval_context.py", help = "Measure how often the answer context holds an evidence page, by token budget" }
+answer-questions = { cmd = "python scripts/answer_questions.py", help = "Answer FinanceBench dev questions with the doc agent, resumably (--limit N)" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
