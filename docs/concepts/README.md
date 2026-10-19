@@ -14,7 +14,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 8 | [hnsw-and-qdrant.md](hnsw-and-qdrant.md) | How the vector index finds neighbours quickly, and when it doesn't need to | Malkov and Yashunin, HNSW (2018) | 2 | Written |
 | 9 | [retrieval-metrics.md](retrieval-metrics.md) | Recall@k, hit@k, MRR, scored by page | Manning et al., *Introduction to Information Retrieval* (2008) | 2 | Written |
 | 10 | [query-understanding.md](query-understanding.md) | Company, period and form as search filters | FinanceBench (Islam et al., 2023); Qdrant filtering docs | 3 | Written |
-| 11 | `query-rewriting.md` | Multi-query, HyDE, decomposition | Gao et al., HyDE (2022) | 3 | Planned |
+| 11 | [query-rewriting.md](query-rewriting.md) | Multi-query, HyDE, decomposition, fused | Gao et al., HyDE (2022) | 3 | Written |
 | 12 | `grounded-generation.md` | Citations, abstention, context budgets | Gao et al., *Enabling LLMs to Generate Text with Citations* (2023) | 3 | Planned |
 | 13 | `llm-as-judge.md` | Judging answers, and checking the judge | Zheng et al., *Judging LLM-as-a-Judge* (2023) | 3 | Planned |
 | 14 | `corrective-rag.md` | Grading retrieved evidence before answering | Yan et al., CRAG (2024); Asai et al., Self-RAG (2023) | 3 | Planned |
