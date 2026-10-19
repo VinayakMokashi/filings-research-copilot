@@ -7,6 +7,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **10-K / 10-Q** | Annual and quarterly reports that US public companies file with the SEC. |
 | **10-K item** | A numbered section of an annual report, such as Item 1A (Risk Factors) or Item 7 (Management's Discussion and Analysis). |
 | **52/53-week fiscal year** | A fiscal year that ends on the same weekday each year (for example the last Saturday of December), so it runs 52 or 53 weeks. |
+| **Abstention** | Saying that the sources don't contain what the question needs, and what is missing, instead of guessing. Here the answer's `answerable` flag is false. |
 | **Accession number** | SEC's unique id for one filing, such as `0000066740-24-000016`. |
 | **ADR** | Architecture Decision Record: a short note recording one decision, the options considered and why. |
 | **Bi-encoder** | A model that embeds the query and each passage separately, so passage vectors can be computed ahead of time and searched quickly. The embedding models here are bi-encoders. |
@@ -16,7 +17,9 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **CIK** | Central Index Key, the SEC's unique ID for each filer. |
 | **Citation precision** | The share of cited sources that actually support the claim they're attached to. |
 | **Company facts** | SEC's per-company JSON of every XBRL fact the company has filed, without dimensions, from `data.sec.gov/api/xbrl/companyfacts`. |
-| **Corrective RAG** | Grade the retrieved documents before generating; if they're weak, rewrite the query or fall back. |
+| **Context budget** | The most retrieved text, in tokens, that the answer prompt may hold: 3,000 here. |
+| **Context hit** | Whether at least one evidence page is among the sources the answer model sees. An answer can't be better than its context. |
+| **Corrective RAG** | Grade the retrieved documents before generating; if they're weak, rewrite the query or fall back. Here the answer model's own refusal is the grade, and the fallback is one search across all of the company's filings. |
 | **Cross-encoder** | A model that reads the query and a passage together to score relevance. Slower than embedding search, but more precise. |
 | **Data card** | A short document describing a dataset: source, licence, size, checksums, fields, splits and known issues. |
 | **Demo window** | A period when the full AWS stack is brought up for a demo and torn down afterwards, so idle time costs nothing. |
@@ -28,6 +31,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Fallback chain** | Models tried in order when a role's own model keeps failing after retries. |
 | **FinanceBench** | A benchmark of questions over real company filings, with answers and evidence pages. |
 | **Git blob id** | The SHA-1 hash git computes over a file's contents. Used here to check every downloaded file against a manifest. |
+| **Grounded answer** | An answer whose every claim cites a retrieved source that states it, so a reader can check it. |
 | **Grouped split** | A split that keeps every item of a group (here, a company) on the same side, so nothing about the group leaks across. |
 | **Held-out test set** | Questions set aside while building and opened only at milestones, so the reported result isn't tuned to them. |
 | **Hit@k** | Whether at least one relevant item appears in the top k results: 1 or 0 for each question. |
@@ -37,6 +41,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **HyDE** | Hypothetical Document Embeddings: write a hypothetical answer, embed it, and search with that instead of the raw question. |
 | **IDF** | Inverse document frequency: how rare a term is across the collection. BM25 multiplies each term's weight by it, so a rare word like a ticker counts for more than "the". |
 | **Index card** | A JSON file kept beside each Qdrant collection, recording its models, query prefix, vector and HNSW settings, payload indexes, counts and timing. |
+| **JSON mode** | A provider option that makes the model reply with one valid JSON object, so code can read the answer's fields. |
 | **LangGraph** | A library for building LLM workflows as state graphs with branches, loops and checkpoints. |
 | **Late chunking** | Run long stretches of a document through a long-context embedding model, then average each chunk's token vectors, so the chunk's vector keeps the surrounding context. |
 | **LiteLLM** | A library and proxy that gives one interface to many LLM providers, with retries and fallbacks. |
@@ -57,6 +62,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Payload index** | An index on a field stored with each Qdrant point, such as `company`, that makes searches filtered on that field fast. |
 | **pdfium** | Google's PDF engine (used in Chrome); pypdfium2 is its Python binding and this project's parser. |
 | **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
+| **Program-aided arithmetic** | The model writes a calculation as an expression and a safe evaluator computes it, instead of the model doing the arithmetic in its head (after PAL, Gao et al. 2022). |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |

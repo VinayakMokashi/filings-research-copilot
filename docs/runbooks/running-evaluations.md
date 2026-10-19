@@ -81,6 +81,24 @@ uv run poe eval-sql --predictions answers.jsonl --run sql-agent-v1
 
 Each line of a predictions file is `{"id": "s01", "sql": "SELECT ..."}`, or `{"id": "s33", "declined": true}` to decline. Queries run read-only with a step limit. Runs land in `eval/results/sql/<run>/<split>/`, with accuracy overall, for answerable and unanswerable questions, and by difficulty. After rebuilding the facts database, `uv run pytest -m integration` confirms every gold query still returns its recorded rows.
 
+## Answer dev questions
+
+The doc agent ([grounded generation](../concepts/grounded-generation.md)) answers each dev question from the filings, and `poe answer-questions` scores what it can without a judge:
+
+```bash
+uv run poe eval-context                        # is an evidence page in the context? by budget
+uv run poe answer-questions --limit 10         # a smoke run on the first 10 dev questions
+uv run poe answer-questions                    # all dev questions
+uv run poe answer-questions --run doc-agent-v2 # a new run, after changing the agent
+```
+
+Both need Qdrant with the `fb_page_bge-small` collection and `GROQ_API_KEY`. Every model call goes through the cache in `data/cache/llm.jsonl`, so the rewrites cost tokens only the first time.
+
+- **Resumable.** Each answer is appended to `data/processed/answers/<run>/dev/answers.jsonl` as soon as it arrives, and a rerun skips the questions already there. A run stopped by a daily quota continues with the same command the next day.
+- **Paced.** After each uncached call the run waits until the tokens-a-minute limit has earned back what the call used (`FRC_LLM_TOKENS_PER_MINUTE`, 8,000 by default). On Groq's free tier that is about 30 seconds an answer, and the daily cap of about 200,000 tokens allows about 35 questions a day, retries included.
+- **What is committed.** The answers file holds filing text and model answers, so it stays local. `eval/results/answers/<run>/dev/` holds only ids and numbers: `answered`, `retried`, `context_hit`, `cites_evidence`, citation counts, invalid citations, failed calculations, tokens and latency.
+- **Correctness** needs the LLM judge (step 3.6); these measures are structural.
+
 ## Compare two runs
 
 ```bash
@@ -117,4 +135,5 @@ The run's summary records that the held-out split was opened. Say so in the eval
 | `doesn't match the manifest` | A local file is corrupt or changed. Run `uv run poe fetch-financebench` again. |
 | `The test split is held out` | You asked for `--split test` without `--allow-test`. That's deliberate: see above. |
 | `Predictions don't match the questions` | The predictions file must have exactly one line per question in the split. |
+| `llm.error ... rate_limited=True` during `answer-questions` | The model's tokens-a-minute or daily cap was reached. The call is retried after 30, 60 and 90 seconds; if it still fails, the run stops with the answers so far saved. Once the daily cap resets, run the same command again and it carries on. |
 | `differ from the ones the split recorded` | The local question file no longer matches the checksums in the split file. Fetch again. |

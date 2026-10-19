@@ -196,9 +196,9 @@ Size is relative: S < M < L.
 
 - [x] 3.1 Query understanding: company, fiscal period and form become Qdrant filters. Rule-based; across all filings, recall@10 rises from 0.415 to 0.570 ([guide](concepts/query-understanding.md)).
 - [x] 3.2 Query rewriting: multi-query, HyDE and decomposition, run in parallel and fused. All three: recall@10 0.722 against 0.570 without ([ADR-0012](decisions/0012-query-understanding-and-rewriting.md)).
-- [ ] 3.3 Context building: rerank, add neighbouring chunks, pack to a token budget.
-- [ ] 3.4 Grounded generation with numbered sources and inline citations; a relevance check first, and abstention when evidence is missing.
-- [ ] 3.5 Calculator tool: the model writes the expression and a safe evaluator computes it.
+- [x] 3.3 Context building: numbered sources in fused rank order, packed to 3,000 tokens; an evidence page makes the context for 68% of dev questions. Reranking (ADR-0012) and completing split pages were tested and left out ([ADR-0013](decisions/0013-answer-format.md)).
+- [x] 3.4 Grounded generation with numbered sources and inline citations; the answer call judges whether the sources suffice, and abstains with what is missing after one retry aimed at the gap ([grounded generation](concepts/grounded-generation.md), [corrective RAG](concepts/corrective-rag.md)).
+- [x] 3.5 Calculator tool: the model writes the expression and a safe evaluator computes it; the results fill placeholders in the answer.
 - [ ] 3.6 LLM judge for answer correctness, with about 40 answers labelled by hand to measure how often the judge agrees with a person.
 - [ ] 3.7 Dev evaluation: correctness, faithfulness, citation precision, refusal rate, latency and cost; error analysis.
 
@@ -345,8 +345,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-17 | FinanceBench split grouped by company as well as stratified by question type | Keeps every test company's filings out of tuning and Phase 7 training ([ADR-0006](decisions/0006-evaluation-splits.md)) |
 | 2026-10-17 | Table-aware PDF parsing deferred | Reported numbers come from XBRL; pdfium's page text lines up with the evidence pages ([ADR-0009](decisions/0009-pdf-parsing.md)) |
 | 2026-10-18 | Retrieval baseline is dense search over page chunks; hybrid search and reranking are re-tested in Phase 3 after query rewriting | Neither beat dense search on FinanceBench's templated questions ([ADR-0011](decisions/0011-retrieval-baseline.md)) |
-| 2026-10-17 | Table-aware PDF parsing deferred | Reported numbers come from XBRL; pdfium's page text lines up with the evidence pages ([ADR-0009](decisions/0009-pdf-parsing.md)) |
-| 2026-10-18 | Retrieval baseline is dense search over page chunks; hybrid search and reranking are re-tested in Phase 3 after query rewriting | Neither beat dense search on FinanceBench's templated questions ([ADR-0011](decisions/0011-retrieval-baseline.md)) |
+| 2026-10-19 | Step 3.4's relevance check is the answer call's own verdict, and the one retry searches for what a refusal names as missing | A grading call per source would add about eight calls a question on the free tier ([ADR-0013](decisions/0013-answer-format.md)) |
 
 ## 11. Status tracker
 
