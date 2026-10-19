@@ -43,6 +43,7 @@ class Hit:
     pages: tuple[int, ...]
     section: str | None
     text: str
+    tokens: int = 0
 
     @classmethod
     def from_point(cls, point: models.ScoredPoint | models.Record) -> Hit:
@@ -55,6 +56,7 @@ class Hit:
             pages=tuple(payload["pages"]),
             section=payload.get("section"),
             text=payload["text"],
+            tokens=int(payload.get("tokens", 0)),
         )
 
 
@@ -84,16 +86,25 @@ class Searcher:
         mode: Mode = "hybrid",
         limit: int = 20,
         doc_names: Sequence[str] | None = None,
+        *,
+        passage: bool = False,
     ) -> list[Hit]:
-        """The top `limit` chunks for `query`, searching only `doc_names` if given."""
+        """The top `limit` chunks for `query`, searching only `doc_names` if given.
+
+        `passage=True` embeds the text as a document, without the query instruction, as
+        HyDE's hypothetical passages need.
+        """
         where = document_filter(doc_names)
-        if mode == "dense":
-            return self._ranking(self.dense.embed_query(query).tolist(), DENSE, where, limit)
         if mode == "bm25":
             return self._ranking(self._sparse_query(query), SPARSE, where, limit)
+        vector = (
+            self.dense.embed_documents([query])[0] if passage else self.dense.embed_query(query)
+        ).tolist()
+        if mode == "dense":
+            return self._ranking(vector, DENSE, where, limit)
         depth = max(limit, self.candidates)
         rankings = [
-            self._ranking(self.dense.embed_query(query).tolist(), DENSE, where, depth),
+            self._ranking(vector, DENSE, where, depth),
             self._ranking(self._sparse_query(query), SPARSE, where, depth),
         ]
         return reciprocal_rank_fusion(rankings, self.rrf_k, self.rrf_weights)[:limit]
