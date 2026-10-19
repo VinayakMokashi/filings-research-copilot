@@ -1,0 +1,18 @@
+{
+  "metric": "recall@10",
+  "baseline": "page_bge-small-dense-rw-multi-understood",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-dense-rw-multi-hyde-decompose-understood",
+      "baseline": 0.6817,
+      "candidate": 0.7217,
+      "difference": 0.04,
+      "low": 0.005,
+      "high": 0.085,
+      "p": 0.0936,
+      "holm_p": 0.0936,
+      "verdict": "no significant difference"
+    }
+  ]
+}

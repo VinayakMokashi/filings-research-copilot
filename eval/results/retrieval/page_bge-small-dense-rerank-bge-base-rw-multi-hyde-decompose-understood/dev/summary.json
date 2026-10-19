@@ -1,0 +1,210 @@
+{
+  "suite": "retrieval",
+  "run": "page_bge-small-dense-rerank-bge-base-rw-multi-hyde-decompose-understood",
+  "split": "dev",
+  "created": "2026-10-19T17:05:16.393470Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "collection": "fb_page_bge-small",
+    "strategy": "page",
+    "dense_model": "BAAI/bge-small-en-v1.5",
+    "late_chunking": false,
+    "index_documents": 84,
+    "mode": "dense",
+    "setting": "understood",
+    "fetched_chunks": 60,
+    "latency_ms": {
+      "p50": 12168.4,
+      "p95": 16062.9,
+      "mean": 12036.2
+    },
+    "query_understanding": {
+      "resolved": 98,
+      "own_filing_included": 98,
+      "mean_filings": 1.49
+    },
+    "rewrite": {
+      "kinds": [
+        "multi",
+        "hyde",
+        "decompose"
+      ],
+      "prompt_version": "1",
+      "model": "groq/qwen/qwen3.8-27b",
+      "fusion": "RRF, k = 60, over the question and every rewrite",
+      "tokens": 62688,
+      "cache": {
+        "hits": 300,
+        "misses": 0
+      },
+      "latency_ms_p50": 4239.1
+    },
+    "reranker": "BAAI/bge-reranker-base",
+    "rerank_top": 20,
+    "rerank_query": "question"
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "recall@5": {
+      "mean": 0.47,
+      "low": 0.375,
+      "high": 0.565
+    },
+    "recall@10": {
+      "mean": 0.65,
+      "low": 0.56,
+      "high": 0.74
+    },
+    "recall@20": {
+      "mean": 0.7866666666666666,
+      "low": 0.7066666666666666,
+      "high": 0.8616666666666667
+    },
+    "hit@5": {
+      "mean": 0.5,
+      "low": 0.4,
+      "high": 0.6
+    },
+    "hit@10": {
+      "mean": 0.67,
+      "low": 0.58,
+      "high": 0.76
+    },
+    "hit@20": {
+      "mean": 0.8,
+      "low": 0.72,
+      "high": 0.88
+    },
+    "mrr@10": {
+      "mean": 0.33473412698412697,
+      "low": 0.26341557539682536,
+      "high": 0.4105119047619048
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 34,
+        "metrics": {
+          "recall@5": {
+            "mean": 0.22058823529411764,
+            "low": 0.08823529411764706,
+            "high": 0.36764705882352944
+          },
+          "recall@10": {
+            "mean": 0.4411764705882353,
+            "low": 0.27941176470588236,
+            "high": 0.6029411764705882
+          },
+          "recall@20": {
+            "mean": 0.7401960784313725,
+            "low": 0.5931372549019607,
+            "high": 0.872549019607843
+          },
+          "hit@5": {
+            "mean": 0.23529411764705882,
+            "low": 0.08823529411764706,
+            "high": 0.38235294117647056
+          },
+          "hit@10": {
+            "mean": 0.47058823529411764,
+            "low": 0.29411764705882354,
+            "high": 0.6470588235294118
+          },
+          "hit@20": {
+            "mean": 0.7647058823529411,
+            "low": 0.6176470588235294,
+            "high": 0.8823529411764706
+          },
+          "mrr@10": {
+            "mean": 0.11348039215686274,
+            "low": 0.06380310457516343,
+            "high": 0.16985498366013066
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "recall@5": {
+            "mean": 0.6515151515151515,
+            "low": 0.5,
+            "high": 0.803030303030303
+          },
+          "recall@10": {
+            "mean": 0.9090909090909091,
+            "low": 0.803030303030303,
+            "high": 0.9848484848484849
+          },
+          "recall@20": {
+            "mean": 0.9242424242424242,
+            "low": 0.8333333333333334,
+            "high": 1.0
+          },
+          "hit@5": {
+            "mean": 0.7272727272727273,
+            "low": 0.5757575757575758,
+            "high": 0.8787878787878788
+          },
+          "hit@10": {
+            "mean": 0.9393939393939394,
+            "low": 0.8484848484848485,
+            "high": 1.0
+          },
+          "hit@20": {
+            "mean": 0.9393939393939394,
+            "low": 0.8484848484848485,
+            "high": 1.0
+          },
+          "mrr@10": {
+            "mean": 0.5832852332852333,
+            "low": 0.44843133718133726,
+            "high": 0.7202020202020202
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 33,
+        "metrics": {
+          "recall@5": {
+            "mean": 0.5454545454545454,
+            "low": 0.36363636363636365,
+            "high": 0.7272727272727273
+          },
+          "recall@10": {
+            "mean": 0.6060606060606061,
+            "low": 0.42424242424242425,
+            "high": 0.7575757575757576
+          },
+          "recall@20": {
+            "mean": 0.696969696969697,
+            "low": 0.5454545454545454,
+            "high": 0.8484848484848485
+          },
+          "hit@5": {
+            "mean": 0.5454545454545454,
+            "low": 0.36363636363636365,
+            "high": 0.7272727272727273
+          },
+          "hit@10": {
+            "mean": 0.6060606060606061,
+            "low": 0.42424242424242425,
+            "high": 0.7575757575757576
+          },
+          "hit@20": {
+            "mean": 0.696969696969697,
+            "low": 0.5454545454545454,
+            "high": 0.8484848484848485
+          },
+          "mrr@10": {
+            "mean": 0.31414141414141417,
+            "low": 0.19646464646464645,
+            "high": 0.44191919191919193
+          }
+        }
+      }
+    }
+  }
+}

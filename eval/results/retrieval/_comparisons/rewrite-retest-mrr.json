@@ -1,0 +1,40 @@
+{
+  "metric": "mrr@10",
+  "baseline": "page_bge-small-dense-rw-multi-hyde-decompose-understood",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-hybrid-rw-multi-hyde-decompose-understood",
+      "baseline": 0.4759,
+      "candidate": 0.4355,
+      "difference": -0.0404,
+      "low": -0.0939,
+      "high": 0.0124,
+      "p": 0.1355,
+      "holm_p": 0.271,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "page_bge-small-dense-rerank-bge-base-rw-multi-hyde-decompose-understood",
+      "baseline": 0.4759,
+      "candidate": 0.3347,
+      "difference": -0.1412,
+      "low": -0.2159,
+      "high": -0.0687,
+      "p": 0.0006,
+      "holm_p": 0.0018,
+      "verdict": "worse"
+    },
+    {
+      "run": "page_bge-small-dense-rerank-bge-base-rq-rw-multi-hyde-decompose-understood",
+      "baseline": 0.4759,
+      "candidate": 0.4362,
+      "difference": -0.0397,
+      "low": -0.1022,
+      "high": 0.0233,
+      "p": 0.2203,
+      "holm_p": 0.271,
+      "verdict": "no significant difference"
+    }
+  ]
+}
