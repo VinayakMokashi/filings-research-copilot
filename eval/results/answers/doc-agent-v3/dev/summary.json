@@ -1,0 +1,145 @@
+{
+  "suite": "answers",
+  "run": "doc-agent-v3",
+  "split": "dev",
+  "created": "2026-10-19T18:00:12.369988Z",
+  "questions": 10,
+  "test_split_opened": false,
+  "system": {
+    "agent": "understood filings, three rewrites, fused dense search, page chunks",
+    "retry": "on a refusal, search for what is missing across the company's filings",
+    "retry_budget_tokens": 4500,
+    "context_budget_tokens": 3000,
+    "answer_model": "groq/openai/gpt-oss-120b",
+    "rewrite_model": "groq/qwen/qwen3.8-27b",
+    "prompt_version": "2",
+    "mean_prompt_tokens": 5037,
+    "mean_completion_tokens": 702,
+    "invalid_citations": 0,
+    "calculation_errors": 0,
+    "limit": 10
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "answered": {
+      "mean": 0.9,
+      "low": 0.7,
+      "high": 1.0
+    },
+    "retried": {
+      "mean": 0.2,
+      "low": 0.0,
+      "high": 0.5
+    },
+    "uncited": {
+      "mean": 0.1,
+      "low": 0.0,
+      "high": 0.3
+    },
+    "context_hit": {
+      "mean": 0.7,
+      "low": 0.4,
+      "high": 1.0
+    },
+    "cites_evidence": {
+      "mean": 0.5,
+      "low": 0.2,
+      "high": 0.8
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 4,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "uncited": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.75,
+            "low": 0.25,
+            "high": 1.0
+          },
+          "cites_evidence": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 4,
+        "metrics": {
+          "answered": {
+            "mean": 0.75,
+            "low": 0.25,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          },
+          "uncited": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.75,
+            "low": 0.25,
+            "high": 1.0
+          },
+          "cites_evidence": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 2,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "uncited": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          },
+          "context_hit": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          },
+          "cites_evidence": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      }
+    }
+  }
+}

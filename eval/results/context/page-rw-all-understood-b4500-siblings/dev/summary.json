@@ -1,0 +1,79 @@
+{
+  "suite": "context",
+  "run": "page-rw-all-understood-b4500-siblings",
+  "split": "dev",
+  "created": "2026-10-19T17:25:30.621622Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "collection": "fb_page_bge-small",
+    "retrieval": "understood filings, three rewrites, fused dense search",
+    "budget_tokens": 4500,
+    "split_page_parts": true,
+    "mean_sources": 13.17,
+    "mean_tokens": 4461
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "context_hit": {
+      "mean": 0.68,
+      "low": 0.59,
+      "high": 0.77
+    },
+    "context_recall": {
+      "mean": 0.6566666666666666,
+      "low": 0.565,
+      "high": 0.7466666666666666
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 34,
+        "metrics": {
+          "context_hit": {
+            "mean": 0.5882352941176471,
+            "low": 0.4117647058823529,
+            "high": 0.7647058823529411
+          },
+          "context_recall": {
+            "mean": 0.5490196078431372,
+            "low": 0.38725490196078427,
+            "high": 0.7058823529411765
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "context_hit": {
+            "mean": 0.9090909090909091,
+            "low": 0.7878787878787878,
+            "high": 1.0
+          },
+          "context_recall": {
+            "mean": 0.8787878787878788,
+            "low": 0.7727272727272727,
+            "high": 0.9696969696969697
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 33,
+        "metrics": {
+          "context_hit": {
+            "mean": 0.5454545454545454,
+            "low": 0.36363636363636365,
+            "high": 0.7272727272727273
+          },
+          "context_recall": {
+            "mean": 0.5454545454545454,
+            "low": 0.36363636363636365,
+            "high": 0.7272727272727273
+          }
+        }
+      }
+    }
+  }
+}

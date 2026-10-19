@@ -1,0 +1,40 @@
+{
+  "metric": "context_hit",
+  "baseline": "page-rw-all-understood-b3000",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page-rw-all-understood-b1500",
+      "baseline": 0.68,
+      "candidate": 0.52,
+      "difference": -0.16,
+      "low": -0.24,
+      "high": -0.09,
+      "p": 0.0002,
+      "holm_p": 0.0006,
+      "verdict": "worse"
+    },
+    {
+      "run": "page-rw-all-understood-b4500",
+      "baseline": 0.68,
+      "candidate": 0.73,
+      "difference": 0.05,
+      "low": 0.01,
+      "high": 0.1,
+      "p": 0.0643,
+      "holm_p": 0.0643,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "page-rw-all-understood-b3000-siblings",
+      "baseline": 0.68,
+      "candidate": 0.61,
+      "difference": -0.07,
+      "low": -0.12,
+      "high": -0.02,
+      "p": 0.015,
+      "holm_p": 0.03,
+      "verdict": "worse"
+    }
+  ]
+}
