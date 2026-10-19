@@ -15,6 +15,31 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-19 · Phase 3 · Grounded answers
+
+- **Goal:** turn the retrieved pages into cited answers, with the arithmetic done by a calculator and an honest refusal when the evidence isn't there (steps 3.3 to 3.5).
+- **Done:**
+  - `copilot.answer.context`: numbered sources labelled with company, form, period and PDF page, packed in rank order to a token budget; `poe eval-context` measures how often an evidence page makes the context.
+  - `copilot.answer.calculator`: model-written expressions cleaned of separators, currency signs and percentages, and evaluated with the facts formula parser.
+  - `copilot.answer.generate`: the answer prompt, one JSON-mode call to the strong model, lenient parsing with schema validation, placeholders filled by the calculator, and citation checks.
+  - `copilot.answer.agent`: the doc agent (retrieve, build the context, answer) with one retry that searches for what a refusal named as missing, across the company's filings.
+  - `poe answer-questions`: answers dev questions resumably, keeps the full answers in `data/processed/answers/` and writes ids and measures to `eval/results/answers/`.
+  - `PacedLLM` now pauses in proportion to the tokens each call used (`FRC_LLM_TOKENS_PER_MINUTE`).
+  - [ADR-0013](decisions/0013-answer-format.md) and guides on [grounded generation](concepts/grounded-generation.md) and [corrective RAG](concepts/corrective-rag.md).
+- **Commands:** `uv run poe eval-context`, `uv run poe compare-family ... --metric context_hit`, `uv run poe answer-questions --run doc-agent-v1 --limit 10` (and `v2`, `v3` after each fix below), `uv run poe check`.
+- **Results:**
+  - Context (100 dev questions): an evidence page is among the sources for 0.68 of questions at 3,000 tokens (8.2 sources on average). 1,500 tokens (0.52) and completing split pages (0.61) are significantly worse; 4,500 tokens (0.73) is not significantly better.
+  - First smoke run (10 questions, prompt 1): 8 answered, no invalid citations and no failed calculations, but 3 of the 8 answers had no recognised citation, and the retry never ran.
+  - Second smoke run (prompt 2, a retry aimed at what is missing): 9 answered, 2 retried, 1 uncited; an evidence page in the context for 7 and among the cited sources for 5 (2 in the first run).
+  - Third smoke run (a 4,500-token context for the retry): the same counts, but the retried ratio question now uses the right revenue figure and matches the reference answer. About 5,700 tokens a question with retries.
+- **Problems and fixes:**
+  - **Citations in another bracket style.** gpt-oss-120b sometimes cites as 【1】, a habit from its browsing-tool training, and twice it cited nothing. The parser now reads both styles, and the second prompt says that an answer without citations is not accepted.
+  - **A retry that never ran.** The first version retried only when the company had more filings than the resolver chose. Both refusals were about Activision Blizzard, which has one filing in the corpus, and its 10-K does hold both figures. The retry now searches for what the refusal named as missing, weighted as much as all the other searches together.
+  - **The retry's new pages pushed out old ones.** At 3,000 tokens the pages found for the gap displaced the income statement, so one retried answer computed its ratio from the wrong figure. Offline, with the same searches, a 4,500-token second context held both evidence pages; the retry now gets that budget.
+  - **Tokens a minute.** At about 4,000 tokens an answer, a fixed three-second pause ran into Groq's limit of 8,000 a minute on nearly every call; the pause now scales with the tokens used, about 30 seconds an answer.
+- **Decisions:** [ADR-0013](decisions/0013-answer-format.md): 3,000-token context, one JSON answer call with citations, the calculator for arithmetic, and one retry aimed at what is missing, with a 4,500-token context.
+- **Next:** the LLM judge, checked against about 40 answers labelled by hand (step 3.6).
+
 ### 2026-10-19 · Phase 3 · Query rewriting
 
 - **Goal:** search for what each question needs, not for how it was asked (step 3.2), and re-test hybrid search and reranking once the template text is gone.
