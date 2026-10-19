@@ -1,14 +1,17 @@
 """Run one retrieval configuration over FinanceBench questions and score it (steps 2.4, 2.5).
 
 Writes a run to eval/results/retrieval/<run>/<split>/, as `poe eval-retrieval` does, with
-the pages each question retrieved, its latency and the configuration. Two settings:
+the pages each question retrieved, its latency and the configuration. Three settings:
 `oracle` searches only the question's own document (FinanceBench's single-document
-setting); `corpus` searches every document in the collection.
+setting); `corpus` searches every document in the collection; `understood` searches the
+filings that query understanding resolves from the question's company, period and form,
+or everything when it finds no company.
 
 Usage:
   uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode dense
   uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode hybrid --rerank minilm-l6
   uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode hybrid --setting corpus
+  uv run poe run-retrieval --collection fb_page_bge-small --mode dense --setting understood
 """
 
 from __future__ import annotations
@@ -25,6 +28,7 @@ import numpy as np
 from qdrant_client import QdrantClient
 
 from copilot.config import get_settings
+from copilot.eval import financebench as fb
 from copilot.eval import retrieval
 from copilot.eval.report import (
     RESULTS_DIR,
@@ -37,7 +41,9 @@ from copilot.eval.report import (
 from copilot.eval.splits import HeldOutError, load_split
 from copilot.ingest.embed import DenseEmbedder, FastEmbedBM25, FastEmbedDense
 from copilot.ingest.late_chunking import JinaEmbedder
+from copilot.ingest.universe import read_companies
 from copilot.logs import configure_logging
+from copilot.retrieval.query import CompanyMatcher, filings_from, resolve, understand
 from copilot.retrieval.rerank import RERANKERS, FastEmbedReranker, rerank
 from copilot.retrieval.search import MODES, Searcher, ranked_pages, with_neighbours
 
@@ -66,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--rerank-top", type=int, default=30, help="candidates the reranker sees")
     parser.add_argument("--neighbours", type=int, default=0, help="chunks added on each side")
     parser.add_argument("--neighbours-top", type=int, default=5, help="hits that get neighbours")
-    parser.add_argument("--setting", choices=("oracle", "corpus"), default="oracle")
+    parser.add_argument("--setting", choices=("oracle", "corpus", "understood"), default="oracle")
     parser.add_argument("--run", help="run name (derived from the configuration by default)")
     parser.add_argument("--split", choices=("dev", "test"), default="dev")
     parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
@@ -98,11 +104,22 @@ def main(argv: list[str] | None = None) -> int:
     )
     reranker = FastEmbedReranker(args.rerank, cache_dir=cache_dir) if args.rerank else None
 
+    corpus = {q.doc_name for q in fb.load_questions(root)}
+    filings = filings_from(doc for name, doc in fb.load_documents(root).items() if name in corpus)
+    companies = read_companies()
+    matcher = CompanyMatcher([c.name for c in companies], {c.name: c.ticker for c in companies})
+
     predictions: dict[str, list[retrieval.PageRef]] = {}
     latency: dict[str, float] = {}
+    searched: dict[str, list[str] | None] = {}
     for question in questions:
         started = time.perf_counter()
-        documents = [question.doc_name] if args.setting == "oracle" else None
+        documents: list[str] | None = None
+        if args.setting == "oracle":
+            documents = [question.doc_name]
+        elif args.setting == "understood":
+            documents = resolve(understand(question.question, matcher), filings)
+        searched[question.id] = documents
         hits = searcher.search(question.question, args.mode, FETCH, documents)
         if reranker is not None:
             hits = rerank(reranker, question.question, hits, args.rerank_top)
@@ -114,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
     rows = retrieval.score(questions, predictions)
     for row in rows:
         row["latency_ms"] = round(latency[row["id"]], 1)
+        row["searched_filings"] = searched[row["id"]]
     names = retrieval.metric_names()
     times = list(latency.values())
     system: dict[str, Any] = {
@@ -131,6 +149,19 @@ def main(argv: list[str] | None = None) -> int:
             "mean": round(statistics.mean(times), 1),
         },
     }
+    if args.setting == "understood":
+        resolved = [(q, searched[q.id]) for q in questions]
+        system |= {
+            "query_understanding": {
+                "resolved": sum(docs is not None for _, docs in resolved),
+                "own_filing_included": sum(
+                    docs is not None and q.doc_name in docs for q, docs in resolved
+                ),
+                "mean_filings": round(
+                    statistics.mean(len(docs) for _, docs in resolved if docs), 2
+                ),
+            }
+        }
     if args.mode == "hybrid":
         system |= {"rrf_k": searcher.rrf_k, "candidates_per_ranking": searcher.candidates}
         if weights:
