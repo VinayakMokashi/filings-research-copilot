@@ -52,7 +52,7 @@ uv run poe run-retrieval --collection fb_tokens-480_bge-small --mode dense --rer
 | Option | Meaning |
 |---|---|
 | `--mode dense`, `bm25` or `hybrid` | Which vectors to search; hybrid fuses both with RRF (k = 60), `--rrf-weights 2,1` weights the lists |
-| `--setting oracle` or `corpus` | Search only the question's own filing (default), or every filing in the collection |
+| `--setting oracle`, `corpus` or `understood` | Search only the question's own filing (default), every filing in the collection, or the filings resolved from the question's company, period and form |
 | `--rerank KEY` and `--rerank-top N` | Reorder the top N candidates with a cross-encoder: `minilm-l6`, `minilm-l12`, `jina-turbo` or `bge-base` |
 | `--neighbours 1` and `--neighbours-top 5` | Follow each of the top 5 hits with its neighbouring chunks |
 

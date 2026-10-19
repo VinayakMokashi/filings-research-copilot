@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-19 · Phase 3 · Query understanding
+
+- **Goal:** turn the company, period and form a question mentions into the filings to search (step 3.1), to close the gap Phase 2 found between searching the right filing and searching all of them.
+- **Done:**
+  - `copilot.retrieval.query`: a company matcher (names, short names, tickers of three or more letters, common aliases such as "JnJ"; case-sensitive where a name is an ordinary word), period and form cues (fiscal years, quarters, dates, 10-K/10-Q/8-K/earnings), an outlook cue, and `resolve`, which turns the cues into a filing list or None.
+  - `poe run-retrieval --setting understood`, recording which filings each question searched.
+  - A [query understanding guide](concepts/query-understanding.md).
+- **Commands:** `uv run poe run-retrieval --collection fb_page_bge-small --mode dense --setting understood`, `uv run poe compare-family`, `uv run poe check`.
+- **Results** (100 dev questions, dense search over page chunks):
+  - A company was found in 98 questions; the question's own filing was among the resolved ones in all 98, with 1.5 filings searched on average. The other two questions name no company.
+  - recall@10 0.570 and MRR@10 0.381, against 0.415 and 0.230 across all filings (both p = 0.0001), and 0.630 and 0.423 within the question's own filing.
+  - Hybrid search inside the resolved filings: recall@10 0.525, not significantly different from dense search.
+- **Problems and fixes:**
+  - **Next year's outlook lives in this year's filings.** "Is JnJ's adjusted EPS growth expected to accelerate in FY2023?" is answered by the fourth-quarter 2022 earnings release, so forward-looking questions also search the previous year.
+  - **Dates and quarters.** An August 2023 date matched a second-quarter 10-Q and an 8-K for a second-quarter question until dates were mapped to their calendar quarter.
+  - **Tickers that are words:** COST and PEP match only in upper case.
+- **Decisions:** query understanding is rule-based: it costs no model call, it is deterministic, and it already includes the right filing for every question that names a company.
+- **Next:** query rewriting (step 3.2), with every model call cached.
+
 ### 2026-10-18 · Phase 2 · Phase 2 complete
 
 - **Goal:** confirm Phase 2's exit criterion and publish the milestone.

@@ -58,6 +58,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |
+| **Query understanding** | Reading the company, period and form out of a question and searching only the filings that match. |
 | **RRF** | Reciprocal Rank Fusion: merge ranked lists by summing 1/(k + rank) for each item. |
 | **Running header** | Text repeated at the top or bottom of most pages, such as a "Table of Contents" link or a page number. The parser removes it. |
 | **Self-consistency** | Sample several reasoning paths and keep the majority answer. |
