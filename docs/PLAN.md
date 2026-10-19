@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 3, Doc agent with cited answers (next) |
+| **Current phase** | Phase 3, Doc agent with cited answers (in progress) |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -194,7 +194,7 @@ Size is relative: S < M < L.
 
 **Goal:** correct, cited answers from filing text, or an honest refusal.
 
-- [ ] 3.1 Query understanding: company, fiscal period and form become Qdrant filters.
+- [x] 3.1 Query understanding: company, fiscal period and form become Qdrant filters. Rule-based; across all filings, recall@10 rises from 0.415 to 0.570 ([guide](concepts/query-understanding.md)).
 - [ ] 3.2 Query rewriting: multi-query, HyDE and decomposition, run in parallel and fused.
 - [ ] 3.3 Context building: rerank, add neighbouring chunks, pack to a token budget.
 - [ ] 3.4 Grounded generation with numbered sources and inline citations; a relevance check first, and abstention when evidence is missing.
@@ -355,7 +355,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 0 Foundations | Done | 2026-10-15 | 2026-10-17 |
 | 1 Data and evaluation sets | Done | 2026-10-17 | 2026-10-17 |
 | 2 Ingestion and retrieval baseline | Done | 2026-10-17 | 2026-10-18 |
-| 3 Doc agent | Planned | | |
+| 3 Doc agent | In progress | 2026-10-19 | |
 | 4 Data agent | Planned | | |
 | 5 Orchestration | Planned | | |
 | 6 API, UI, MCP, observability | Planned | | |
