@@ -15,9 +15,9 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 9 | [retrieval-metrics.md](retrieval-metrics.md) | Recall@k, hit@k, MRR, scored by page | Manning et al., *Introduction to Information Retrieval* (2008) | 2 | Written |
 | 10 | [query-understanding.md](query-understanding.md) | Company, period and form as search filters | FinanceBench (Islam et al., 2023); Qdrant filtering docs | 3 | Written |
 | 11 | [query-rewriting.md](query-rewriting.md) | Multi-query, HyDE, decomposition, fused | Gao et al., HyDE (2022) | 3 | Written |
-| 12 | `grounded-generation.md` | Citations, abstention, context budgets | Gao et al., *Enabling LLMs to Generate Text with Citations* (2023) | 3 | Planned |
+| 12 | [grounded-generation.md](grounded-generation.md) | Numbered sources, citations, abstention, context budgets, the calculator | Gao et al., *Enabling LLMs to Generate Text with Citations* (2023) | 3 | Written |
 | 13 | `llm-as-judge.md` | Judging answers, and checking the judge | Zheng et al., *Judging LLM-as-a-Judge* (2023) | 3 | Planned |
-| 14 | `corrective-rag.md` | Grading retrieved evidence before answering | Yan et al., CRAG (2024); Asai et al., Self-RAG (2023) | 3 | Planned |
+| 14 | [corrective-rag.md](corrective-rag.md) | Grading the evidence, and searching more widely when it falls short | Yan et al., CRAG (2024); Asai et al., Self-RAG (2023) | 3 | Written |
 | 15 | `text-to-sql-agent.md` | Schema retrieval, guardrails, self-correction | Liu et al., NL2SQL survey (2025) | 4 | Planned |
 | 16 | `value-linking.md` | Matching names and synonyms to database values | Talaei et al., CHESS (2024) | 4 | Planned |
 | 17 | `langgraph-orchestration.md` | State graphs, branches, loops, checkpoints | LangGraph docs | 5 | Planned |
