@@ -1,0 +1,123 @@
+{
+  "suite": "answers",
+  "run": "doc-agent-v1",
+  "split": "dev",
+  "created": "2026-10-19T17:41:25.797006Z",
+  "questions": 10,
+  "test_split_opened": false,
+  "system": {
+    "agent": "understood filings, three rewrites, fused dense search, page chunks",
+    "context_budget_tokens": 3000,
+    "answer_model": "groq/openai/gpt-oss-120b",
+    "rewrite_model": "groq/qwen/qwen3.8-27b",
+    "prompt_version": "1",
+    "mean_prompt_tokens": 3839,
+    "mean_completion_tokens": 460,
+    "invalid_citations": 0,
+    "calculation_errors": 0,
+    "limit": 10
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "answered": {
+      "mean": 0.8,
+      "low": 0.5,
+      "high": 1.0
+    },
+    "retried": {
+      "mean": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "context_hit": {
+      "mean": 0.5,
+      "low": 0.2,
+      "high": 0.8
+    },
+    "cites_evidence": {
+      "mean": 0.2,
+      "low": 0.0,
+      "high": 0.5
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 4,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.75,
+            "low": 0.25,
+            "high": 1.0
+          },
+          "cites_evidence": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 4,
+        "metrics": {
+          "answered": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.25,
+            "low": 0.0,
+            "high": 0.75
+          },
+          "cites_evidence": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 2,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          },
+          "cites_evidence": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      }
+    }
+  }
+}

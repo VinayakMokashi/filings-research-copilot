@@ -1,0 +1,79 @@
+{
+  "suite": "context",
+  "run": "page-rw-all-understood-b1500",
+  "split": "dev",
+  "created": "2026-10-19T17:25:17.401408Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "collection": "fb_page_bge-small",
+    "retrieval": "understood filings, three rewrites, fused dense search",
+    "budget_tokens": 1500,
+    "split_page_parts": false,
+    "mean_sources": 4.23,
+    "mean_tokens": 1462
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "context_hit": {
+      "mean": 0.52,
+      "low": 0.42,
+      "high": 0.62
+    },
+    "context_recall": {
+      "mean": 0.5,
+      "low": 0.4,
+      "high": 0.595
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 34,
+        "metrics": {
+          "context_hit": {
+            "mean": 0.38235294117647056,
+            "low": 0.20588235294117646,
+            "high": 0.5588235294117647
+          },
+          "context_recall": {
+            "mean": 0.35294117647058826,
+            "low": 0.20588235294117646,
+            "high": 0.5147058823529411
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "context_hit": {
+            "mean": 0.8181818181818182,
+            "low": 0.6666666666666666,
+            "high": 0.9393939393939394
+          },
+          "context_recall": {
+            "mean": 0.7878787878787878,
+            "low": 0.6515151515151515,
+            "high": 0.9090909090909091
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 33,
+        "metrics": {
+          "context_hit": {
+            "mean": 0.36363636363636365,
+            "low": 0.21212121212121213,
+            "high": 0.5151515151515151
+          },
+          "context_recall": {
+            "mean": 0.36363636363636365,
+            "low": 0.21212121212121213,
+            "high": 0.5151515151515151
+          }
+        }
+      }
+    }
+  }
+}
