@@ -33,6 +33,18 @@ def test_the_cache_survives_a_restart(tmp_path: Path) -> None:
     assert (again.text, again.cached) == ("kept", True)
 
 
+def test_a_line_cut_short_is_skipped_not_fatal(tmp_path: Path) -> None:
+    path = tmp_path / "llm.jsonl"
+    CachedLLM(FakeLLM(["kept"]), path, MODELS).complete([user("q")])
+    with path.open("a", encoding="utf-8") as out:
+        out.write('{"key": "abc", "response": {"te')
+
+    cache = CachedLLM(FakeLLM([]), path, MODELS)
+
+    assert cache.skipped == 1
+    assert cache.complete([user("q")]).text == "kept"
+
+
 def test_keys_separate_messages_parameters_roles_and_models() -> None:
     base = cache_key("groq/qwen", [user("q")], {"temperature": 0.0})
 
