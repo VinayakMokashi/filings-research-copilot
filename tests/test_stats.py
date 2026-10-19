@@ -6,7 +6,14 @@ import math
 
 import pytest
 
-from copilot.eval.stats import bootstrap_ci, holm, mcnemar_exact, paired_test
+from copilot.eval.stats import (
+    bootstrap_ci,
+    cohens_kappa,
+    holm,
+    kappa_interval,
+    mcnemar_exact,
+    paired_test,
+)
 
 SCORES = [1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0] * 5  # mean 0.7, n = 50
 
@@ -106,3 +113,26 @@ def test_holm_adjusts_in_input_order() -> None:
     assert holm([0.01, 0.04, 0.03]) == pytest.approx([0.03, 0.06, 0.06])
     assert holm([0.5, 0.9]) == pytest.approx([1.0, 1.0])
     assert holm([]) == []
+
+
+def test_cohens_kappa_corrects_agreement_for_chance() -> None:
+    judge = ["correct", "correct", "correct", "incorrect", "incorrect"]
+    person = ["correct", "correct", "incorrect", "incorrect", "incorrect"]
+
+    # Observed agreement 0.8; chance 0.6 * 0.4 + 0.4 * 0.6 = 0.48.
+    assert cohens_kappa(judge, person) == pytest.approx((0.8 - 0.48) / 0.52)
+    assert cohens_kappa(judge, judge) == pytest.approx(1.0)
+    assert math.isnan(cohens_kappa(["correct"] * 3, ["correct"] * 3))
+    with pytest.raises(ValueError, match="same non-empty items"):
+        cohens_kappa(["correct"], [])
+
+
+def test_kappa_interval_brackets_the_estimate_and_is_repeatable() -> None:
+    judge = ["correct"] * 12 + ["incorrect"] * 8
+    person = ["correct"] * 10 + ["incorrect"] * 2 + ["incorrect"] * 6 + ["correct"] * 2
+
+    interval = kappa_interval(judge, person, resamples=2000, seed=3)
+
+    assert interval.low <= interval.mean <= interval.high
+    assert interval.n == 20
+    assert interval == kappa_interval(judge, person, resamples=2000, seed=3)

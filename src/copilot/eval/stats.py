@@ -6,6 +6,8 @@
   permutation (sign-flip) test.
 - `mcnemar_exact`: the exact McNemar test for two systems' right-or-wrong outcomes.
 - `holm`: Holm-Bonferroni adjusted p-values for several comparisons made at once.
+- `cohens_kappa` and `kappa_interval`: agreement between two raters (a judge and a person)
+  beyond what chance would give, with a bootstrap interval.
 
 Every resampling function takes a seed, so the same scores always give the same numbers.
 """
@@ -139,6 +141,64 @@ def holm(p_values: Sequence[float]) -> list[float]:
         running = max(running, min(1.0, (len(p_values) - position) * p_values[index]))
         adjusted[index] = running
     return adjusted
+
+
+def cohens_kappa(a: Sequence[str], b: Sequence[str]) -> float:
+    """Agreement between two raters beyond chance: 1 is perfect, 0 is what chance gives.
+
+    NaN when both raters gave every item the same one label: chance agreement is then
+    already perfect, and kappa is undefined.
+    """
+    codes_a, codes_b = _label_codes(a, b)
+    return float(_kappas(codes_a[np.newaxis, :], codes_b[np.newaxis, :])[0])
+
+
+def kappa_interval(
+    a: Sequence[str],
+    b: Sequence[str],
+    *,
+    confidence: float = CONFIDENCE,
+    resamples: int = RESAMPLES,
+    seed: int = 0,
+) -> Interval:
+    """Cohen's kappa with a percentile bootstrap interval, resampling the rated items.
+
+    Resamples where kappa is undefined are left out of the interval.
+    """
+    codes_a, codes_b = _label_codes(a, b)
+    rng = np.random.default_rng(seed)
+    picks = rng.integers(0, codes_a.size, size=(resamples, codes_a.size))
+    kappas = _kappas(codes_a[picks], codes_b[picks])
+    tail = (1.0 - confidence) / 2.0
+    low, high = np.nanquantile(kappas, [tail, 1.0 - tail])
+    return Interval(
+        mean=cohens_kappa(a, b),
+        low=float(low),
+        high=float(high),
+        n=int(codes_a.size),
+        confidence=confidence,
+    )
+
+
+def _label_codes(a: Sequence[str], b: Sequence[str]) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
+    if len(a) != len(b) or not a:
+        raise ValueError(f"Two raters need the same non-empty items, got {len(a)} and {len(b)}.")
+    labels = {label: code for code, label in enumerate(sorted(set(a) | set(b)))}
+    return (
+        np.array([labels[x] for x in a], dtype=np.int64),
+        np.array([labels[y] for y in b], dtype=np.int64),
+    )
+
+
+def _kappas(a: NDArray[np.int64], b: NDArray[np.int64]) -> NDArray[np.float64]:
+    """Kappa for each row of two equally shaped label-code matrices."""
+    observed = (a == b).mean(axis=1)
+    expected = np.zeros(a.shape[0])
+    for code in np.union1d(a, b):
+        expected += (a == code).mean(axis=1) * (b == code).mean(axis=1)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        kappas = (observed - expected) / (1.0 - expected)
+    return np.where(np.isclose(expected, 1.0), np.nan, kappas)
 
 
 def _as_scores(values: Sequence[float]) -> NDArray[np.float64]:
