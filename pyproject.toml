@@ -75,6 +75,9 @@ compare-family = { cmd = "python scripts/compare_family.py", help = "Compare can
 generate-pairs = { cmd = "python scripts/generate_pairs.py", help = "Generate synthetic question-to-chunk pairs from training filings with the LLM" }
 eval-context = { cmd = "python scripts/eval_context.py", help = "Measure how often the answer context holds an evidence page, by token budget" }
 answer-questions = { cmd = "python scripts/answer_questions.py", help = "Answer FinanceBench dev questions with the doc agent, resumably (--limit N)" }
+judge-answers = { cmd = "python scripts/judge_answers.py", help = "Judge a run's answers against the reference answers, resumably (--run NAME)" }
+label-sample = { cmd = "python scripts/sample_labels.py", help = "Pick the answers to label by hand, stratified by question type (--run NAME)" }
+judge-agreement = { cmd = "python scripts/judge_agreement.py", help = "Agreement and Cohen's kappa between a judge and the hand labels" }
 
 # ---------------------------------------------------------------------------
 # Lint and format

@@ -18,6 +18,8 @@ Correctness and faithfulness come from the judge (step 3.6).
 
 Usage: uv run poe answer-questions --limit 10        (needs GROQ_API_KEY)
        uv run poe answer-questions                   (all dev questions, resumable)
+       uv run poe answer-questions --first eval/labels/answer-correctness-sample.json
+                                                     (the questions sampled for labelling first)
 """
 
 from __future__ import annotations
@@ -96,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--run", default="doc-agent-v3", help="run name")
     parser.add_argument("--limit", type=int, help="answer only the first N questions")
+    parser.add_argument("--first", type=Path, help="a JSON file whose ids to answer first")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
 
@@ -113,6 +116,9 @@ def main(argv: list[str] | None = None) -> int:
 
     agent = build_agent(settings)
     todo = [question for question in questions if question.id not in done]
+    if args.first:
+        first = set(json.loads(args.first.read_text(encoding="utf-8"))["ids"])
+        todo.sort(key=lambda question: question.id not in first)
     print(f"{len(questions)} questions, {len(done)} already answered, {len(todo)} to go")
     with path.open("a", encoding="utf-8", newline="\n") as out:
         for number, question in enumerate(todo, start=1):
