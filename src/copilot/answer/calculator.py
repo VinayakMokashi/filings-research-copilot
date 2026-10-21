@@ -10,18 +10,25 @@ infinity.
 
 Models write numbers the way filings print them, so thousands separators, currency signs
 and a trailing percent sign on a number are cleaned up first.
+
+Models also build on their own results: a free cash flow conversion becomes `c1 = 7838 -
+442`, then `c2 = c1 / 4756`. `run_all` evaluates a list of calculations in order, and an
+expression may name an earlier calculation by its id; the name is replaced by that
+calculation's value before evaluation.
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, replace
 
 from copilot.facts.formula import FormulaError, evaluate
 
 _THOUSANDS = re.compile(r"(?<=\d),(?=\d{3}(?!\d))")
 _CURRENCY = re.compile(r"[$\N{EURO SIGN}\N{POUND SIGN}]")
 _PERCENT = re.compile(r"(?<![\d.])(\d+(?:\.\d+)?)\s*%")
+_REFERENCE = re.compile(r"\b[cC](\d+)\b")
 
 
 class CalculationError(ValueError):
@@ -70,3 +77,26 @@ def run(calculation_id: str, expression: str, decimals: int = 2) -> Calculation:
     except CalculationError as exc:
         return Calculation(calculation_id, expression, decimals, error=str(exc))
     return Calculation(calculation_id, expression, decimals, value=value)
+
+
+def run_all(requests: Sequence[tuple[str, str, int]]) -> list[Calculation]:
+    """Each (id, expression, decimals) in order; an expression may use an earlier id."""
+    values: dict[str, float] = {}
+    results = []
+    for calculation_id, expression, decimals in requests:
+        names = [f"c{number}" for number in _REFERENCE.findall(expression)]
+        unknown = [name for name in names if name not in values]
+        if unknown:
+            result = Calculation(
+                calculation_id,
+                expression,
+                decimals,
+                error=f"Uses {unknown[0]}, which has no value before this calculation.",
+            )
+        else:
+            resolved = _REFERENCE.sub(lambda m: f"({values['c' + m.group(1)]!r})", expression)
+            result = replace(run(calculation_id, resolved, decimals), expression=expression)
+        if result.value is not None:
+            values[calculation_id.lower()] = result.value
+        results.append(result)
+    return results
