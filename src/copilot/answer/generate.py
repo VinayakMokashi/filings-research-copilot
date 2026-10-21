@@ -23,14 +23,15 @@ recorded, never an exception.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from copilot.answer.calculator import Calculation, run
+from copilot.answer.calculator import Calculation, run_all
 from copilot.answer.context import Source
 from copilot.llm import LLMClient, LLMResponse, Message, ModelRole, system, user
 from copilot.llm.parsing import json_object
@@ -113,7 +114,17 @@ _LENTICULAR = re.compile(
     r"\N{LEFT BLACK LENTICULAR BRACKET}\s*(\d+(?:\s*,\s*\d+)*)\s*"
     r"(?:\N{DAGGER}[^\N{RIGHT BLACK LENTICULAR BRACKET}]*)?\N{RIGHT BLACK LENTICULAR BRACKET}"
 )
-_PLACEHOLDER = re.compile(r"\{\s*(c\d+)\s*\}")
+# "{c1}", or "{c1*100:.1f}": models sometimes scale a result in the placeholder itself, or
+# add a Python format code giving the decimals.
+_PLACEHOLDER = re.compile(
+    r"\{\s*(c\d+)\s*(?:([*/+-])\s*(\d+(?:\.\d+)?)\s*)?(?::\s*,?\.(\d)f\s*)?\}"
+)
+_OPERATIONS: dict[str, Callable[[float, float], float | None]] = {
+    "*": lambda a, b: a * b,
+    "/": lambda a, b: a / b if b else None,
+    "+": lambda a, b: a + b,
+    "-": lambda a, b: a - b,
+}
 
 
 def parse_draft(text: str) -> _Draft:
@@ -125,12 +136,20 @@ def parse_draft(text: str) -> _Draft:
 
 
 def fill(text: str, calculations: Sequence[Calculation]) -> str:
-    """The answer with each {cN} replaced by its computed value."""
+    """The answer with each {cN} (or {cN*100}, and so on) replaced by its computed value."""
     by_id = {calculation.id: calculation for calculation in calculations}
 
     def replace(match: re.Match[str]) -> str:
         calculation = by_id.get(match.group(1))
-        return calculation.text if calculation is not None else "[calculation missing]"
+        if calculation is None:
+            return "[calculation missing]"
+        operator, operand, decimals = match.group(2), match.group(3), match.group(4)
+        if decimals is not None:
+            calculation = dataclasses.replace(calculation, decimals=int(decimals))
+        if operator is None or calculation.value is None:
+            return calculation.text
+        value = _OPERATIONS[operator](calculation.value, float(operand))
+        return dataclasses.replace(calculation, value=value).text
 
     return _PLACEHOLDER.sub(replace, text)
 
@@ -172,7 +191,7 @@ def build_answer(question: str, sources: Sequence[Source], response: LLMResponse
             latency_s=response.latency_s,
             error=str(exc),
         )
-    calculations = [run(c.id, c.expression, c.decimals) for c in draft.calculations]
+    calculations = run_all([(c.id, c.expression, c.decimals) for c in draft.calculations])
     text = normalise_citations(fill(draft.answer, calculations))
     numbers = {source.number for source in sources}
     cited = citations(text)

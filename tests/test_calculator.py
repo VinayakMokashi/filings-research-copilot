@@ -37,3 +37,19 @@ def test_run_keeps_the_error_and_formats_the_result() -> None:
     assert calculator.run("c3", "1234567.891", decimals=0).text == "1,234,568"
     assert (bad.value, bad.text) == (None, "[calculation failed]")
     assert bad.error is not None
+
+
+def test_run_all_lets_a_calculation_use_an_earlier_result() -> None:
+    results = calculator.run_all(
+        [
+            ("c1", "7838 - 442", 0),
+            ("c2", "c1 / 4756 * 100", 1),
+            ("c3", "C2 - 100", 1),
+            ("c4", "c9 * 2", 2),
+        ]
+    )
+
+    assert [r.value for r in results[:3]] == pytest.approx([7396.0, 155.508, 55.508], rel=1e-4)
+    assert results[1].expression == "c1 / 4756 * 100"
+    assert results[3].value is None
+    assert "c9" in (results[3].error or "")

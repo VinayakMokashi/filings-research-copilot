@@ -54,6 +54,11 @@ def test_fill_and_citations() -> None:
         fill("It was {c1}% and { c2 }.", calculations) == "It was 4.8% and [calculation missing]."
     )
     assert citations("A [2]. B [1, 3][2]. C [10].") == [2, 1, 3, 10]
+    ratio = [run("c1", "6539 / 34229", 4)]
+    assert (
+        fill("Margin {c1*100}% ({ c1 / 0 }).", ratio) == "Margin 19.1037% ([calculation failed])."
+    )
+    assert fill("Margin {c1*100:.1f}% or {c1:,.2f}.", ratio) == "Margin 19.1% or 0.19."
 
 
 def test_build_answer_computes_cites_and_records_usage() -> None:
