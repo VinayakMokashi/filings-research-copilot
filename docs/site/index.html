@@ -207,7 +207,7 @@ td.metric{font-weight:600;white-space:nowrap}
 <header class="sheet cover">
   <div class="cover-top">
     <span class="kicker">Personal project · Build in progress</span>
-    <span class="kicker">Updated 18 October 2026</span>
+    <span class="kicker">Updated 23 October 2026</span>
   </div>
   <h1>Filings Research Copilot</h1>
   <p class="lede">Ask about a public company. The copilot answers from its SEC filings and reported financials, and <span class="hl">cites every claim to the page it came from</span><sup class="fn">1</sup>.</p>
@@ -217,7 +217,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><dt>Sources</dt><dd>10-K and 10-Q text · XBRL company facts</dd></div>
     <div><dt>Benchmark</dt><dd>FinanceBench public sample</dd></div>
     <div><dt>Target platform</dt><dd>AWS ECS Fargate, on demand · Qdrant · open models on Groq</dd></div>
-    <div><dt>Status</dt><dd>Phases 0 to 2 done; Phase 3 next</dd></div>
+    <div><dt>Status</dt><dd>Phases 0 to 3 done; Phase 4 next</dd></div>
   </dl>
   <div class="actions">
     <a class="btn btn-primary" href="#architecture">See the architecture</a>
@@ -237,7 +237,7 @@ td.metric{font-weight:600;white-space:nowrap}
   <div class="cols">
     <div>
       <div class="caps">
-        <div class="cap"><span class="kicker">Text</span><h3>Reads the filings</h3><p>Finds the passages that answer your question across 10-K and 10-Q filings, with a search setup chosen by measurement: semantic search over page-sized chunks. Every sentence in the answer points to a page.</p></div>
+        <div class="cap"><span class="kicker">Text</span><h3>Reads the filings</h3><p>Works out which filings a question is about, rewrites it three ways and searches page-sized chunks of those filings. Every sentence in the answer cites a page, a calculator does the arithmetic, and it says so when the pages don't hold the answer.</p></div>
         <div class="cap"><span class="kicker">Numbers</span><h3>Runs the numbers</h3><p>Turns questions about reported figures into read-only SQL over XBRL facts. A calculator does the arithmetic, so the model never works out a ratio in its head.</p></div>
         <div class="cap"><span class="kicker">Briefs</span><h3>Writes the brief</h3><p>For longer requests, a planner outlines the brief, writers draft sections in parallel, and an editor and a critic check each claim before it reaches you.</p></div>
       </div>
@@ -248,11 +248,11 @@ td.metric{font-weight:600;white-space:nowrap}
           <li><span class="k"><span>1</span>Understand</span><p>Company 3M (CIK <span class="mono">0000066740</span>), fiscal years 2018 to 2022, annual reports (10-K).</p></li>
           <li><span class="k"><span>2</span>Route</span><p>The question needs numbers and narrative, so it goes to both the data agent and the doc agent.</p></li>
           <li><span class="k"><span>3</span>Data agent</span><p>Read-only SQL over XBRL facts tagged <span class="tag">us-gaap:PaymentsToAcquirePropertyPlantAndEquipment</span>, one value per fiscal year.</p></li>
-          <li><span class="k"><span>4</span>Doc agent</span><p>Dense search over page-sized chunks of Item 7, management's discussion, for passages about capital spending, with neighbouring paragraphs added for context.</p></li>
+          <li><span class="k"><span>4</span>Doc agent</span><p>Dense search over page-sized chunks of 3M's 10-Ks for passages about capital spending, with the question and three rewrites of it; the best chunks become numbered sources.</p></li>
           <li><span class="k"><span>5</span>Validate</span><p>Each sentence is checked against its cited page or query result. Unsupported claims trigger a retry or are dropped.</p></li>
           <li><span class="k"><span>6</span>Respond</span><p>An answer with numbered citations, a five-year chart, and the SQL one click away.</p></li>
         </ol>
-        <p class="trace-foot">Planned behaviour, built across Phases 2 to 6.</p>
+        <p class="trace-foot">Steps 1 and 4 work today (Phases 2 and 3); the others arrive in Phases 4 to 6.</p>
       </div>
     </div>
     <aside class="note" aria-label="Design note">
@@ -369,10 +369,10 @@ td.metric{font-weight:600;white-space:nowrap}
     <aside class="detail" id="detail" aria-live="polite">
       <p class="eyebrow">Selected</p>
       <h3 id="d-title">Doc agent</h3>
-      <p class="what" id="d-what">Rewrites the question several ways, searches page-sized chunks of the filings with dense vectors (the setup that won Phase 2's measurements) and adds neighbouring passages before answering with citations. Keyword fusion and cross-encoder reranking get another test once questions are rewritten.</p>
+      <p class="what" id="d-what">Resolves the filings a question names, rewrites it three ways, searches page-sized chunks with dense vectors and answers from numbered sources in one call, citing every sentence and leaving arithmetic to a calculator. When the sources fall short, it searches once more for what is missing. On FinanceBench dev it answers 65% of questions correctly, 88% of those that ask for a figure.</p>
       <dl>
-        <div><dt>Techniques</dt><dd><div class="chips" id="d-tech"><span class="chip">Dense search over page chunks</span><span class="chip">Multi-query · HyDE · decomposition</span><span class="chip">Hybrid search and reranking, re-tested</span><span class="chip">Fine-tuned embedder, if adopted</span></div></dd></div>
-        <div><dt>Background</dt><dd id="d-refs">HyDE (Gao et al., 2022); reciprocal rank fusion (Cormack et al., 2009); passage reranking with BERT (Nogueira and Cho, 2019)</dd></div>
+        <div><dt>Techniques</dt><dd><div class="chips" id="d-tech"><span class="chip">Filings resolved from the question</span><span class="chip">Multi-query · HyDE · decomposition, fused</span><span class="chip">Dense search over page chunks</span><span class="chip">Cited sentences, calculator</span><span class="chip">Retry aimed at what is missing</span></div></dd></div>
+        <div><dt>Background</dt><dd id="d-refs">HyDE (Gao et al., 2022); reciprocal rank fusion (Cormack et al., 2009); citations (Gao et al., 2023); corrective RAG (Yan et al., 2024)</dd></div>
         <div><dt>Built in</dt><dd id="d-phase">Phases 2 and 3, embedder tuned in Phase 7</dd></div>
       </dl>
     </aside>
@@ -380,40 +380,40 @@ td.metric{font-weight:600;white-space:nowrap}
 
   <div class="cols">
     <div>
-      <h3 class="subhead">Retrieval: recall first, then precision</h3>
+      <h3 class="subhead">Retrieval: narrow to the filings, then widen recall</h3>
       <figure class="fig">
         <p class="hint">Scroll sideways to see the whole diagram.</p>
         <div class="fig-scroll">
-          <svg class="dg" viewBox="0 0 1000 176" role="img" aria-label="Retrieval funnel. Rewrite the question into four variants, search each with dense vectors over page chunks, fuse the variants' results with reciprocal rank fusion, rerank only if Phase 3 shows it helps, then add neighbouring chunks within a 6,000-token budget.">
-            <path class="edge" d="M10 40H590M10 33V47M590 33V47"/>
-            <text class="lbl" x="300" y="26" text-anchor="middle">widen recall</text>
-            <path class="edge" d="M598 40H786M598 33V47M786 33V47"/>
-            <text class="lbl" x="692" y="26" text-anchor="middle">sharpen precision</text>
+          <svg class="dg" viewBox="0 0 1000 176" role="img" aria-label="Retrieval funnel. Resolve the filings from the question's company, period and form, rewrite the question three ways, search the question and each rewrite with dense vectors over page chunks, fuse the rankings with reciprocal rank fusion, then pack the best chunks into numbered sources within 3,000 tokens.">
+            <path class="edge" d="M10 40H198M10 33V47M198 33V47"/>
+            <text class="lbl" x="104" y="26" text-anchor="middle">narrow</text>
+            <path class="edge" d="M206 40H786M206 33V47M786 33V47"/>
+            <text class="lbl" x="496" y="26" text-anchor="middle">widen recall</text>
             <path class="edge" d="M794 40H982M794 33V47M982 33V47"/>
-            <text class="lbl" x="888" y="26" text-anchor="middle">add context</text>
+            <text class="lbl" x="888" y="26" text-anchor="middle">build the context</text>
             <polygon class="st1" points="10,58 180,58 198,84 180,110 10,110"/>
             <polygon class="st2" points="206,58 376,58 394,84 376,110 206,110 224,84"/>
             <polygon class="st3" points="402,58 572,58 590,84 572,110 402,110 420,84"/>
             <polygon class="st4" points="598,58 768,58 786,84 768,110 598,110 616,84"/>
             <polygon class="st5" points="794,58 964,58 982,84 964,110 794,110 812,84"/>
-            <text class="t" x="104" y="136" text-anchor="middle">Rewrite</text>
-            <text class="s" x="104" y="154" text-anchor="middle">4 query variants</text>
-            <text class="t" x="300" y="136" text-anchor="middle">Search</text>
-            <text class="s" x="300" y="154" text-anchor="middle">dense · page chunks</text>
-            <text class="t" x="496" y="136" text-anchor="middle">Fuse</text>
-            <text class="s" x="496" y="154" text-anchor="middle">RRF across variants</text>
-            <text class="t" x="692" y="136" text-anchor="middle">Rerank</text>
-            <text class="s" x="692" y="154" text-anchor="middle">re-tested in Phase 3</text>
-            <text class="t" x="888" y="136" text-anchor="middle">Expand</text>
-            <text class="s" x="888" y="154" text-anchor="middle">+ neighbours · ≤ 6k tokens</text>
+            <text class="t" x="104" y="136" text-anchor="middle">Resolve</text>
+            <text class="s" x="104" y="154" text-anchor="middle">company · period · form</text>
+            <text class="t" x="300" y="136" text-anchor="middle">Rewrite</text>
+            <text class="s" x="300" y="154" text-anchor="middle">question + 3 rewrites</text>
+            <text class="t" x="496" y="136" text-anchor="middle">Search</text>
+            <text class="s" x="496" y="154" text-anchor="middle">dense · page chunks</text>
+            <text class="t" x="692" y="136" text-anchor="middle">Fuse</text>
+            <text class="s" x="692" y="154" text-anchor="middle">RRF across searches</text>
+            <text class="t" x="888" y="136" text-anchor="middle">Pack</text>
+            <text class="s" x="888" y="154" text-anchor="middle">numbered · ≤ 3k tokens</text>
           </svg>
         </div>
-        <figcaption>Phase 2 settled the search stage by measurement on FinanceBench dev: dense search over page-sized chunks. BM25 fusion and cross-encoder reranking lost or tied on the benchmark's templated questions, so they come back for another test once Phase 3 rewrites queries; fusion here merges the query variants' results. Each stage gets its own metric: recall@k after search, rank quality after reranking.</figcaption>
+        <figcaption>Each stage was chosen by measurement on FinanceBench dev. Resolving the filings lifts recall@10 from 0.42 to 0.57, and fusing three rewrites with the question to 0.72, above the 0.63 Phase 2 reached when each question searched only its own filing. BM25 fusion and reranking, re-tested on the rewrites, still didn't help. A 3,000-token context of numbered sources holds an evidence page for 73% of questions.</figcaption>
       </figure>
     </div>
     <aside class="note" aria-label="Design note">
       <span class="eyebrow">Design note</span>
-      <p><b>Measure each stage on its own.</b> In Phase 2, BM25 fusion and three cross-encoder rerankers failed to beat plain dense search, and page-sized chunks did more for ranking than any of them.</p>
+      <p><b>Measure each stage on its own.</b> BM25 fusion and cross-encoder reranking failed to beat plain dense search twice, before and after query rewriting, and completing split pages lowered how often the evidence reached the context.</p>
     </aside>
   </div>
 </section>
@@ -432,15 +432,15 @@ td.metric{font-weight:600;white-space:nowrap}
           <tbody>
             <tr><td class="metric">Page recall@10</td><td>Retrieval surfaces the evidence page</td><td>FinanceBench dev, evidence pages</td><td>2</td><td><span class="pill pill-done">0.63 on dev</span></td></tr>
             <tr><td class="metric">MRR@10</td><td>How high the first relevant chunk ranks</td><td>FinanceBench dev, evidence pages</td><td>2, 7</td><td><span class="pill pill-done">0.42 on dev</span></td></tr>
-            <tr><td class="metric">Answer correctness</td><td>The final answer is right, judged by an LLM checked against human labels</td><td>FinanceBench dev; held-out test at milestones</td><td>3, 5</td><td><span class="pill">Pending</span></td></tr>
-            <tr><td class="metric">Faithfulness</td><td>Every claim is supported by its citation</td><td>The same answers</td><td>3, 5</td><td><span class="pill">Pending</span></td></tr>
+            <tr><td class="metric">Answer correctness</td><td>The final answer is right, judged by an LLM checked against reference labels</td><td>FinanceBench dev; held-out test at milestones</td><td>3, 5</td><td><span class="pill pill-done">0.65 on dev</span></td></tr>
+            <tr><td class="metric">Faithfulness</td><td>Every claim is supported by its citation</td><td>The same answers</td><td>3, 5</td><td><span class="pill pill-done">0.63 on dev</span></td></tr>
             <tr><td class="metric">Execution accuracy</td><td>Generated SQL returns the gold result</td><td>42 hand-verified SQL questions</td><td>4</td><td><span class="pill">Pending</span></td></tr>
             <tr><td class="metric">Routing accuracy</td><td>Each question reaches the right specialist</td><td>198 labelled queries</td><td>5, 7</td><td><span class="pill">Pending</span></td></tr>
             <tr><td class="metric">p95 latency, cost</td><td>Fast and cheap enough to run in public</td><td>All suites, plus a load test</td><td>6, 8</td><td><span class="pill">Pending</span></td></tr>
           </tbody>
         </table>
       </div>
-      <p class="tnote">Every result is reported with a 95% bootstrap confidence interval. A change ships only when its paired improvement on the dev set is significant. The held-out test set is opened only at milestones. On dev, the Phase 2 baseline (dense search over page chunks) puts an evidence page in its top 20 for 77% of questions when it searches the right filing, against 29% for that filing's first 20 pages, and for 52% when it searches all 84 filings. Keyword routing is right 62% of the time, and the XBRL facts database reproduces all 33 FinanceBench metrics answers.</p>
+      <p class="tnote">Every result is reported with a 95% bootstrap confidence interval. A change ships only when its paired improvement on the dev set is significant. The held-out test set is opened only at milestones. On dev, the Phase 2 baseline (dense search over page chunks) puts an evidence page in its top 20 for 77% of questions when it searches the right filing, against 29% for that filing's first 20 pages, and for 52% when it searches all 84 filings. Keyword routing is right 62% of the time, and the XBRL facts database reproduces all 33 FinanceBench metrics answers. In Phase 3 the doc agent answers 65% of dev questions correctly (0.56 to 0.74), and 88% of those that ask for a figure, by an LLM judge that agreed with all 41 reference labels from a stronger model, not a person; 63% of its answers are supported sentence by sentence by their citations, at about a tenth of a cent per question.</p>
     </div>
     <aside class="note" aria-label="Lesson carried over">
       <span class="eyebrow">Lesson carried over</span>
@@ -583,7 +583,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <p class="intro">Every phase ends with tests, an evaluation wherever quality changes, and documentation: a build log entry, decision records and concept guides.</p>
   </div>
   <div class="strip" aria-hidden="true">
-    <span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
+    <span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
   </div>
   <div class="strip-scale" aria-hidden="true"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
   <div class="legend"><span><i class="sw done"></i>Done</span><span><i class="sw now"></i>In progress</span><span><i class="sw"></i>Planned</span></div>
@@ -594,7 +594,7 @@ td.metric{font-weight:600;white-space:nowrap}
         <tr><td><span class="ph">0</span>Foundations</td><td>Repo, CI, typed config, LLM gateway, local Qdrant and Postgres</td><td>Later phases land on tested ground</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">1</span>Data and eval sets</td><td>FinanceBench splits, XBRL facts tables, SQL and routing sets, eval harness</td><td>We know how we'll be judged before building</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">2</span>Retrieval baseline</td><td>PDF parsing, four chunkers, a Qdrant index, search variants measured</td><td>Retrieval settings are chosen by measurement</td><td><span class="pill pill-done">Done</span></td></tr>
-        <tr><td><span class="ph">3</span>Doc agent</td><td>Query rewriting, cited answers, abstention, calculator</td><td>Answers are grounded in filing text</td><td><span class="pill">Planned</span></td></tr>
+        <tr><td><span class="ph">3</span>Doc agent</td><td>Filing resolution, query rewriting, cited answers, a calculator, a corrective retry, an LLM judge</td><td>Answers are grounded in filing text</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">4</span>Data agent</td><td>text2sql-analyst over XBRL facts, with value linking</td><td>Reported numbers come from SQL queries</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">5</span>Orchestration</td><td>LangGraph router, validator loop, memory</td><td>One copilot routes, combines and checks</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">6</span>Product surface</td><td>FastAPI with streaming, Streamlit UI, MCP server, Langfuse traces</td><td>People and AI tools can use it</td><td><span class="pill">Planned</span></td></tr>
@@ -647,7 +647,7 @@ td.metric{font-weight:600;white-space:nowrap}
 
 <footer class="sheet foot">
   <p>Built by Vinayak Mokashi · <a href="https://github.com/VinayakMokashi/filings-research-copilot">Source on GitHub</a> · The data agent builds on <a href="https://github.com/VinayakMokashi/text2sql-analyst">text2sql-analyst</a>, an earlier project</p>
-  <p>Updated 18 October 2026</p>
+  <p>Updated 23 October 2026</p>
 </footer>
 
 <script>
@@ -657,7 +657,7 @@ td.metric{font-weight:600;white-space:nowrap}
     api: { title: "API service", what: "A FastAPI service that checks per-visitor quotas, answers repeated questions from a semantic cache, and streams answers back as they are written.", tech: ["FastAPI + SSE", "Quotas in DynamoDB", "Semantic cache"], refs: "GPTCache (semantic caching); FastAPI documentation", phase: "Phase 6" },
     router: { title: "Router", what: "Decides which specialists a question needs. Phase 5 compares an LLM router with a semantic router over labelled examples. Phase 7 trains a LoRA classifier on the LLM router's labels and keeps whichever is best on accuracy, latency and cost.", tech: ["Semantic routing", "LoRA classifier", "LLM router as teacher"], refs: "LoRA (Hu et al., 2021); semantic routing over labelled examples", phase: "Phase 5, LoRA router compared in Phase 7" },
     qdrant: { title: "Qdrant", what: "The vector database. Every chunk is stored with a dense vector, a BM25 sparse vector, and metadata for filtering by company, year, form, section and page.", tech: ["Dense + BM25 vectors per chunk", "Payload indexes", "Exact search at this size"], refs: "HNSW (Malkov and Yashunin, 2018); BM25 (Robertson and Zaragoza, 2009)", phase: "Phase 2" },
-    doc: { title: "Doc agent", what: "Rewrites the question several ways, searches page-sized chunks of the filings with dense vectors (the setup that won Phase 2's measurements) and adds neighbouring passages before answering with citations. Keyword fusion and cross-encoder reranking get another test once questions are rewritten.", tech: ["Dense search over page chunks", "Multi-query · HyDE · decomposition", "Hybrid search and reranking, re-tested", "Fine-tuned embedder, if adopted"], refs: "HyDE (Gao et al., 2022); reciprocal rank fusion (Cormack et al., 2009); passage reranking with BERT (Nogueira and Cho, 2019)", phase: "Phases 2 and 3, embedder tuned in Phase 7" },
+    doc: { title: "Doc agent", what: "Resolves the filings a question names, rewrites it three ways, searches page-sized chunks with dense vectors and answers from numbered sources in one call, citing every sentence and leaving arithmetic to a calculator. When the sources fall short, it searches once more for what is missing. On FinanceBench dev it answers 65% of questions correctly, 88% of those that ask for a figure.", tech: ["Filings resolved from the question", "Multi-query · HyDE · decomposition, fused", "Dense search over page chunks", "Cited sentences, calculator", "Retry aimed at what is missing"], refs: "HyDE (Gao et al., 2022); reciprocal rank fusion (Cormack et al., 2009); citations (Gao et al., 2023); corrective RAG (Yan et al., 2024)", phase: "Phases 2 and 3, embedder tuned in Phase 7" },
     tools: { title: "Tools", what: "A safe calculator for ratios and growth rates, and fetchers for new filings. Every tool is read-only, so a misled model cannot change anything.", tech: ["Tool calling", "Safe expression evaluation"], refs: "ReAct (Yao et al., 2023)", phase: "Phase 3" },
     brief: { title: "Brief crew", what: "For longer requests. A Self-Discover planner outlines the brief, writers draft sections in parallel, an editor merges them, and a critic checks each claim.", tech: ["Self-Discover", "Multi-agent DAG", "Reflection", "LLM jury + judge"], refs: "Self-Discover (Zhou et al., 2024); Self-Refine (Madaan et al., 2023)", phase: "Phase 7" },
     data: { title: "Data agent", what: "The text2sql-analyst pipeline pointed at XBRL facts. It picks tables, links names like 3M to tickers, writes SQL, checks it with sqlglot and runs it read-only.", tech: ["Schema retrieval", "Value linking", "SQL guardrails", "Self-correction"], refs: "NL2SQL survey (Liu et al., 2025); CHESS (Talaei et al., 2024)", phase: "Phase 4" },
