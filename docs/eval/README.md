@@ -4,6 +4,7 @@
 |---|---|---|
 | [Retrieval baseline](retrieval-baseline.md) | 2 | Which chunking, search mode, reranker and context expansion to start from |
 | [Doc agent: dev evaluation](doc-agent-dev.md) | 3 | How often the doc agent answers correctly from filing text, how well its citations hold up, what it costs, and where the wrong answers come from |
+| [Data agent: FinanceBench's metrics questions](data-agent-financebench.md) | 4 | Whether SQL over the facts database answers FinanceBench's figure questions better than reading filing pages, and at what cost |
 
 One report per experiment, with these sections:
 
@@ -45,6 +46,8 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [doc-agent-v4-full--qwen3.8-27b-p2](../../eval/results/errors/doc-agent-v4-full--qwen3.8-27b-p2/dev/summary.md) | Errors | Dev | 18 wrong with the evidence in context; 11 without | Error categories, model latency and cost |
 | [doc-agent-v3-full--qwen3.8-27b-p2](../../eval/results/judge-agreement/doc-agent-v3-full--qwen3.8-27b-p2/dev/summary.md) | Judge agreement | Dev, 41 labelled | agree 1.00; kappa 1.00 | The default answer judge against reference labels from a stronger model ([ADR-0014](../decisions/0014-answer-judge.md)) |
 | [doc-agent-v3-full--gpt-oss-20b-p2](../../eval/results/judge-agreement/doc-agent-v3-full--gpt-oss-20b-p2/dev/summary.md) | Judge agreement | Dev, 41 labelled | agree 0.93 (0.83 to 1.00); kappa 0.84 (0.63 to 1.00) | The second judge against the same labels |
+| [data-agent-v1--qwen3.8-27b-p2](../../eval/results/correctness/data-agent-v1--qwen3.8-27b-p2/dev/summary.md) | Correctness | Dev, 33 metrics | correct 0.97 (exact 0.84 to 1.00) | The data agent on FinanceBench's metrics questions, against the doc agent's 0.88 on the same questions ([report](data-agent-financebench.md)); the second judge sits beside it |
+| [data-agent-v1](../../eval/results/answers/data-agent-v1/dev/summary.md) | Answers | Dev, 33 metrics | answered 1.00; repaired 0.03 | That run: no declines or failures; tokens, model latency and cost |
 | [sql-agent-v2](../../eval/results/sql/sql-agent-v2/dev/summary.md) | SQL | Dev | accuracy 1.000 (exact 0.88 to 1.00) | The data agent with value linking ([guide](../concepts/value-linking.md)) |
 | [sql-agent-v1](../../eval/results/sql/sql-agent-v1/dev/summary.md) | SQL | Dev | accuracy 0.607 (0.43 to 0.79) | The data agent: text2sql-analyst over the facts database, before value linking ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)) |
 | [majority](../../eval/results/routing/majority/dev/summary.md) | Routing | Dev | accuracy 0.217 (0.152 to 0.290) | Always the most common route |
