@@ -1,0 +1,103 @@
+{
+  "suite": "correctness",
+  "run": "doc-agent-v3-full--gpt-oss-20b-p2",
+  "split": "dev",
+  "created": "2026-10-21T15:44:15.315877Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "answers_run": "doc-agent-v3-full",
+    "judge_model": "groq/openai/gpt-oss-20b",
+    "judge_prompt_version": "2",
+    "judge_errors": 0,
+    "judge_tokens": 81079,
+    "verdicts": {
+      "correct": 64,
+      "incorrect": 30,
+      "refused": 6
+    }
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "correct": {
+      "mean": 0.64,
+      "low": 0.55,
+      "high": 0.73
+    },
+    "incorrect": {
+      "mean": 0.3,
+      "low": 0.21,
+      "high": 0.39
+    },
+    "refused": {
+      "mean": 0.06,
+      "low": 0.02,
+      "high": 0.11
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 34,
+        "metrics": {
+          "correct": {
+            "mean": 0.5588235294117647,
+            "low": 0.38235294117647056,
+            "high": 0.7352941176470589
+          },
+          "incorrect": {
+            "mean": 0.38235294117647056,
+            "low": 0.23529411764705882,
+            "high": 0.5588235294117647
+          },
+          "refused": {
+            "mean": 0.058823529411764705,
+            "low": 0.0,
+            "high": 0.14705882352941177
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "correct": {
+            "mean": 0.8787878787878788,
+            "low": 0.7575757575757576,
+            "high": 0.9696969696969697
+          },
+          "incorrect": {
+            "mean": 0.06060606060606061,
+            "low": 0.0,
+            "high": 0.15151515151515152
+          },
+          "refused": {
+            "mean": 0.06060606060606061,
+            "low": 0.0,
+            "high": 0.15151515151515152
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 33,
+        "metrics": {
+          "correct": {
+            "mean": 0.48484848484848486,
+            "low": 0.30303030303030304,
+            "high": 0.6666666666666666
+          },
+          "incorrect": {
+            "mean": 0.45454545454545453,
+            "low": 0.30303030303030304,
+            "high": 0.6363636363636364
+          },
+          "refused": {
+            "mean": 0.06060606060606061,
+            "low": 0.0,
+            "high": 0.15151515151515152
+          }
+        }
+      }
+    }
+  }
+}
