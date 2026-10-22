@@ -5,6 +5,8 @@ text2sql-analyst's pipeline, set up for this project:
 - **Every table is offered.** The facts database has seven tables, few enough to show the
   table-selection step whole, so `AllTablesRetriever` takes the place of a vector index.
   The descriptions are the hand-written ones in data/reference/facts_descriptions.json.
+- **Value linking** (`copilot.sql.linking`): the companies a question names, the metric
+  names, the definitions of combined measures and what fiscal years mean, as hints.
 - **Model calls go through the gateway** (`GatewayLLM`): SQL on the strong model, table
   selection and the written analysis on the fast one, cached on disk in a file of their
   own and paced for the free tier.
@@ -32,6 +34,7 @@ from copilot.llm import LLMClient, LLMGateway, ModelRole
 from copilot.llm.cache import CachedLLM
 from copilot.llm.pacing import PacedLLM
 from copilot.sql.adapter import GatewayLLM
+from copilot.sql.linking import FactsLinker
 
 DESCRIPTIONS_FILE = Path("data/reference/facts_descriptions.json")
 CACHE_FILE = "sql.jsonl"
@@ -57,8 +60,12 @@ def build_pipeline(
     *,
     db_path: Path | None = None,
     descriptions: Mapping[str, str] | None = None,
+    linking: bool = True,
 ) -> Pipeline:
-    """text2sql-analyst's pipeline over the facts database, with this project's models."""
+    """text2sql-analyst's pipeline over the facts database, with this project's models.
+
+    `linking=False` leaves out value linking, as the first baseline ran.
+    """
     path = db_path or facts_db_path(settings)
     # The models come from the gateway, so text2sql-analyst's own provider is never used.
     options = Text2SQLSettings(db_path=path, llm_provider="fake")
@@ -75,4 +82,5 @@ def build_pipeline(
         TableSelector(helper),
         SQLGenerator(sql_llm, options.sql_dialect, options.sample_rows),
         Analyst(helper, options.analysis_rows),
+        linker=FactsLinker.read(path) if linking else None,
     )
