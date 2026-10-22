@@ -1,0 +1,62 @@
+{
+  "suite": "correctness",
+  "run": "data-agent-v1--gpt-oss-20b-p2",
+  "split": "dev",
+  "created": "2026-10-22T23:34:44.241136Z",
+  "questions": 33,
+  "test_split_opened": false,
+  "system": {
+    "answers_run": "data-agent-v1",
+    "judge_model": "groq/openai/gpt-oss-20b",
+    "judge_prompt_version": "2",
+    "judge_errors": 0,
+    "judge_tokens": 23381,
+    "verdicts": {
+      "correct": 32,
+      "incorrect": 1
+    }
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "correct": {
+      "mean": 0.9696969696969697,
+      "low": 0.9090909090909091,
+      "high": 1.0
+    },
+    "incorrect": {
+      "mean": 0.030303030303030304,
+      "low": 0.0,
+      "high": 0.09090909090909091
+    },
+    "refused": {
+      "mean": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    }
+  },
+  "by": {
+    "question_type": {
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "correct": {
+            "mean": 0.9696969696969697,
+            "low": 0.9090909090909091,
+            "high": 1.0
+          },
+          "incorrect": {
+            "mean": 0.030303030303030304,
+            "low": 0.0,
+            "high": 0.09090909090909091
+          },
+          "refused": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      }
+    }
+  }
+}
