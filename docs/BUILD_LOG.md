@@ -15,6 +15,33 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 4 · Value linking
+
+- **Goal:** give the data agent the database values its questions refer to, which the schema doesn't show (steps 4.2 and 4.3).
+- **Done:**
+  - **Upstream:** text2sql-analyst [PR #2](https://github.com/VinayakMokashi/text2sql-analyst/pull/2) (version 0.3.0) adds `text2sql.linking`:
+    - `ColumnCatalogue`, a short column's values with labels;
+    - `ValueMatcher`, values a question mentions, by name or alias;
+    - `StaticLinker`, and `Pipeline(..., linker=...)`, which adds a linker's hints to every question.
+  - Pinned at bfaafdf.
+  - `copilot.sql.linking.FactsLinker`. The hints:
+    - each company the question names (the query-understanding matcher), with its database name, CIK and fiscal-year coverage;
+    - every company in the database;
+    - the metric catalogue;
+    - definitions of combined measures;
+    - notes on fiscal years and on naming companies.
+  - `poe run-sql-agent --no-linking` reproduces the baseline; a [value linking guide](concepts/value-linking.md).
+- **Commands:** `uv add "text2sql-analyst @ git+...@bfaafdf"`, `uv run poe run-sql-agent`, `uv run poe compare-runs eval/results/sql/sql-agent-v1/dev eval/results/sql/sql-agent-v2/dev --metric accuracy`, `uv run poe check`.
+- **Results** (28 dev questions):
+  - All 28 right: accuracy 1.000, exact 95% interval 0.88 to 1.00, against 0.607 without linking (+0.393, p = 0.001).
+  - All seven unanswerable questions were declined at table selection, citing the hints.
+  - About 3,300 tokens a question, 1,000 more than without linking.
+- **Problems and fixes:**
+  - **A perfect score's interval.** The bootstrap interval collapses to a point when every answer is right, so the exact binomial interval is reported instead.
+  - **Tuned on dev.** The definitions of combined measures were written after reading the baseline's errors, and the dev set asks for those measures. The fair checks are FinanceBench's metrics questions (step 4.5) and the SQL test split at the end of Phase 4.
+- **Decisions:** value linking goes in as hints, not as changes to text2sql-analyst's prompts. The parts any database can use went upstream; companies, coverage and definitions stay here.
+- **Next:** the data agent as a typed tool (step 4.4), then FinanceBench's metrics questions against the doc agent (step 4.5).
+
 ### 2026-10-23 · Phase 4 · Data agent baseline
 
 - **Goal:** answer questions about reported figures with SQL over the facts database by reusing text2sql-analyst, and measure where it starts (step 4.1).
