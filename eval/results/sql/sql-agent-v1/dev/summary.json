@@ -1,0 +1,179 @@
+{
+  "suite": "sql",
+  "run": "sql-agent-v1",
+  "split": "dev",
+  "created": "2026-10-22T22:08:51.689692Z",
+  "questions": 28,
+  "test_split_opened": false,
+  "system": {
+    "agent": "text2sql-analyst over the facts database, every table offered",
+    "text2sql_analyst": "0.2.0",
+    "sql_model": "groq/openai/gpt-oss-120b",
+    "helper_model": "groq/qwen/qwen3.8-27b",
+    "repaired": 0,
+    "errors": 0,
+    "mean_tokens": 2345,
+    "model_latency_s": {
+      "p50": 1.56,
+      "p95": 2.16
+    },
+    "limit": null
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.6071428571428571,
+      "low": 0.42857142857142855,
+      "high": 0.7857142857142857
+    }
+  },
+  "by": {
+    "answerable": {
+      "answerable": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5714285714285714,
+            "low": 0.38095238095238093,
+            "high": 0.7619047619047619
+          }
+        }
+      },
+      "unanswerable": {
+        "questions": 7,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.7142857142857143,
+            "low": 0.2857142857142857,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "difficulty": {
+      "easy": {
+        "questions": 8,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5,
+            "low": 0.125,
+            "high": 0.875
+          }
+        }
+      },
+      "hard": {
+        "questions": 8,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5,
+            "low": 0.125,
+            "high": 0.875
+          }
+        }
+      },
+      "medium": {
+        "questions": 12,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.75,
+            "low": 0.5,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "category": {
+      "aggregate": {
+        "questions": 2,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "comparison": {
+        "questions": 1,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "growth": {
+        "questions": 1,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "lookup": {
+        "questions": 7,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5714285714285714,
+            "low": 0.14285714285714285,
+            "high": 0.8571428571428571
+          }
+        }
+      },
+      "provenance": {
+        "questions": 2,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      },
+      "ranking": {
+        "questions": 3,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.3333333333333333,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      },
+      "ratio": {
+        "questions": 3,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.3333333333333333,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      },
+      "trend": {
+        "questions": 2,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5,
+            "low": 0.0,
+            "high": 1.0
+          }
+        }
+      },
+      "unanswerable": {
+        "questions": 7,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.7142857142857143,
+            "low": 0.2857142857142857,
+            "high": 1.0
+          }
+        }
+      }
+    }
+  }
+}
