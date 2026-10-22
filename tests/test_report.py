@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from copilot.eval.report import (
+    MetricSummary,
     RunSummary,
     compare_family,
     compare_runs,
@@ -62,6 +63,28 @@ def test_markdown_summary_lists_metrics_and_groups(tmp_path: Path) -> None:
     assert "| hit@10 | 0.750 |" in markdown
     assert "## By question type" in markdown
     assert "held-out test split was opened" in markdown
+
+
+def test_a_run_level_metric_gets_no_column_in_the_group_tables(tmp_path: Path) -> None:
+    rows = _rows([1.0, 0.0, 1.0, 1.0])
+    metrics = summarise(rows, ["hit@10"])
+    metrics["cohens_kappa"] = MetricSummary(mean=0.8, low=0.6, high=1.0)
+    summary = RunSummary(
+        suite="judge-agreement",
+        run="r",
+        split="dev",
+        created=datetime(2026, 10, 23, 12, 0, tzinfo=UTC),
+        questions=len(rows),
+        test_split_opened=False,
+        metrics=metrics,
+        by={"question_type": summarise_by(rows, ["hit@10"], "question_type")},
+    )
+
+    write_run(tmp_path / "run", summary, rows)
+
+    markdown = (tmp_path / "run" / "summary.md").read_text(encoding="utf-8")
+    assert "| cohens_kappa | 0.800 |" in markdown
+    assert "| Question type | Questions | hit@10 |" in markdown
 
 
 def test_compare_runs_pairs_questions_by_id(tmp_path: Path) -> None:

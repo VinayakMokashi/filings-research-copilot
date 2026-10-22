@@ -127,8 +127,9 @@ def render_markdown(summary: RunSummary) -> str:
             for name, m in summary.metrics.items()
         ),
     ]
-    names = list(summary.metrics)
     for key, groups in summary.by.items():
+        # A metric that only makes sense over the whole run (such as kappa) has no column.
+        names = [n for n in summary.metrics if all(n in g.metrics for g in groups.values())]
         label = key.replace("_", " ")
         lines += [
             "",
