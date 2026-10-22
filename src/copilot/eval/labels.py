@@ -1,8 +1,9 @@
-"""Hand labels for checking the judge: which answers to label, and reading the labels back.
+"""Reference labels for checking the judge: which answers to label, and reading them back.
 
-A person labels a sample of the agent's answers as correct, incorrect or unsure, seeing
-what the judge sees. The sample is stratified by question type, so each type is
-represented in proportion, and drawn with a fixed seed, so it can be drawn again.
+A labeller, a person or a stronger model, labels a sample of the agent's answers as
+correct, incorrect or unsure, seeing what the judge sees. Each label line records who
+labelled it. The sample is stratified by question type, so each type is represented in
+proportion, and drawn with a fixed seed, so it can be drawn again.
 """
 
 from __future__ import annotations
@@ -35,6 +36,17 @@ def stratified_sample(groups: Mapping[str, Sequence[str]], size: int, seed: int)
     rng = random.Random(seed)
     shares = allocate({group: len(ids) for group, ids in groups.items()}, size)
     return {item for group in sorted(groups) for item in rng.sample(groups[group], shares[group])}
+
+
+def labellers(path: Path, run: str) -> list[str]:
+    """Who labelled one answers run: people or models, as the label lines record them."""
+    names = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            item = json.loads(line)
+            if item["answers_run"] == run:
+                names.add(item.get("labeller", "unknown"))
+    return sorted(names)
 
 
 def read_labels(path: Path, run: str) -> dict[str, str]:

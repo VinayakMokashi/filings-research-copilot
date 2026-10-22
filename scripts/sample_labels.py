@@ -1,4 +1,4 @@
-"""Pick the answers a person labels by hand to check the judge (step 3.6).
+"""Pick the answers to label as a reference for checking the judge (step 3.6).
 
 Draws `--size` dev questions, stratified by question type, with a fixed seed, once: the
 sample doesn't depend on the answers, so the agent can answer it first. Each later run

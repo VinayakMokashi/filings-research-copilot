@@ -4,7 +4,7 @@ FinanceBench gives each question a reference answer written by a financial analy
 figure in the units the question names ("$1577.00" for USD millions), a yes or no with its
 reasons, or a few sentences. A string match fails on every rounding and unit difference,
 so a model compares each answer with the reference, and a sample of its verdicts is
-checked against a person's labels before its numbers are trusted.
+checked against reference labels before its numbers are trusted.
 
 - **Three outcomes**, as in the FinanceBench paper: correct, incorrect, or refused. A
   refusal (the agent said its sources don't contain the answer) needs no judge.
