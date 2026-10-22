@@ -49,6 +49,7 @@ A predicted query is right when its rows match the gold rows under text2sql-anal
 | Gold SQL, declining the unanswerable | 1.000, a check of the scorer |
 | Decline everything | 0.250 (0.107 to 0.429) |
 | The data agent, before value linking ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)) | 0.607 (0.429 to 0.786) |
+| The data agent with value linking ([guide](../concepts/value-linking.md)) | 1.000 (exact interval 0.877 to 1.000) |
 
 ## Known issues
 

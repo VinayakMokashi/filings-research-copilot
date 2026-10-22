@@ -84,8 +84,9 @@ Each line of a predictions file is `{"id": "s01", "sql": "SELECT ..."}`, or `{"i
 The data agent ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)) answers the set and scores itself in one step:
 
 ```bash
-uv run poe run-sql-agent                         # dev, run sql-agent-v1 (needs GROQ_API_KEY)
-uv run poe run-sql-agent --run sql-agent-v2 --limit 5
+uv run poe run-sql-agent                         # dev, run sql-agent-v2 (needs GROQ_API_KEY)
+uv run poe run-sql-agent --run sql-agent-v1 --no-linking   # the baseline, without value linking
+uv run poe run-sql-agent --run sql-agent-v3 --limit 5
 ```
 
 Each response is appended to `eval/results/sql/<run>/<split>/trace.jsonl` as it arrives, with the agent's status, the tables it used, its SQL attempts, tokens and model time; a rerun skips answered questions, and a run stopped by a daily quota exits with a message and carries on when run again. The run then writes `predictions.jsonl` (for `poe eval-sql`) and the scored run beside it, with accuracy by category too. Model calls are cached in `data/cache/sql.jsonl`. These files hold the project's own questions and the model's SQL, so they are committed.
