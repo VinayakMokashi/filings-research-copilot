@@ -13,6 +13,7 @@ dependencies = [
     "litellm>=1.105.1",
     "numpy>=2.5.4",
     "onnxruntime>=1.31.0",
+    "pandas>=3.1.0",
     "pydantic>=2.14.1",
     "pydantic-settings>=2.16.0",
     "pypdfium2>=5.14.0",
@@ -32,6 +33,7 @@ packages = ["src/copilot"]
 [dependency-groups]
 dev = [
     "mypy>=2.4.0",
+    "pandas-stubs>=3.0.5.260914",
     "poethepoet>=0.48.0",
     "pre-commit>=4.7.0",
     "pytest>=9.1.1",
@@ -82,6 +84,7 @@ judge-agreement = { cmd = "python scripts/judge_agreement.py", help = "Agreement
 check-faithfulness = { cmd = "python scripts/check_faithfulness.py", help = "Check that each answer sentence is supported by the sources it cites (--run NAME)" }
 analyse-errors = { cmd = "python scripts/analyse_errors.py", help = "Sort a run's answers into outcomes and error categories, with cost and latency" }
 run-sql-agent = { cmd = "python scripts/run_sql_agent.py", help = "Answer the SQL set with the data agent and score it, resumably" }
+ask-data = { cmd = "python scripts/ask_data.py", help = "Ask the data agent one question (needs GROQ_API_KEY)" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
