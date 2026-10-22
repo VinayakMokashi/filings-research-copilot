@@ -109,3 +109,24 @@ def test_the_pipeline_declines_what_the_tables_cannot_answer(facts_db: Path) -> 
     assert out.status == "unanswerable"
     assert out.message == "No prices."
     assert not any(call.role == "strong" for call in fake.calls)
+
+
+def test_the_analysis_can_be_written_by_the_strong_model(facts_db: Path) -> None:
+    def reply(messages: Sequence[Message], role: ModelRole) -> str:
+        if role == "fast":
+            return '{"tables": ["annual_values", "companies"], "answerable": true}'
+        if "explaining query results" in messages[0]["content"]:
+            return '{"answer": "3M spent $1,577 million.", "insights": [], "caveats": []}'
+        return f"```sql\n{SQL}\n```"
+
+    fake = FakeLLM(reply)
+    pipeline = build_pipeline(
+        Settings(), fake, db_path=facts_db, descriptions={}, analysis_model="strong"
+    )
+
+    out = pipeline.ask("What was 3M's FY2018 capex in millions?")
+
+    assert out.analysis is not None
+    assert out.analysis.answer == "3M spent $1,577 million."
+    analysis = [c for c in fake.calls if "explaining query results" in c.messages[0]["content"]]
+    assert [c.role for c in analysis] == ["strong"]
