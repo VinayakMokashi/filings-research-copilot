@@ -6,13 +6,13 @@
 
 An agentic research copilot for public-company filings. Ask a question about a company and get an answer built from its 10-K and 10-Q text and its XBRL financial facts, with every claim cited to the page or query it came from.
 
-> **Status:** in active development. Phases 0 to 2 are done (foundations, data and evaluation sets, and the retrieval baseline); Phase 3, the doc agent, is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
+> **Status:** in active development. Phases 0 to 3 are done (foundations, data and evaluation sets, the retrieval baseline, and the doc agent with cited answers); Phase 4, the data agent, is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
 >
 > **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/
 
 ## What it does (when finished)
 
-- **Cited answers from filing text.** Retrieval over 10-K and 10-Q filings chosen by measurement (dense search over page chunks so far, with hybrid search and reranking re-tested after query rewriting), page-level citations, and a refusal when the evidence isn't there.
+- **Cited answers from filing text.** The filings a question names, three rewrites of it, and dense search over page chunks, each chosen by measurement; answers with a citation on every sentence, a calculator for arithmetic, and a refusal when the evidence isn't there. On FinanceBench dev the doc agent answers 65% of questions correctly (88% of those that ask for a figure), by an LLM judge checked against reference labels.
 - **Numbers from structured data.** Text-to-SQL over XBRL company facts, built on [text2sql-analyst](https://github.com/VinayakMokashi/text2sql-analyst), with read-only guardrails and a calculator for arithmetic.
 - **Research briefs.** A planner, parallel section writers, an editor and a critic, with every claim validated against its source.
 - **Tools for other AI apps.** An MCP server exposing search, financial queries and the copilot itself.
@@ -59,7 +59,10 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Qdrant index: bge-small dense and BM25 sparse vectors per chunk, payload indexes, resumable per-document jobs, and late chunking with jina-v2-small | `src/copilot/ingest/` ([ADR-0010](docs/decisions/0010-vector-store-and-embeddings.md), [HNSW guide](docs/concepts/hnsw-and-qdrant.md)) |
 | Retrieval: dense, BM25 and hybrid search with client-side rank fusion, cross-encoder reranking and neighbouring chunks, each measured on FinanceBench dev; the baseline is dense search over page chunks | `src/copilot/retrieval/` ([report](docs/eval/retrieval-baseline.md), [ADR-0011](docs/decisions/0011-retrieval-baseline.md)) |
 | Synthetic training pairs: 1,006 LLM-written questions paired with the chunks that answer them, from filings kept apart from evaluation | `src/copilot/training/` ([data card](docs/data/synthetic-pairs.md)) |
-| Synthetic training pairs: 1,006 LLM-written questions paired with the chunks that answer them, from filings kept apart from evaluation | `src/copilot/training/` ([data card](docs/data/synthetic-pairs.md)) |
+| Query understanding and rewriting: company, period and form resolved to filings; multi-query, HyDE and decomposition rewrites fused with the question | `src/copilot/retrieval/query.py`, `rewrite.py` ([ADR-0012](docs/decisions/0012-query-understanding-and-rewriting.md)) |
+| Model-call cache and pacing for free tiers: replay by model, messages and parameters; pauses sized to the tokens each call used | `src/copilot/llm/cache.py`, `pacing.py` |
+| Doc agent: numbered sources within 3,000 tokens, one JSON answer call with citations, a safe calculator, and one retry aimed at what a refusal names as missing | `src/copilot/answer/` ([ADR-0013](docs/decisions/0013-answer-format.md), [guide](docs/concepts/grounded-generation.md)) |
+| Answer evaluation: an LLM judge with a rubric and code-computed comparisons of figures, checked against reference labels; faithfulness and citation precision; error categories, latency and cost | `src/copilot/eval/judge.py`, `faithfulness.py`, `errors.py` ([ADR-0014](docs/decisions/0014-answer-judge.md), [report](docs/eval/doc-agent-dev.md)) |
 
 ## Local development
 
@@ -83,7 +86,10 @@ uv run poe chunk-corpus --strategy tokens-480     # chunk the parsed pages
 uv run poe index-corpus --strategy page --docs all   # embed chunks into Qdrant (resumable)
 uv run poe run-retrieval --collection fb_page_bge-small --mode dense   # search and score on dev
 uv run poe generate-pairs --per-doc 6   # synthetic question-to-chunk pairs (needs the key)
-uv run poe generate-pairs --per-doc 6   # synthetic question-to-chunk pairs (needs the key)
+uv run poe answer-questions --run doc-agent-v4-full   # answer the dev questions (resumable; needs the key)
+uv run poe judge-answers --run doc-agent-v4-full      # grade them against the reference answers
+uv run poe check-faithfulness --run doc-agent-v4-full # check each sentence against its citations
+uv run poe analyse-errors --run doc-agent-v4-full --judge qwen3.8-27b-p2   # error categories, latency, cost
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).
