@@ -83,4 +83,5 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
 | **Transition report (10-KT)** | An annual report covering a short period, filed when a company changes its fiscal year end. |
+| **Value linking** | Telling a Text-to-SQL model which database values a question refers to (a company's stored name, a metric's real key, the years covered), because the schema alone doesn't. |
 | **XBRL** | The tagged data format companies use to file financial statements. Each number carries a concept tag, a period and a unit. |
