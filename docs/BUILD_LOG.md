@@ -15,6 +15,41 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 3 · Phase 3 complete
+
+- **Goal:** confirm Phase 3's exit criterion and publish the milestone.
+- **Done:**
+  - **The exit criterion is met:** the [dev evaluation](eval/doc-agent-dev.md) reports correctness, faithfulness, citation precision, refusals, latency and cost with 95% intervals, and the top error categories.
+  - Updated the plan (steps, status tracker), the README and the project page (status, the doc agent, the retrieval diagram, the evaluation table, the roadmap).
+- **Commands:** `uv run poe check`.
+- **Results:** the doc agent answers 65% of dev questions correctly (0.56 to 0.74), 88% of figure questions, at about $0.0011 a question.
+- **Problems and fixes:** none new.
+- **Decisions:** v4 is the Phase 3 doc agent ([report](eval/doc-agent-dev.md)); ADRs 0012 to 0014 hold the design.
+- **Next:** Phase 4, the data agent: Text-to-SQL over the XBRL facts database, which the error analysis also points to for ratio questions whose definitions the filings don't print.
+
+### 2026-10-23 · Phase 3 · Dev evaluation
+
+- **Goal:** measure the doc agent on the 100 dev questions: correctness, faithfulness, citation precision, refusals, latency and cost, and find where the wrong answers come from (step 3.7).
+- **Done:**
+  - `copilot.eval.faithfulness` and `poe check-faithfulness`: one judge call per answer checks each cited sentence against its cited pages and the calculations behind it, giving faithfulness and citation precision.
+  - `copilot.eval.errors` and `poe analyse-errors`: one category per answer that isn't correct, with model latency and cost at list prices; a reading of all 29 incorrect answers against their references and sources.
+  - A post-processing fix (v4): calculations may use earlier results, and placeholders may scale a result or give its decimals.
+  - The [dev evaluation report](eval/doc-agent-dev.md).
+- **Commands:** `uv run poe answer-questions --run doc-agent-v4-full` (all from the cache), `uv run poe judge-answers`, `uv run poe check-faithfulness` and `uv run poe analyse-errors` on both runs, `uv run poe compare-runs ... --metric correct`, `uv run poe check`.
+- **Results:**
+  - Correct 0.65 (0.56 to 0.74) by the Qwen judge and 0.63 by gpt-oss-20b; incorrect 0.29; refused 0.06. Metrics-generated questions 0.88, domain-relevant 0.59, novel-generated 0.48.
+  - Faithful 0.63 (Qwen) and 0.68 (gpt-oss-20b) of answered questions; citation precision 0.93 and 0.84; an evidence page cited for 0.64 of questions.
+  - The retry ran for 16 questions: 6 became correct answers, 4 wrong ones, and 6 stayed refused.
+  - Model latency 2.34 s at p50 and 5.52 s at p95; 5,403 tokens and about $0.0011 a question at list prices.
+  - v4 against v3: correctness unchanged (p = 1.0 with both judges); failed calculations 11 to 0, unfilled placeholders 3 to 0.
+  - Of the 29 incorrect answers, 18 had the evidence page in context: 6 used another definition of the measure, 6 were incomplete, 6 misread a figure, 4 took the wrong line item, 3 the wrong period, 2 reached a different judgement, and 2 are arguably correct.
+- **Problems and fixes:**
+  - **Calculations that build on each other.** The model wrote `c1 / 4756` with `c1` an earlier result, and the calculator rejected the name 11 times; calculations now run in order with earlier results substituted.
+  - **Python habits in placeholders.** `{c1*100}` and `{c1*100:.1f}` left raw placeholders in three answers; placeholders now take one operation and a number of decimals. Because only the post-processing changed, the whole run was rebuilt from the model-call cache with no new calls.
+  - **Faithfulness depends on the judge.** The two models agree on 79 of 94 answers (84%) about faithfulness, less than on correctness, so the report gives both.
+- **Decisions:** adopt v4; the next levers are definitions, completeness and the choice of filing, then the judge's precision rule ([report](eval/doc-agent-dev.md)).
+- **Next:** close Phase 3.
+
 ### 2026-10-23 · Phase 3 · Answer judge
 
 - **Goal:** grade answers against FinanceBench's reference answers automatically, and check the grader before trusting it (step 3.6).

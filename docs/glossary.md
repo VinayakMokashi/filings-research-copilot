@@ -29,6 +29,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **ECS Fargate** | AWS's service for running containers without managing servers. |
 | **Embedding** | A vector that represents meaning; similar texts get nearby vectors. |
 | **Execution accuracy (EX)** | Generated SQL counts as correct when it returns the same result as the gold query. |
+| **Faithfulness** | Whether each sentence of an answer is supported by the sources it cites. An answer can be faithful and wrong (the cited page is the wrong one) or correct and unfaithful (the figure came from memory). |
 | **Fallback chain** | Models tried in order when a role's own model keeps failing after retries. |
 | **FinanceBench** | A benchmark of questions over real company filings, with answers and evidence pages. |
 | **Git blob id** | The SHA-1 hash git computes over a file's contents. Used here to check every downloaded file against a manifest. |

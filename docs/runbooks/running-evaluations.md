@@ -115,6 +115,15 @@ uv run poe judge-agreement --run doc-agent-v3-full --judge qwen3.8-27b-p2 --judg
 - **Labels.** `eval/labels/answer-correctness.jsonl` holds one line per labelled answer: id, answers run, labeller and label. The sample's ids are in `answer-correctness-sample.json`; the labeller sees exactly what the judge sees, never its verdicts. The current labels came from a stronger model, not a person ([data card](../data/answer-labels.md)).
 - **Cost.** About 660 tokens a verdict on the fast model, about 66,000 for a 100-question run.
 
+Two more passes read the same answers:
+
+```bash
+uv run poe check-faithfulness --run doc-agent-v4-full      # each sentence against the pages it cites
+uv run poe analyse-errors --run doc-agent-v4-full --judge qwen3.8-27b-p2 --faithfulness qwen3.8-27b-f1
+```
+
+`check-faithfulness` makes one call per answered question (about 1,300 tokens), resumably, with its own cache file (`data/cache/faithfulness.jsonl`); `analyse-errors` makes none, and adds error categories, model latency and cost at list prices. A change to what happens after the model replies, such as the calculator, can be re-scored at no cost: a new `--run` name replays every model call from the cache.
+
 ## Compare two runs
 
 ```bash

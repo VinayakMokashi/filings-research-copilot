@@ -200,7 +200,7 @@ Size is relative: S < M < L.
 - [x] 3.4 Grounded generation with numbered sources and inline citations; the answer call judges whether the sources suffice, and abstains with what is missing after one retry aimed at the gap ([grounded generation](concepts/grounded-generation.md), [corrective RAG](concepts/corrective-rag.md)).
 - [x] 3.5 Calculator tool: the model writes the expression and a safe evaluator computes it; the results fill placeholders in the answer.
 - [x] 3.6 LLM judge for answer correctness: a Qwen judge with a written rubric and code-computed comparisons of figures. Checked against 41 reference labels from a stronger model (a Claude model), not by hand: 41 of 41 agree, and the second judge (gpt-oss-20b) 38 of 41 ([ADR-0014](decisions/0014-answer-judge.md)). A person check of about 20 answers is still open.
-- [ ] 3.7 Dev evaluation: correctness, faithfulness, citation precision, refusal rate, latency and cost; error analysis.
+- [x] 3.7 Dev evaluation: 65% of dev questions answered correctly (0.56 to 0.74) by the Qwen judge, 88% of figure questions; 63% of answers supported sentence by sentence by their citations, citation precision 0.93; 6% refused; model latency 2.3 s at p50 and 5.5 s at p95; about $0.0011 a question at list prices. Error analysis: definitions, completeness and the choice of filing cause more errors than retrieval ([report](eval/doc-agent-dev.md)).
 
 **Done when:** dev results with confidence intervals and the top error categories are documented.
 **Docs:** ADRs on answer format and judge design; guides `query-rewriting.md`, `grounded-generation.md`, `llm-as-judge.md`, `corrective-rag.md`.
@@ -355,7 +355,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 0 Foundations | Done | 2026-10-15 | 2026-10-17 |
 | 1 Data and evaluation sets | Done | 2026-10-17 | 2026-10-17 |
 | 2 Ingestion and retrieval baseline | Done | 2026-10-17 | 2026-10-18 |
-| 3 Doc agent | In progress | 2026-10-19 | |
+| 3 Doc agent | Done | 2026-10-19 | 2026-10-23 |
 | 4 Data agent | Planned | | |
 | 5 Orchestration | Planned | | |
 | 6 API, UI, MCP, observability | Planned | | |
