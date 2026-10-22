@@ -85,6 +85,7 @@ check-faithfulness = { cmd = "python scripts/check_faithfulness.py", help = "Che
 analyse-errors = { cmd = "python scripts/analyse_errors.py", help = "Sort a run's answers into outcomes and error categories, with cost and latency" }
 run-sql-agent = { cmd = "python scripts/run_sql_agent.py", help = "Answer the SQL set with the data agent and score it, resumably" }
 ask-data = { cmd = "python scripts/ask_data.py", help = "Ask the data agent one question (needs GROQ_API_KEY)" }
+answer-with-data = { cmd = "python scripts/answer_with_data.py", help = "Answer FinanceBench dev questions with the data agent, resumably (needs GROQ_API_KEY)" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
