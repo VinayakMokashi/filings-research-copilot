@@ -1,0 +1,109 @@
+{
+  "suite": "judge-agreement",
+  "run": "doc-agent-v3-full--gpt-oss-20b-p2",
+  "split": "dev",
+  "created": "2026-10-22T20:45:18.303431Z",
+  "questions": 41,
+  "test_split_opened": false,
+  "system": {
+    "answers_run": "doc-agent-v3-full",
+    "judge": "gpt-oss-20b-p2",
+    "labelled": 41,
+    "labellers": [
+      "claude"
+    ],
+    "confusion": {
+      "labeller correct, judge correct": 26,
+      "labeller correct, judge incorrect": 3,
+      "labeller incorrect, judge incorrect": 12
+    }
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "agree": {
+      "mean": 0.926829268292683,
+      "low": 0.8292682926829268,
+      "high": 1.0
+    },
+    "labeller_correct": {
+      "mean": 0.7073170731707317,
+      "low": 0.5609756097560976,
+      "high": 0.8292682926829268
+    },
+    "judge_correct": {
+      "mean": 0.6341463414634146,
+      "low": 0.4878048780487805,
+      "high": 0.7804878048780488
+    },
+    "cohens_kappa": {
+      "mean": 0.8353413654618475,
+      "low": 0.6306306306306307,
+      "high": 1.0
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 13,
+        "metrics": {
+          "agree": {
+            "mean": 0.7692307692307693,
+            "low": 0.5384615384615384,
+            "high": 1.0
+          },
+          "labeller_correct": {
+            "mean": 0.7692307692307693,
+            "low": 0.5384615384615384,
+            "high": 1.0
+          },
+          "judge_correct": {
+            "mean": 0.5384615384615384,
+            "low": 0.3076923076923077,
+            "high": 0.7692307692307693
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 14,
+        "metrics": {
+          "agree": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "labeller_correct": {
+            "mean": 0.9285714285714286,
+            "low": 0.7857142857142857,
+            "high": 1.0
+          },
+          "judge_correct": {
+            "mean": 0.9285714285714286,
+            "low": 0.7857142857142857,
+            "high": 1.0
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 14,
+        "metrics": {
+          "agree": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "labeller_correct": {
+            "mean": 0.42857142857142855,
+            "low": 0.21428571428571427,
+            "high": 0.7142857142857143
+          },
+          "judge_correct": {
+            "mean": 0.42857142857142855,
+            "low": 0.21428571428571427,
+            "high": 0.7142857142857143
+          }
+        }
+      }
+    }
+  }
+}
