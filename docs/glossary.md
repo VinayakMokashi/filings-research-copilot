@@ -79,6 +79,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
 | **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries. |
 | **Sparse vector** | A vector stored as its few non-zero dimensions, such as one weight for each word in a text. Qdrant stores BM25 this way. |
+| **SQL guardrails** | The checks that let a model's query run only if it is one read-only SELECT: a parser check, a read-only connection, an authorizer inside SQLite, and caps on rows, value size and time. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |

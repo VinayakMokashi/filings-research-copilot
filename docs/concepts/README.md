@@ -18,7 +18,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 12 | [grounded-generation.md](grounded-generation.md) | Numbered sources, citations, abstention, context budgets, the calculator | Gao et al., *Enabling LLMs to Generate Text with Citations* (2023) | 3 | Written |
 | 13 | [llm-as-judge.md](llm-as-judge.md) | Judging answers with a rubric and computed comparisons, and checking the judge | Zheng et al., *Judging LLM-as-a-Judge* (2023) | 3 | Written |
 | 14 | [corrective-rag.md](corrective-rag.md) | Grading the evidence, and searching more widely when it falls short | Yan et al., CRAG (2024); Asai et al., Self-RAG (2023) | 3 | Written |
-| 15 | `text-to-sql-agent.md` | Schema retrieval, guardrails, self-correction | Liu et al., NL2SQL survey (2025) | 4 | Planned |
+| 15 | [text-to-sql-agent.md](text-to-sql-agent.md) | Table selection, guardrails, repair, and a typed answer with exact statistics | Liu et al., NL2SQL survey (2025) | 4 | Written |
 | 16 | [value-linking.md](value-linking.md) | Matching names, metric values and coverage to the database, as hints | Talaei et al., CHESS (2024) | 4 | Written |
 | 17 | `langgraph-orchestration.md` | State graphs, branches, loops, checkpoints | LangGraph docs | 5 | Planned |
 | 18 | `semantic-routing.md` | Routing by embedding similarity | Semantic Router library docs | 5 | Planned |
