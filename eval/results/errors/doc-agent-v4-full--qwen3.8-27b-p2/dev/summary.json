@@ -1,0 +1,62 @@
+{
+  "suite": "errors",
+  "run": "doc-agent-v4-full--qwen3.8-27b-p2",
+  "split": "dev",
+  "created": "2026-10-21T15:55:04+00:00",
+  "questions": 100,
+  "test_split_opened": false,
+  "judge": "qwen3.8-27b-p2",
+  "faithfulness": "qwen3.8-27b-f1",
+  "categories": {
+    "correct": 65,
+    "refused, evidence retrieved": 2,
+    "refused, evidence not retrieved": 4,
+    "calculation broke": 0,
+    "evidence not retrieved": 11,
+    "wrong with the evidence in context": 18
+  },
+  "by_question_type": {
+    "domain-relevant": {
+      "correct": 20,
+      "refused, evidence retrieved": 1,
+      "refused, evidence not retrieved": 1,
+      "calculation broke": 0,
+      "evidence not retrieved": 5,
+      "wrong with the evidence in context": 7
+    },
+    "metrics-generated": {
+      "correct": 29,
+      "refused, evidence retrieved": 1,
+      "refused, evidence not retrieved": 1,
+      "calculation broke": 0,
+      "evidence not retrieved": 0,
+      "wrong with the evidence in context": 2
+    },
+    "novel-generated": {
+      "correct": 16,
+      "refused, evidence retrieved": 0,
+      "refused, evidence not retrieved": 2,
+      "calculation broke": 0,
+      "evidence not retrieved": 6,
+      "wrong with the evidence in context": 9
+    }
+  },
+  "outcomes": {
+    "correct": 65,
+    "incorrect": 29,
+    "refused": 6
+  },
+  "retried": 16,
+  "failed_calculations": 0,
+  "unfilled_placeholders": 0,
+  "mean_prompt_tokens": 4743,
+  "mean_completion_tokens": 660,
+  "model_latency_s": {
+    "p50": 2.34,
+    "p95": 5.52
+  },
+  "cost_usd": {
+    "total": 0.1107,
+    "per_question": 0.001107
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "suite": "faithfulness",
+  "run": "doc-agent-v4-full--gpt-oss-20b-f1",
+  "split": "dev",
+  "created": "2026-10-21T15:54:31.923827Z",
+  "questions": 94,
+  "test_split_opened": false,
+  "system": {
+    "answers_run": "doc-agent-v4-full",
+    "judge_model": "groq/openai/gpt-oss-20b",
+    "prompt_version": "1",
+    "citation_precision": 0.8411,
+    "citations": 258,
+    "judge_errors": 1,
+    "judge_tokens": 151708
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "faithful": {
+      "mean": 0.6808510638297872,
+      "low": 0.5851063829787234,
+      "high": 0.776595744680851
+    },
+    "supported_share": {
+      "mean": 0.7943262411347518,
+      "low": 0.7207446808510638,
+      "high": 0.8590425531914894
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 32,
+        "metrics": {
+          "faithful": {
+            "mean": 0.40625,
+            "low": 0.25,
+            "high": 0.59375
+          },
+          "supported_share": {
+            "mean": 0.6640625,
+            "low": 0.5416666666666666,
+            "high": 0.78125
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 31,
+        "metrics": {
+          "faithful": {
+            "mean": 0.9032258064516129,
+            "low": 0.8056451612903297,
+            "high": 1.0
+          },
+          "supported_share": {
+            "mean": 0.9193548387096774,
+            "low": 0.8225806451612904,
+            "high": 1.0
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 31,
+        "metrics": {
+          "faithful": {
+            "mean": 0.7419354838709677,
+            "low": 0.5806451612903226,
+            "high": 0.8709677419354839
+          },
+          "supported_share": {
+            "mean": 0.803763440860215,
+            "low": 0.6693548387096774,
+            "high": 0.9220430107526881
+          }
+        }
+      }
+    }
+  }
+}
