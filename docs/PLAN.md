@@ -212,7 +212,7 @@ Size is relative: S < M < L.
 - [x] 4.1 Add text2sql-analyst as a pinned dependency: improved upstream first (optional extras, an all-tables retriever, hints), pinned at 2b89c30, with every table of the facts schema offered and the models on the gateway. Baseline execution accuracy 0.61 (0.43 to 0.79) on the dev SQL set ([ADR-0015](decisions/0015-reuse-text2sql-analyst.md)).
 - [x] 4.2 Value linking: the companies a question names (names, aliases, tickers) with their CIK and coverage, every company and every metric value, and definitions of combined measures, as hints. Execution accuracy on the dev SQL set rises from 0.61 to 1.00 (exact 95% interval 0.88 to 1.00). The generic parts went upstream as `text2sql.linking` ([guide](concepts/value-linking.md)).
 - [x] 4.3 Fiscal-calendar handling: hints that `fiscal_year` is the company's own label for its year and that values are annual and as first reported, and each named company's fiscal-year coverage, so out-of-range years are declined. Quarterly values aren't in the facts tables yet, so quarter questions are declined.
-- [ ] 4.4 Wrap the pipeline as a tool with a typed result: rows, SQL, statistics, chart spec.
+- [x] 4.4 Wrap the pipeline as a tool with a typed result: `DataAgent.ask` returns a `DataAnswer` with the status, SQL, rows, exact statistics per measure column (with the rows of the extremes), a chart spec and the written answer; `poe ask-data` puts one question to it ([guide](concepts/text-to-sql-agent.md)).
 - [ ] 4.5 Execution accuracy on the SQL set; error analysis and fixes.
 - [ ] 4.6 Prototype hybrid answers that combine numbers with narrative.
 

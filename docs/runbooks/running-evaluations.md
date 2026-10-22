@@ -91,6 +91,29 @@ uv run poe run-sql-agent --run sql-agent-v3 --limit 5
 
 Each response is appended to `eval/results/sql/<run>/<split>/trace.jsonl` as it arrives, with the agent's status, the tables it used, its SQL attempts, tokens and model time; a rerun skips answered questions, and a run stopped by a daily quota exits with a message and carries on when run again. The run then writes `predictions.jsonl` (for `poe eval-sql`) and the scored run beside it, with accuracy by category too. Model calls are cached in `data/cache/sql.jsonl`. These files hold the project's own questions and the model's SQL, so they are committed.
 
+To put one question of your own to the data agent ([guide](../concepts/text-to-sql-agent.md)):
+
+```bash
+uv run poe ask-data "How did 3M's capital expenditure change from fiscal 2018 to fiscal 2022?"
+uv run poe ask-data "..." --json      # the whole typed answer, as other components get it
+```
+
+It prints the status and the written answer, the SQL, the rows (the first 20), exact statistics for each measure column with the rows where its extremes fall, and the suggested chart:
+
+```text
+[ok] 3M's capital expenditure increased from $1.577 billion in fiscal 2018 to $1.749 billion
+in fiscal 2022, representing an overall growth of $172 million (10.9%).
+  ...
+fiscal_year | capital_expenditure | change_from_2018
+2018 | 1577000000.0 | 0.0
+  ...
+capital_expenditure: total 8,129,000,000.00, mean 1,625,800,000.00, min 1,501,000,000.00,
+max 1,749,000,000.00, max at 2022, min at 2020
+Chart: line of capital_expenditure by fiscal_year
+```
+
+The status is `ok`, `unanswerable` (declined, with the reason) or `error` (the query still failed after two repairs, or a quota stopped the call), and `error` exits with code 1. The calls share the cache in `data/cache/sql.jsonl`, so asking the same question again costs no tokens.
+
 ## Answer dev questions
 
 The doc agent ([grounded generation](../concepts/grounded-generation.md)) answers each dev question from the filings, and `poe answer-questions` scores what it can without a judge:

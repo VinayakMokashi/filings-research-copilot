@@ -15,6 +15,26 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 4 · The data agent as a tool
+
+- **Goal:** one typed result from the data agent that the orchestrator, the API and the MCP server can check, store and send (step 4.4).
+- **Done:**
+  - `copilot.sql.tool.DataAgent.ask(question)` returns a `DataAnswer`, a pydantic model of this project's own:
+    - the status (`ok`, `unanswerable` or `error`) and the written answer, with insights and caveats;
+    - the SQL, the columns and rows, exact statistics and a chart spec;
+    - the tables used, the hints, the number of attempts and the timings.
+  - Failures come back as a status, never as an exception, and the answer survives a JSON round trip.
+  - `column_statistics`: the count, total, mean, minimum and maximum of each measure column, and the label of the row where each extreme falls.
+  - `poe ask-data "..."` prints one answer, or the whole model with `--json`.
+  - A [Text-to-SQL agent guide](concepts/text-to-sql-agent.md) on the pipeline end to end.
+- **Commands:** `uv run poe ask-data "How did 3M's capital expenditure change from fiscal 2018 to fiscal 2022?"`, `uv run poe check`.
+- **Results:** that question gets one query over five rows: $1.577 billion to $1.749 billion (+10.9%), with the 2020 low and the 2022 peak named and a line chart suggested.
+- **Problems and fixes:**
+  - **Years counted as measures.** The first statistics added up the fiscal years (a "total" of 10,100) and had no column left to label the extremes. The tool now uses text2sql-analyst's rules for measure, identifier and period columns, with `cik` as an identifier too, so a year labels the rows.
+  - **Types for pandas.** Those rules take a DataFrame, so pandas is now a direct dependency, and `pandas-stubs` keeps mypy strict.
+- **Decisions:** callers depend on `DataAnswer`, not on text2sql-analyst's classes, so a library upgrade touches one function (`to_answer`).
+- **Next:** the data agent on FinanceBench's metrics questions, judged as the doc agent's answers were and compared question by question (step 4.5).
+
 ### 2026-10-23 · Phase 4 · Value linking
 
 - **Goal:** give the data agent the database values its questions refer to, which the schema doesn't show (steps 4.2 and 4.3).
