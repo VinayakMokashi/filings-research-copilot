@@ -23,7 +23,9 @@ CREATE TABLE annual_values (
     fiscal_year INTEGER NOT NULL,
     value REAL
 );
+CREATE TABLE metrics (metric TEXT PRIMARY KEY, label TEXT NOT NULL);
 INSERT INTO companies VALUES (66740, 'MMM', '3M'), (21344, 'KO', 'Coca-Cola');
+INSERT INTO metrics VALUES ('capital_expenditure', 'Capital expenditure'), ('revenue', 'Revenue');
 INSERT INTO annual_values VALUES
     (66740, 'capital_expenditure', 2018, 1577000000),
     (21344, 'capital_expenditure', 2018, 1548000000);
@@ -92,11 +94,15 @@ def test_the_pipeline_answers_over_a_facts_database(facts_db: Path) -> None:
     assert {call.role for call in fake.calls} == {"fast", "strong"}
     selection_prompt = fake.calls[0].messages[1]["content"]
     assert "Description: One row per company." in selection_prompt
+    sql_prompt = fake.calls[1].messages[1]["content"]
+    assert "\"3M\" is companies.name = '3M' (cik 66740)" in sql_prompt
+    assert "annual_values.metric takes only these values: capital_expenditure" in sql_prompt
+    assert out.hints[-1] == "3M"
 
 
 def test_the_pipeline_declines_what_the_tables_cannot_answer(facts_db: Path) -> None:
     fake = _models('{"tables": [], "answerable": false, "reason": "No prices."}', SQL)
-    pipeline = build_pipeline(Settings(), fake, db_path=facts_db, descriptions={})
+    pipeline = build_pipeline(Settings(), fake, db_path=facts_db, descriptions={}, linking=False)
 
     out = pipeline.ask("What is 3M's share price today?", analyze=False)
 
