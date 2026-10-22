@@ -139,4 +139,4 @@ filterwarnings = [
 ]
 
 [tool.uv.sources]
-text2sql-analyst = { git = "https://github.com/VinayakMokashi/text2sql-analyst", rev = "2b89c30706220f4d8d4fac57ea9cfc5179fa9cac" }
+text2sql-analyst = { git = "https://github.com/VinayakMokashi/text2sql-analyst", rev = "bfaafdf7fdb212eef15a6e0c5bb4994d7ff38d7b" }
