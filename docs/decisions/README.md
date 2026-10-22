@@ -16,5 +16,6 @@
 | [0012](0012-query-understanding-and-rewriting.md) | Resolve the filings, then search three rewrites of the question | Accepted | 2026-10-19 |
 | [0013](0013-answer-format.md) | Answer from numbered sources in JSON, with a calculator and one retry aimed at what is missing | Accepted | 2026-10-19 |
 | [0014](0014-answer-judge.md) | Grade answers with a rubric-bound model judge, checked against reference labels | Accepted | 2026-10-23 |
+| [0015](0015-reuse-text2sql-analyst.md) | Reuse text2sql-analyst as a pinned dependency, improved upstream first | Accepted | 2026-10-23 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
