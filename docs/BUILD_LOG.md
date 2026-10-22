@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 3 · Answer judge
+
+- **Goal:** grade answers against FinanceBench's reference answers automatically, and check the grader before trusting it (step 3.6).
+- **Done:**
+  - `copilot.eval.judge`: a rubric-bound judge on the fast model (Qwen), JSON verdicts with a reason, refusals without a call, and `closest_figures`, which pairs each reference figure with the answer's closest one and gives the judge the distance.
+  - `copilot.eval.labels` and `poe label-sample`: a stratified, fixed-seed sample of 44 dev questions drawn before any answer was judged, answered first (`poe answer-questions --first`), and shown on a private labelling page exactly as the judge sees them.
+  - `copilot.eval.stats.cohens_kappa` and `kappa_interval`; `poe judge-answers` and `poe judge-agreement`.
+  - `copilot.llm.parsing.json_object`, shared by the answer step and the judge; the model-call cache now skips lines it can't read.
+  - [ADR-0014](decisions/0014-answer-judge.md), an [LLM-as-judge guide](concepts/llm-as-judge.md) and a [data card](data/answer-labels.md) for the labels.
+- **Commands:** `uv run poe answer-questions --run doc-agent-v3-full --first eval/labels/answer-correctness-sample.json` (about three days on the free tier), `uv run poe judge-answers --run doc-agent-v3-full` (and with `FRC_LLM_FAST_MODEL=groq/openai/gpt-oss-20b`), `uv run poe label-sample --run doc-agent-v3-full`, `uv run poe judge-agreement --run doc-agent-v3-full --judge qwen3.8-27b-p2 --judge gpt-oss-20b-p2`, `uv run poe check`.
+- **Results:**
+  - Against 41 reference labels: the Qwen judge agrees on all 41 (kappa 1.00); gpt-oss-20b on 38 (kappa 0.84, 0.63 to 1.00), stricter on the three it differs on.
+  - The two judges agree on 87 of the 94 answered dev questions (kappa 0.83).
+  - About 660 tokens a verdict; no invalid verdicts.
+- **Problems and fixes:**
+  - **The judge couldn't do the arithmetic it checks.** The first rubric left "within 1%" to the model, which called 8.738 and 8.70 more than 1% apart; code now computes the distances.
+  - **The rubric was silent on the hard case**, a right conclusion resting on a wrong figure, and the first judge decided it both ways. The rubric now says a figure given for something the reference quantifies must match too.
+  - **Labels from a model.** The plan called for about 40 answers labelled by hand. The labels came from a Claude model given the same page instead, and matched the default judge on every answer. The docs call the judge checked against a stronger model, not validated against a person, and a person check of about 20 answers stays open.
+  - **Daily caps.** The 100-question dev run needed three days of the strong model's rolling daily quota; a loop re-ran the resumable job every 20 minutes and answered the labelling sample first.
+- **Decisions:** [ADR-0014](decisions/0014-answer-judge.md).
+- **Next:** the dev evaluation (step 3.7): correctness, faithfulness, citation precision, refusals, latency and cost, with an error analysis.
+
 ### 2026-10-19 · Phase 3 · Grounded answers
 
 - **Goal:** turn the retrieved pages into cited answers, with the arithmetic done by a calculator and an honest refusal when the evidence isn't there (steps 3.3 to 3.5).

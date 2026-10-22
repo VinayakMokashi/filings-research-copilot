@@ -199,7 +199,7 @@ Size is relative: S < M < L.
 - [x] 3.3 Context building: numbered sources in fused rank order, packed to 3,000 tokens; an evidence page makes the context for 68% of dev questions. Reranking (ADR-0012) and completing split pages were tested and left out ([ADR-0013](decisions/0013-answer-format.md)).
 - [x] 3.4 Grounded generation with numbered sources and inline citations; the answer call judges whether the sources suffice, and abstains with what is missing after one retry aimed at the gap ([grounded generation](concepts/grounded-generation.md), [corrective RAG](concepts/corrective-rag.md)).
 - [x] 3.5 Calculator tool: the model writes the expression and a safe evaluator computes it; the results fill placeholders in the answer.
-- [ ] 3.6 LLM judge for answer correctness, with about 40 answers labelled by hand to measure how often the judge agrees with a person.
+- [x] 3.6 LLM judge for answer correctness: a Qwen judge with a written rubric and code-computed comparisons of figures. Checked against 41 reference labels from a stronger model (a Claude model), not by hand: 41 of 41 agree, and the second judge (gpt-oss-20b) 38 of 41 ([ADR-0014](decisions/0014-answer-judge.md)). A person check of about 20 answers is still open.
 - [ ] 3.7 Dev evaluation: correctness, faithfulness, citation precision, refusal rate, latency and cost; error analysis.
 
 **Done when:** dev results with confidence intervals and the top error categories are documented.
@@ -346,6 +346,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-17 | Table-aware PDF parsing deferred | Reported numbers come from XBRL; pdfium's page text lines up with the evidence pages ([ADR-0009](decisions/0009-pdf-parsing.md)) |
 | 2026-10-18 | Retrieval baseline is dense search over page chunks; hybrid search and reranking are re-tested in Phase 3 after query rewriting | Neither beat dense search on FinanceBench's templated questions ([ADR-0011](decisions/0011-retrieval-baseline.md)) |
 | 2026-10-19 | Step 3.4's relevance check is the answer call's own verdict, and the one retry searches for what a refusal names as missing | A grading call per source would add about eight calls a question on the free tier ([ADR-0013](decisions/0013-answer-format.md)) |
+| 2026-10-23 | Step 3.6's judge is checked against labels from a stronger model instead of labels by hand | The labels came from a Claude model; judge numbers carry that caveat, and a person check of about 20 answers stays open ([ADR-0014](decisions/0014-answer-judge.md)) |
 
 ## 11. Status tracker
 
