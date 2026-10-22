@@ -132,6 +132,17 @@ Both need Qdrant with the `fb_page_bge-small` collection and `GROQ_API_KEY`. Eve
 - **What is committed.** The answers file holds filing text and model answers, so it stays local. `eval/results/answers/<run>/dev/` holds only ids and numbers: `answered`, `retried`, `context_hit`, `cites_evidence`, citation counts, invalid citations, failed calculations, tokens and latency.
 - **Correctness** needs the LLM judge (step 3.6); these measures are structural.
 
+The data agent ([guide](../concepts/text-to-sql-agent.md)) answers the same questions with SQL over the facts database instead, and writes its answers in the same shape, so the same judge grades them:
+
+```bash
+uv run poe answer-with-data --limit 3 --run data-agent-smoke   # a smoke run
+uv run poe answer-with-data                    # the 33 dev metrics questions, run data-agent-v1
+uv run poe answer-with-data --types all --run data-agent-all   # every dev question
+uv run poe judge-answers --run data-agent-v1
+```
+
+It needs the facts database (`poe build-facts`) and `GROQ_API_KEY`, not Qdrant. The written answer comes from the strong model, the doc agent's answer model, unless `--analysis-model fast` says otherwise; that keeps a comparison of the two agents to where their numbers come from. Calls are cached in `data/cache/sql.jsonl`. It resumes like the doc agent's runs, and stops with a message when a daily quota runs out. About 4,500 tokens a question. `eval/results/answers/<run>/dev/` holds ids and numbers only: `answered`, `declined`, `failed`, `repaired`, tokens, model latency and cost at list prices; the SQL and rows stay in the local answers file, since they restate the questions' figures.
+
 ## Judge answers and check the judge
 
 The judge ([guide](../concepts/llm-as-judge.md)) grades a run's answers against FinanceBench's reference answers; a sample of reference labels checks the judge:
@@ -163,7 +174,15 @@ uv run poe analyse-errors --run doc-agent-v4-full --judge qwen3.8-27b-p2 --faith
 uv run poe compare-runs eval/results/retrieval/first-pages/dev eval/results/retrieval/hybrid-v1/dev --metric recall@10
 ```
 
-The output gives both means, the difference with its 95% interval, the p-value from a paired permutation test, and a verdict at α = 0.05 ([ADR-0007](../decisions/0007-evaluation-statistics.md)). A change ships when the verdict is "significant improvement".
+The output gives both means, the difference with its 95% interval, the p-value from a paired permutation test, and a verdict at α = 0.05 ([ADR-0007](../decisions/0007-evaluation-statistics.md)). A change ships when the verdict is "significant improvement". For a yes-or-no metric it also counts the questions both runs get, each run alone, and neither.
+
+Two runs must cover the same questions. To compare runs over different sets, such as the doc agent on all dev questions and the data agent on the metrics questions, keep the questions they share with `--where`:
+
+```bash
+R=eval/results/correctness
+uv run poe compare-runs $R/doc-agent-v4-full--qwen3.8-27b-p2/dev $R/data-agent-v1--qwen3.8-27b-p2/dev \
+  --metric correct --where question_type=metrics-generated
+```
 
 When one experiment tries several variants against the same baseline, compare them as a family, so their p-values are adjusted together (Holm):
 

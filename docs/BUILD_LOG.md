@@ -15,6 +15,27 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 4 · The data agent on FinanceBench
+
+- **Goal:** measure the data agent on FinanceBench's figure questions against the doc agent, with the same questions and the same judges (step 4.5).
+- **Done:**
+  - `poe answer-with-data`: the data agent answers FinanceBench dev questions resumably, in the shape the judge reads, with its SQL, rows, tokens by model and cost kept locally. The written answer comes from gpt-oss-120b, the doc agent's answer model.
+  - `build_pipeline(analysis_model=...)`, `PacedLLM.tokens_by_model`, and `token_cost` in the gateway, for costs across models.
+  - `poe compare-runs --where question_type=metrics-generated` compares runs on the questions they share, and a yes-or-no metric now gets a count of who gets each question.
+  - A [report](eval/data-agent-financebench.md), with a hand review of the one answer that wasn't correct.
+- **Commands:** `uv run poe answer-with-data`, `uv run poe judge-answers --run data-agent-v1` and the same with the gpt-oss-20b judge, `uv run poe compare-runs ... --where question_type=metrics-generated`, `uv run poe check`.
+- **Results** (33 dev metrics questions):
+  - 32 correct by both judges (0.97; exact 95% interval 0.84 to 1.00), against the doc agent's 29 (0.88).
+  - Right wherever the doc agent is. It also answers two calculations across years that the doc agent refused, and a return on assets the doc agent wrote as a percentage. Difference +0.09 (0.00 to +0.21), p = 0.25.
+  - Every query used `annual_values` and `companies`, followed the question's own definitions, and rounded in SQL as the question asked; one needed a repair.
+  - About 4,900 tokens, 2.8 s of model time and $0.0025 a question, against the doc agent's $0.0010 on the same questions. The table-selection call on Qwen3.8 27B is two thirds of the cost.
+- **Problems and fixes:**
+  - **Runs over different questions.** `compare_runs` rightly refused to pair a 33-question run with a 100-question one. `--where` now keeps the shared questions explicitly, rather than intersecting them silently.
+  - **The judge and the writer.** The data agent normally writes its answer with Qwen, the default judge's own model. This run used gpt-oss-120b instead, as the doc agent does, which keeps the judge apart from the writer and leaves the source of the numbers as the only difference.
+  - **A rounding miss.** The one wrong answer gives the reported $389 million as $0.39 billion; the reference rounds it to one decimal and writes $0.40.
+- **Decisions:** figure questions go to the data agent in Phase 5; the agent itself stays as it is.
+- **Next:** hybrid answers that combine the data agent's numbers with the doc agent's narrative (step 4.6), then the SQL test split and the close of Phase 4.
+
 ### 2026-10-23 · Phase 4 · The data agent as a tool
 
 - **Goal:** one typed result from the data agent that the orchestrator, the API and the MCP server can check, store and send (step 4.4).

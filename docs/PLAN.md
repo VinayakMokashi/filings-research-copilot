@@ -213,7 +213,7 @@ Size is relative: S < M < L.
 - [x] 4.2 Value linking: the companies a question names (names, aliases, tickers) with their CIK and coverage, every company and every metric value, and definitions of combined measures, as hints. Execution accuracy on the dev SQL set rises from 0.61 to 1.00 (exact 95% interval 0.88 to 1.00). The generic parts went upstream as `text2sql.linking` ([guide](concepts/value-linking.md)).
 - [x] 4.3 Fiscal-calendar handling: hints that `fiscal_year` is the company's own label for its year and that values are annual and as first reported, and each named company's fiscal-year coverage, so out-of-range years are declined. Quarterly values aren't in the facts tables yet, so quarter questions are declined.
 - [x] 4.4 Wrap the pipeline as a tool with a typed result: `DataAgent.ask` returns a `DataAnswer` with the status, SQL, rows, exact statistics per measure column (with the rows of the extremes), a chart spec and the written answer; `poe ask-data` puts one question to it ([guide](concepts/text-to-sql-agent.md)).
-- [ ] 4.5 Execution accuracy on the SQL set; error analysis and fixes.
+- [x] 4.5 FinanceBench's 33 dev metrics questions answered by the data agent and graded by the doc agent's judges: 32 of 33 correct (exact 95% interval 0.84 to 1.00) against the doc agent's 29, and right wherever the doc agent is. The one miss is a rounding question about the reference ([report](eval/data-agent-financebench.md)). Execution accuracy and error analysis on the SQL set came with 4.1 and 4.2; its test split opens when the phase closes.
 - [ ] 4.6 Prototype hybrid answers that combine numbers with narrative.
 
 **Done when:** execution accuracy is reported with a confidence interval, and the hybrid prototype handles 10 hand-picked questions.
@@ -347,6 +347,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-18 | Retrieval baseline is dense search over page chunks; hybrid search and reranking are re-tested in Phase 3 after query rewriting | Neither beat dense search on FinanceBench's templated questions ([ADR-0011](decisions/0011-retrieval-baseline.md)) |
 | 2026-10-19 | Step 3.4's relevance check is the answer call's own verdict, and the one retry searches for what a refusal names as missing | A grading call per source would add about eight calls a question on the free tier ([ADR-0013](decisions/0013-answer-format.md)) |
 | 2026-10-23 | Step 3.6's judge is checked against labels from a stronger model instead of labels by hand | The labels came from a Claude model; judge numbers carry that caveat, and a person check of about 20 answers stays open ([ADR-0014](decisions/0014-answer-judge.md)) |
+| 2026-10-23 | Step 4.5 measures the data agent on FinanceBench's metrics questions, graded like the doc agent's answers | The SQL set's accuracy and errors were measured in steps 4.1 and 4.2; comparing the two agents needs the same questions and the same judge |
 
 ## 11. Status tracker
 
