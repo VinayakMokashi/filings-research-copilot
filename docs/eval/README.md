@@ -3,6 +3,7 @@
 | Report | Phase | Question |
 |---|---|---|
 | [Retrieval baseline](retrieval-baseline.md) | 2 | Which chunking, search mode, reranker and context expansion to start from |
+| [Doc agent: dev evaluation](doc-agent-dev.md) | 3 | How often the doc agent answers correctly from filing text, how well its citations hold up, what it costs, and where the wrong answers come from |
 
 One report per experiment, with these sections:
 
@@ -39,6 +40,9 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [Other retrieval runs](../../eval/results/retrieval/) | Retrieval | Dev | See the [report](retrieval-baseline.md) | BM25, hybrid, rerankers, neighbouring chunks, chunking, late chunking |
 | [page-rw-all-understood-b3000](../../eval/results/context/page-rw-all-understood-b3000/dev/summary.md) | Context | Dev | context_hit 0.68 (0.59 to 0.77) | An evidence page among the answer's sources: 3,000 tokens of the agent's retrieval ([ADR-0013](../decisions/0013-answer-format.md)); the other budgets sit [beside it](../../eval/results/context/) |
 | [doc-agent-v3](../../eval/results/answers/doc-agent-v3/dev/summary.md) | Answers | Dev, first 10 | answered 0.90 (0.70 to 1.00); evidence cited 0.50 (0.20 to 0.80) | Smoke run of the doc agent; v1 and v2 are the runs before the citation and retry fixes ([ADR-0013](../decisions/0013-answer-format.md)) |
+| [doc-agent-v4-full--qwen3.8-27b-p2](../../eval/results/correctness/doc-agent-v4-full--qwen3.8-27b-p2/dev/summary.md) | Correctness | Dev | correct 0.65 (0.56 to 0.74); refused 0.06 | The Phase 3 doc agent graded by the default judge ([report](doc-agent-dev.md)); v3 and the second judge sit beside it |
+| [doc-agent-v4-full--qwen3.8-27b-f1](../../eval/results/faithfulness/doc-agent-v4-full--qwen3.8-27b-f1/dev/summary.md) | Faithfulness | Dev, 94 answered | faithful 0.63 (0.53 to 0.72); citation precision 0.93 | Each sentence checked against the pages it cites |
+| [doc-agent-v4-full--qwen3.8-27b-p2](../../eval/results/errors/doc-agent-v4-full--qwen3.8-27b-p2/dev/summary.md) | Errors | Dev | 18 wrong with the evidence in context; 11 without | Error categories, model latency and cost |
 | [doc-agent-v3-full--qwen3.8-27b-p2](../../eval/results/judge-agreement/doc-agent-v3-full--qwen3.8-27b-p2/dev/summary.md) | Judge agreement | Dev, 41 labelled | agree 1.00; kappa 1.00 | The default answer judge against reference labels from a stronger model ([ADR-0014](../decisions/0014-answer-judge.md)) |
 | [doc-agent-v3-full--gpt-oss-20b-p2](../../eval/results/judge-agreement/doc-agent-v3-full--gpt-oss-20b-p2/dev/summary.md) | Judge agreement | Dev, 41 labelled | agree 0.93 (0.83 to 1.00); kappa 0.84 (0.63 to 1.00) | The second judge against the same labels |
 | [majority](../../eval/results/routing/majority/dev/summary.md) | Routing | Dev | accuracy 0.217 (0.152 to 0.290) | Always the most common route |
