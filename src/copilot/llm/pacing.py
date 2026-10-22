@@ -7,7 +7,7 @@ pause, or, when it knows the limit, the time the limit takes to earn back the to
 call used, whichever is longer. An answer call of 4,000 tokens under a limit of 8,000 a
 minute waits 30 seconds; a short rewrite waits the fixed pause. It also retries a
 rate-limited call after a growing pause, and adds up the latency and tokens of the calls
-it makes, so a run can report what it cost.
+it makes, in all and by model, so a run can report what it cost.
 """
 
 from __future__ import annotations
@@ -36,9 +36,11 @@ class PacedLLM:
         self.latency_s = 0.0
         self.prompt_tokens = 0
         self.completion_tokens = 0
+        self.tokens_by_model: dict[str, tuple[int, int]] = {}  # model: (prompt, completion)
 
     def reset(self) -> None:
         self.calls, self.latency_s, self.prompt_tokens, self.completion_tokens = 0, 0.0, 0, 0
+        self.tokens_by_model = {}
 
     def pause_after(self, response: LLMResponse) -> float:
         """Seconds to wait after a call; see the module docstring."""
@@ -53,6 +55,11 @@ class PacedLLM:
         self.latency_s += response.latency_s
         self.prompt_tokens += response.prompt_tokens or 0
         self.completion_tokens += response.completion_tokens or 0
+        prompt, completion = self.tokens_by_model.get(response.model, (0, 0))
+        self.tokens_by_model[response.model] = (
+            prompt + (response.prompt_tokens or 0),
+            completion + (response.completion_tokens or 0),
+        )
 
     def complete(
         self,

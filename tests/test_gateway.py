@@ -13,7 +13,7 @@ from pydantic import SecretStr
 
 from copilot.config import Settings
 from copilot.llm import LLMError, LLMGateway, user
-from copilot.llm.gateway import api_key_for, build_router, provider_of
+from copilot.llm.gateway import api_key_for, build_router, provider_of, token_cost
 
 # --- Happy paths through a real LiteLLM router ---------------------------------------------
 
@@ -171,6 +171,15 @@ def test_models_missing_from_the_price_map_have_unknown_cost() -> None:
     response = LLMGateway(settings).complete([user("hi")], mock_response="ok")
 
     assert response.cost_usd is None
+
+
+def test_token_cost_prices_known_models_and_leaves_others_unknown(settings: Settings) -> None:
+    one_call = token_cost(settings.llm_strong_model, 1000, 100)
+
+    assert one_call is not None
+    assert one_call > 0
+    assert token_cost(settings.llm_strong_model, 2000, 200) == pytest.approx(2 * one_call)
+    assert token_cost("groq/not-in-the-price-map", 1000, 100) is None
 
 
 # --- Failures -----------------------------------------------------------------------------------

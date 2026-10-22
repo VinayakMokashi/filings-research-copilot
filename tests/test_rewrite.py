@@ -96,7 +96,10 @@ def test_paced_llm_retries_rate_limits_and_adds_up_usage(monkeypatch: pytest.Mon
     assert flaky.attempts == 2
     assert pauses == [30.0, 3.0]
     assert (paced.calls, paced.prompt_tokens, paced.completion_tokens) == (1, 10, 5)
+    assert paced.tokens_by_model == {"fake": (10, 5)}
     assert paced.latency_s == pytest.approx(0.25)
+    paced.reset()
+    assert (paced.calls, paced.tokens_by_model) == (0, {})
 
 
 def test_paced_llm_waits_long_enough_to_earn_back_the_tokens() -> None:
