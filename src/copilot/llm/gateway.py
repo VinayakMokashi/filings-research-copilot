@@ -244,3 +244,13 @@ def _has_token_prices(model: str) -> bool:
         return False
     entry = litellm.model_cost.get(key) or {}
     return any(entry.get(field) is not None for field in _TOKEN_PRICE_FIELDS)
+
+
+def token_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float | None:
+    """The list price of some tokens in US dollars, or None when LiteLLM has no prices."""
+    if not _has_token_prices(model):
+        return None
+    prompt_cost, completion_cost = litellm.cost_per_token(
+        model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens
+    )
+    return float(prompt_cost + completion_cost)
