@@ -1,0 +1,14 @@
+{
+  "answers_run": "data-agent-v1",
+  "judge": "qwen3.8-27b-p2",
+  "method": "Each answer the judge didn't mark correct, read against its reference answer, its SQL and the rows it returned; one reason per answer. The gpt-oss-20b-p2 judge marks the same answer incorrect.",
+  "counts": {
+    "the reference rounds more coarsely than it shows": 1
+  },
+  "items": {
+    "financebench_id_05718": "the reference rounds more coarsely than it shows"
+  },
+  "notes": {
+    "financebench_id_05718": "The query returns the figure as reported, $389 million, as $0.39 billion; the reference gives $0.40, which is $0.389 billion rounded to one decimal and written with two."
+  }
+}

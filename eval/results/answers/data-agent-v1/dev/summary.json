@@ -1,0 +1,83 @@
+{
+  "suite": "answers",
+  "run": "data-agent-v1",
+  "split": "dev",
+  "created": "2026-10-22T23:26:47.398654Z",
+  "questions": 33,
+  "test_split_opened": false,
+  "system": {
+    "agent": "the data agent: text2sql-analyst over the facts database, value linking",
+    "text2sql_analyst": "0.3.0",
+    "question_types": [
+      "metrics-generated"
+    ],
+    "selection_model": "groq/qwen/qwen3.8-27b",
+    "sql_model": "groq/openai/gpt-oss-120b",
+    "analysis_model": "groq/openai/gpt-oss-120b",
+    "mean_prompt_tokens": 4005,
+    "mean_completion_tokens": 863,
+    "model_latency_s": {
+      "p50": 2.78,
+      "p95": 4.09
+    },
+    "cost_usd": {
+      "total": 0.084,
+      "per_question": 0.002544,
+      "priced_questions": 33
+    },
+    "limit": null
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "answered": {
+      "mean": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    },
+    "declined": {
+      "mean": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "failed": {
+      "mean": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "repaired": {
+      "mean": 0.030303030303030304,
+      "low": 0.0,
+      "high": 0.09090909090909091
+    }
+  },
+  "by": {
+    "question_type": {
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "declined": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "failed": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "repaired": {
+            "mean": 0.030303030303030304,
+            "low": 0.0,
+            "high": 0.09090909090909091
+          }
+        }
+      }
+    }
+  }
+}
