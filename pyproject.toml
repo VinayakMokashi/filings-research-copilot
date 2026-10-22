@@ -18,6 +18,7 @@ dependencies = [
     "pypdfium2>=5.14.0",
     "qdrant-client>=1.19.1",
     "structlog>=26.1.0",
+    "text2sql-analyst",
     "tokenizers>=0.23.3",
 ]
 
@@ -80,6 +81,7 @@ label-sample = { cmd = "python scripts/sample_labels.py", help = "Pick the answe
 judge-agreement = { cmd = "python scripts/judge_agreement.py", help = "Agreement and Cohen's kappa between a judge and the reference labels" }
 check-faithfulness = { cmd = "python scripts/check_faithfulness.py", help = "Check that each answer sentence is supported by the sources it cites (--run NAME)" }
 analyse-errors = { cmd = "python scripts/analyse_errors.py", help = "Sort a run's answers into outcomes and error categories, with cost and latency" }
+run-sql-agent = { cmd = "python scripts/run_sql_agent.py", help = "Answer the SQL set with the data agent and score it, resumably" }
 
 # ---------------------------------------------------------------------------
 # Lint and format
@@ -110,6 +112,11 @@ plugins = ["pydantic.mypy"]
 module = ["pypdfium2", "pypdfium2.*", "onnxruntime", "onnxruntime.*"]
 ignore_missing_imports = true
 
+# text2sql-analyst is annotated but ships no py.typed marker; read its annotations anyway.
+[[tool.mypy.overrides]]
+module = ["text2sql", "text2sql.*"]
+follow_untyped_imports = true
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
@@ -130,3 +137,6 @@ filterwarnings = [
     # Tests use Qdrant's in-memory mode, which accepts payload indexes but doesn't need them.
     "ignore:Payload indexes have no effect in the local Qdrant:UserWarning",
 ]
+
+[tool.uv.sources]
+text2sql-analyst = { git = "https://github.com/VinayakMokashi/text2sql-analyst", rev = "2b89c30706220f4d8d4fac57ea9cfc5179fa9cac" }
