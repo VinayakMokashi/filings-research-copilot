@@ -11,8 +11,9 @@ them (execution accuracy; declining is right only for questions the database can
 answer) and written next to the trace, with predictions.jsonl for `poe eval-sql`. A
 response that failed without any SQL counts as wrong, never as declining.
 
-Usage: uv run poe run-sql-agent                              (dev, run sql-agent-v1)
-       uv run poe run-sql-agent --run sql-agent-v2 --limit 5
+Usage: uv run poe run-sql-agent                              (dev, run sql-agent-v2)
+       uv run poe run-sql-agent --run sql-agent-v1 --no-linking   (the first baseline)
+       uv run poe run-sql-agent --run sql-agent-v3 --limit 5
 """
 
 from __future__ import annotations
@@ -56,7 +57,10 @@ def prediction(record: dict[str, Any]) -> sql.Prediction:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
-    parser.add_argument("--run", default="sql-agent-v1", help="run name")
+    parser.add_argument("--run", default="sql-agent-v2", help="run name")
+    parser.add_argument(
+        "--no-linking", action="store_true", help="leave out value linking, as v1 ran"
+    )
     parser.add_argument("--split", choices=("dev", "test"), default="dev")
     parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
     parser.add_argument("--limit", type=int, help="answer only the first N questions")
@@ -76,7 +80,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     done = read_trace(trace_path)
 
     client = batch_client(settings)
-    pipeline = build_pipeline(settings, client)
+    pipeline = build_pipeline(settings, client, linking=not args.no_linking)
     todo = [q for q in questions if q.id not in done]
     print(f"{len(questions)} questions, {len(done)} already answered, {len(todo)} to go")
     with trace_path.open("a", encoding="utf-8", newline="\n") as out:
@@ -136,6 +140,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         test_split_opened=args.split == "test",
         system={
             "agent": "text2sql-analyst over the facts database, every table offered",
+            "value_linking": not args.no_linking,
             "text2sql_analyst": text2sql.__version__,
             "sql_model": settings.llm_strong_model,
             "helper_model": settings.llm_fast_model,
