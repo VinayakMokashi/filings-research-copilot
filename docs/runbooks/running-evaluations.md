@@ -81,6 +81,15 @@ uv run poe eval-sql --predictions answers.jsonl --run sql-agent-v1
 
 Each line of a predictions file is `{"id": "s01", "sql": "SELECT ..."}`, or `{"id": "s33", "declined": true}` to decline. Queries run read-only with a step limit. Runs land in `eval/results/sql/<run>/<split>/`, with accuracy overall, for answerable and unanswerable questions, and by difficulty. After rebuilding the facts database, `uv run pytest -m integration` confirms every gold query still returns its recorded rows.
 
+The data agent ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)) answers the set and scores itself in one step:
+
+```bash
+uv run poe run-sql-agent                         # dev, run sql-agent-v1 (needs GROQ_API_KEY)
+uv run poe run-sql-agent --run sql-agent-v2 --limit 5
+```
+
+Each response is appended to `eval/results/sql/<run>/<split>/trace.jsonl` as it arrives, with the agent's status, the tables it used, its SQL attempts, tokens and model time; a rerun skips answered questions, and a run stopped by a daily quota exits with a message and carries on when run again. The run then writes `predictions.jsonl` (for `poe eval-sql`) and the scored run beside it, with accuracy by category too. Model calls are cached in `data/cache/sql.jsonl`. These files hold the project's own questions and the model's SQL, so they are committed.
+
 ## Answer dev questions
 
 The doc agent ([grounded generation](../concepts/grounded-generation.md)) answers each dev question from the filings, and `poe answer-questions` scores what it can without a judge:
