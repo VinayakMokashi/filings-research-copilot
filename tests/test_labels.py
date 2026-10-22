@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from copilot.eval.labels import allocate, read_labels, stratified_sample
+from copilot.eval.labels import allocate, labellers, read_labels, stratified_sample
 
 
 def test_allocate_is_proportional_and_adds_up() -> None:
@@ -39,6 +39,7 @@ def test_read_labels_keeps_decided_labels_for_one_run(tmp_path: Path) -> None:
     path.write_text("\n".join(json.dumps(row) for row in rows) + "\n\n", encoding="utf-8")
 
     assert read_labels(path, "v3") == {"q1": "correct"}
+    assert labellers(path, "v3") == ["unknown"]
     path.write_text(json.dumps({"id": "q4", "answers_run": "v3", "label": "maybe"}))
     with pytest.raises(ValueError, match="Unknown label"):
         read_labels(path, "v3")

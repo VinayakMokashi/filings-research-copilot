@@ -1,15 +1,15 @@
-"""How often a judge agrees with a person about whether answers are correct (step 3.6).
+"""How often a judge agrees with the reference labels about which answers are correct (3.6).
 
-Reads the hand labels in eval/labels/answer-correctness.jsonl (one line per labelled
-answer: its id, the answers run, and "correct", "incorrect" or "unsure") and each judge's
-verdicts for the same answers. Unsure labels are left out. Writes, per judge, to
-eval/results/judge-agreement/<run>--<judge>/dev/:
+Reads the reference labels in eval/labels/answer-correctness.jsonl (one line per labelled
+answer: its id, the answers run, who labelled it, and "correct", "incorrect" or "unsure")
+and each judge's verdicts for the same answers. Unsure labels are left out. Writes, per
+judge, to eval/results/judge-agreement/<run>--<judge>/dev/:
 
-- `agree`: the judge's verdict matches the person's label (with a bootstrap interval);
+- `agree`: the judge's verdict matches the label (with a bootstrap interval);
 - `cohens_kappa`: agreement beyond chance, with a bootstrap interval;
-- `person_correct`, `judge_correct`: how often each says correct, to show a lenient or a
+- `labeller_correct`, `judge_correct`: how often each says correct, to show a lenient or a
   strict judge;
-- the confusion counts.
+- the confusion counts, and who the labeller was.
 
 Usage: uv run poe judge-agreement --run doc-agent-v3-full --judge qwen3.8-27b-p2
        uv run poe judge-agreement --run doc-agent-v3-full --judge qwen3.8-27b-p2 \
@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from copilot.config import get_settings
-from copilot.eval.labels import read_labels
+from copilot.eval.labels import labellers, read_labels
 from copilot.eval.report import (
     RESULTS_DIR,
     MetricSummary,
@@ -39,7 +39,7 @@ from copilot.eval.splits import load_split
 from copilot.eval.stats import kappa_interval
 
 LABELS_FILE = Path("eval/labels/answer-correctness.jsonl")
-METRICS = ["agree", "person_correct", "judge_correct"]
+METRICS = ["agree", "labeller_correct", "judge_correct"]
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -72,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
                 "id": qid,
                 "question_type": types[qid],
                 "agree": float(verdicts[qid] == labels[qid]),
-                "person_correct": float(labels[qid] == "correct"),
+                "labeller_correct": float(labels[qid] == "correct"),
                 "judge_correct": float(verdicts[qid] == "correct"),
             }
             for qid in ids
@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
         kappa = kappa_interval([labels[qid] for qid in ids], [verdicts[qid] for qid in ids])
         metrics = summarise(rows, METRICS)
         metrics["cohens_kappa"] = MetricSummary(mean=kappa.mean, low=kappa.low, high=kappa.high)
-        confusion = Counter(f"person {labels[qid]}, judge {verdicts[qid]}" for qid in ids)
+        confusion = Counter(f"labeller {labels[qid]}, judge {verdicts[qid]}" for qid in ids)
         summary = RunSummary(
             suite="judge-agreement",
             run=f"{args.run}--{name}",
@@ -92,6 +92,7 @@ def main(argv: list[str] | None = None) -> int:
                 "answers_run": args.run,
                 "judge": name,
                 "labelled": len(labels),
+                "labellers": labellers(args.labels, args.run),
                 "confusion": dict(sorted(confusion.items())),
             },
             metrics=metrics,
