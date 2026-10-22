@@ -82,7 +82,11 @@ If the model says the sources fall short, the agent searches once more, more wid
 
 3,000 tokens is the choice: halving it loses a sixth of the evidence, and 4,500 would cost every answer half as much again for a gain that isn't significant. Completing split pages (adding the other part of a long page next to a hit) spends the budget on text next to a hit rather than on the next-ranked hit, which more often holds the evidence. By question type, the evidence is in context for 0.91 of metrics-generated questions, which need statement pages that search finds easily, and for 0.59 and 0.55 of domain-relevant and novel-generated ones, which need narrative pages.
 
-**Answers.** `poe answer-questions` records, for each question, whether it was answered, whether the retry ran, whether an evidence page was in the context and among the cited sources, invalid citations, failed calculations, tokens and latency. Whether the answers are *right* needs a judge, which is step 3.6; the [ADR](../decisions/0013-answer-format.md) has the first numbers.
+**Answers.** `poe answer-questions` records, for each question, whether it was answered, whether the retry ran, whether an evidence page was in the context and among the cited sources, invalid citations, failed calculations, tokens and latency. Whether the answers are *right* needs a judge ([LLM as judge](llm-as-judge.md)). On the 100 dev questions ([report](../eval/doc-agent-dev.md)):
+
+- 65% of answers are correct by the default judge (0.56 to 0.74), 88% of the metrics-generated questions, and 6% are refusals.
+- **Faithfulness**, a second judge call per answer (`copilot.eval.faithfulness`): every sentence of an answer is checked against the pages it cites, with the calculations behind its computed figures. 63% of answers are supported sentence by sentence by one judge and 68% by the other; 93% and 84% of citations contribute to the sentence they are attached to. Judgement sentences fare worst: 41% of domain-relevant answers are faithful, 87% of metrics-generated ones.
+- 3% of answers carry no valid citation; none cites a source number that doesn't exist.
 
 ## Pitfalls we hit
 
@@ -91,6 +95,8 @@ If the model says the sources fall short, the agent searches once more, more wid
 - **Citations the parser didn't see.** In the first smoke run, three of eight answers had no recognised citation: one cited in lenticular brackets, and two cited nothing although the prompt asked for it. The parser now reads both bracket styles, and the second prompt says that an answer without citations is not accepted and repeats the rule in the description of the JSON fields.
 - **Tokens a minute.** An answer call uses about 4,000 tokens, and the free tier allows 8,000 a minute. A fixed three-second pause between calls ran into the limit on almost every call, so the pacer now waits for as long as the limit takes to earn back the tokens the last call used.
 - **Split pages.** Completing them looked like a free improvement and lowered how often the evidence made the context (above).
+- **Models build on their own calculations.** The answer model writes `c2 = c1 / 4756`, and the calculator first rejected the name: 11 of the dev run's calculations failed that way. Calculations now run in order, with earlier results substituted for their ids.
+- **Placeholders with arithmetic and format codes.** The model also writes `{c1*100}` and `{c1*100:.1f}`, Python habits that left three answers showing a raw placeholder. The placeholder now takes one operation and a number of decimals. Both fixes change only what happens after the reply, so the whole dev run was rebuilt from the model-call cache with no new calls: failed calculations 11 to 0, unfilled placeholders 3 to 0, correctness unchanged.
 
 ## Review questions
 
