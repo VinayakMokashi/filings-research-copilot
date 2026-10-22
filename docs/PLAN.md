@@ -209,7 +209,7 @@ Size is relative: S < M < L.
 
 **Goal:** reliable numbers from XBRL facts.
 
-- [ ] 4.1 Add text2sql-analyst as a pinned dependency and index the facts schema.
+- [x] 4.1 Add text2sql-analyst as a pinned dependency: improved upstream first (optional extras, an all-tables retriever, hints), pinned at 2b89c30, with every table of the facts schema offered and the models on the gateway. Baseline execution accuracy 0.61 (0.43 to 0.79) on the dev SQL set ([ADR-0015](decisions/0015-reuse-text2sql-analyst.md)).
 - [ ] 4.2 Value linking: map company names, tickers and metric synonyms to canonical values, and contribute it back to text2sql-analyst.
 - [ ] 4.3 Fiscal-calendar handling (fiscal vs calendar years, quarters).
 - [ ] 4.4 Wrap the pipeline as a tool with a typed result: rows, SQL, statistics, chart spec.
@@ -356,7 +356,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 1 Data and evaluation sets | Done | 2026-10-17 | 2026-10-17 |
 | 2 Ingestion and retrieval baseline | Done | 2026-10-17 | 2026-10-18 |
 | 3 Doc agent | Done | 2026-10-19 | 2026-10-23 |
-| 4 Data agent | Planned | | |
+| 4 Data agent | In progress | 2026-10-23 | |
 | 5 Orchestration | Planned | | |
 | 6 API, UI, MCP, observability | Planned | | |
 | 7 Fine-tuning and optimisation | Planned | | |

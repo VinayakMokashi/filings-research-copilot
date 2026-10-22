@@ -15,6 +15,30 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 4 · Data agent baseline
+
+- **Goal:** answer questions about reported figures with SQL over the facts database by reusing text2sql-analyst, and measure where it starts (step 4.1).
+- **Done:**
+  - **Upstream first.** text2sql-analyst [PR #1](https://github.com/VinayakMokashi/text2sql-analyst/pull/1), version 0.2.0:
+    - ChromaDB, Streamlit and Altair became optional extras, and ChromaDB loads only when a collection is opened;
+    - a `SchemaRetriever` protocol and an `AllTablesRetriever`;
+    - `hints` passed to the selection and SQL prompts.
+  - Pinned at commit 2b89c30.
+  - `copilot.sql.adapter.GatewayLLM`: text2sql-analyst's model interface on the cached, paced gateway, with "sql" mapped to the strong model and "helper" to the fast one.
+  - `copilot.sql.agent.build_pipeline`: the pipeline over the facts database, every table offered with the hand-written descriptions.
+  - `poe run-sql-agent`: answers the SQL set resumably and scores it as `poe eval-sql` does, with each question's status, tables, attempts, tokens and model time.
+  - [ADR-0015](decisions/0015-reuse-text2sql-analyst.md).
+- **Commands:** `uv add "text2sql-analyst @ git+...@2b89c30"`, `uv run poe run-sql-agent`, `uv run poe compare-runs eval/results/sql/decline-all/dev eval/results/sql/sql-agent-v1/dev --metric accuracy`, `uv run poe check`.
+- **Results** (28 dev questions):
+  - Execution accuracy 0.607 (0.43 to 0.79): 12 of 21 answerable questions, 5 of 7 unanswerable.
+  - +0.357 over declining everything (p = 0.015).
+  - No repairs or failed queries; about 2,300 tokens a question.
+- **Problems and fixes:**
+  - **A dependency built as an app.** Pinning text2sql-analyst as it was would have installed Streamlit, Altair and a second vector database to index seven tables. Making them optional upstream kept the addition to eight small packages.
+  - **The agent doesn't know the metric names.** Seven of nine wrong answers guessed names that don't exist (`netProfitMargin`, `cashAndCashEquivalents`), because table selection never chose the `metrics` table that lists them. The two wrong declines queried a company and a year the database doesn't hold. Both are value linking, which is next.
+- **Decisions:** [ADR-0015](decisions/0015-reuse-text2sql-analyst.md).
+- **Next:** value linking and fiscal-calendar handling (steps 4.2 and 4.3).
+
 ### 2026-10-23 · Phase 3 · Phase 3 complete
 
 - **Goal:** confirm Phase 3's exit criterion and publish the milestone.
