@@ -13,6 +13,7 @@ from copilot.eval.report import (
     RunSummary,
     compare_family,
     compare_runs,
+    outcome_table,
     read_rows,
     read_summary,
     summarise,
@@ -111,6 +112,42 @@ def test_compare_runs_refuses_different_splits(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="different splits"):
         compare_runs(baseline, candidate, "hit@10")
+
+
+def test_compare_runs_can_keep_one_question_type(tmp_path: Path) -> None:
+    baseline = _write(tmp_path / "a", [0.0] * 40)
+    rows = [row | {"hit@10": 1.0} for row in _rows([0.0] * 40)[::2]]  # metrics-generated only
+    summary = RunSummary(
+        suite="retrieval",
+        run="b",
+        split="dev",
+        created=datetime(2026, 10, 23, 12, 0, tzinfo=UTC),
+        questions=len(rows),
+        test_split_opened=False,
+        metrics=summarise(rows, ["hit@10"]),
+    )
+    write_run(tmp_path / "b", summary, rows)
+    metrics = {"question_type": "metrics-generated"}
+
+    with pytest.raises(ValueError, match="different questions"):
+        compare_runs(baseline, tmp_path / "b", "hit@10")
+    result = compare_runs(baseline, tmp_path / "b", "hit@10", where=metrics)
+
+    assert result.difference.n == 20
+    assert result.difference.mean == pytest.approx(1.0)
+    with pytest.raises(ValueError, match="No questions"):
+        compare_runs(baseline, tmp_path / "b", "hit@10", where={"question_type": "other"})
+
+
+def test_outcome_table_counts_who_gets_each_question(tmp_path: Path) -> None:
+    baseline = _write(tmp_path / "a", [1.0, 1.0, 0.0, 0.0, 1.0])
+    candidate = _write(tmp_path / "b", [1.0, 0.0, 1.0, 0.0, 1.0])
+
+    table = outcome_table(baseline, candidate, "hit@10")
+
+    assert table == {"both": 2, "baseline only": 1, "candidate only": 1, "neither": 1}
+    graded = _write(tmp_path / "c", [0.5, 0.0, 1.0, 0.0, 1.0])
+    assert outcome_table(baseline, graded, "hit@10") is None
 
 
 def test_compare_family_adjusts_p_values_across_candidates(tmp_path: Path) -> None:
