@@ -59,7 +59,16 @@ The version here is deliberately light: one check, one retry.
 
 ## How we measured it
 
-`poe answer-questions` records `retried` for every question, keeps the first answer's "missing" note, counts the searches of each kind, and adds both calls' tokens to the question's cost. The [ADR](../decisions/0013-answer-format.md) has the smoke-run numbers; the dev evaluation (step 3.7) will report how often the retry ran, how often it turned a refusal into an answer, and how often those answers were right.
+`poe answer-questions` records `retried` for every question, keeps the first answer's "missing" note, counts the searches of each kind, and adds both calls' tokens to the question's cost. The [ADR](../decisions/0013-answer-format.md) has the smoke-run numbers. On the 100 dev questions ([report](../eval/doc-agent-dev.md)):
+
+| | Questions |
+|---|---|
+| First answer was a refusal, so the retry ran | 16 |
+| Answered correctly after the retry | 6 |
+| Answered, but incorrectly | 4 |
+| Refused again | 6 |
+
+Without the retry, those 16 would all have been refusals: 6 of the 100 dev questions became correct answers, for one extra answer call on each of the 16. Of the 6 final refusals, 2 had an evidence page in their context, so the model missed what was there; for the other 4, with no evidence page in the context, refusing was the honest outcome.
 
 ## Pitfalls we hit
 
