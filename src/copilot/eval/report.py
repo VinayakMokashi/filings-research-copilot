@@ -12,6 +12,7 @@ Rows hold question ids and predictions only, never benchmark text.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -151,22 +152,71 @@ def render_markdown(summary: RunSummary) -> str:
     return "\n".join(lines) + "\n"
 
 
-def compare_runs(
-    baseline: Path, candidate: Path, metric: str, *, seed: int = 0
-) -> PairedComparison:
-    """A paired test of `candidate` against `baseline` on one metric, matched by question id."""
+def _matched(
+    baseline: Path, candidate: Path, metric: str, where: Mapping[str, str] | None
+) -> tuple[list[float], list[float]]:
+    """Both runs' values of `metric`, question by question, for the questions `where` keeps.
+
+    `where` keeps the rows whose fields have the given values, such as
+    {"question_type": "metrics-generated"}; the two runs must then cover the same questions.
+    """
     splits = {read_summary(baseline).split, read_summary(candidate).split}
     if len(splits) > 1:
         raise ValueError(f"The runs are on different splits: {', '.join(sorted(splits))}.")
-    a = {row["id"]: float(row[metric]) for row in read_rows(baseline)}
-    b = {row["id"]: float(row[metric]) for row in read_rows(candidate)}
+    conditions = (where or {}).items()
+
+    def values(directory: Path) -> dict[str, float]:
+        return {
+            row["id"]: float(row[metric])
+            for row in read_rows(directory)
+            if all(str(row.get(field)) == value for field, value in conditions)
+        }
+
+    a, b = values(baseline), values(candidate)
     if a.keys() != b.keys():
         raise ValueError(
             f"The runs cover different questions: {len(a.keys() - b.keys())} only in the "
             f"baseline, {len(b.keys() - a.keys())} only in the candidate."
         )
+    if not a:
+        raise ValueError("No questions are left to compare.")
     ids = sorted(a)
-    return paired_test([a[i] for i in ids], [b[i] for i in ids], seed=seed)
+    return [a[i] for i in ids], [b[i] for i in ids]
+
+
+def compare_runs(
+    baseline: Path,
+    candidate: Path,
+    metric: str,
+    *,
+    seed: int = 0,
+    where: Mapping[str, str] | None = None,
+) -> PairedComparison:
+    """A paired test of `candidate` against `baseline` on one metric, matched by question id.
+
+    `where` limits the test to some questions, such as one question type.
+    """
+    a, b = _matched(baseline, candidate, metric, where)
+    return paired_test(a, b, seed=seed)
+
+
+def outcome_table(
+    baseline: Path, candidate: Path, metric: str, *, where: Mapping[str, str] | None = None
+) -> dict[str, int] | None:
+    """For a yes-or-no metric, the questions both runs get, each run alone, and neither.
+
+    None when the metric takes values other than 0 and 1.
+    """
+    a, b = _matched(baseline, candidate, metric, where)
+    if not set(a) | set(b) <= {0.0, 1.0}:
+        return None
+    pairs = Counter(zip(a, b, strict=True))
+    return {
+        "both": pairs[(1.0, 1.0)],
+        "baseline only": pairs[(1.0, 0.0)],
+        "candidate only": pairs[(0.0, 1.0)],
+        "neither": pairs[(0.0, 0.0)],
+    }
 
 
 @dataclass(frozen=True, slots=True)
