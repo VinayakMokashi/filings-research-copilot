@@ -20,4 +20,4 @@ Each card records:
 | [Facts database dictionary](facts-dictionary.md) | Every table and column in the SQLite facts database | 2026-10-17 |
 | [SQL set](sql-set.md) | 42 questions over the facts database, with verified gold SQL or a reason to decline | 2026-10-17 |
 | [Synthetic pairs](synthetic-pairs.md) | 1,006 LLM-written questions paired with the chunks that answer them, from training filings only, for fine-tuning in Phase 7 | 2026-10-18 |
-| [Synthetic pairs](synthetic-pairs.md) | 1,006 LLM-written questions paired with the chunks that answer them, from training filings only, for fine-tuning in Phase 7 | 2026-10-18 |
+| [Answer labels](answer-labels.md) | 41 correctness labels for the doc agent's dev answers, from a Claude model, for checking the answer judge | 2026-10-23 |
