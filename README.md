@@ -13,7 +13,7 @@ An agentic research copilot for public-company filings. Ask a question about a c
 ## What it does (when finished)
 
 - **Cited answers from filing text.** The filings a question names, three rewrites of it, and dense search over page chunks, each chosen by measurement; answers with a citation on every sentence, a calculator for arithmetic, and a refusal when the evidence isn't there. On FinanceBench dev the doc agent answers 65% of questions correctly (88% of those that ask for a figure), by an LLM judge checked against reference labels.
-- **Numbers from structured data.** Text-to-SQL over XBRL company facts, built on [text2sql-analyst](https://github.com/VinayakMokashi/text2sql-analyst): hints that link the question to the database's companies and metrics, read-only guardrails, and an answer that carries its SQL, the rows, exact statistics and a chart.
+- **Numbers from structured data.** Text-to-SQL over XBRL company facts, built on [text2sql-analyst](https://github.com/VinayakMokashi/text2sql-analyst): hints that link the question to the database's companies and metrics, read-only guardrails, and an answer that carries its SQL, the rows, exact statistics and a chart. On FinanceBench's dev figure questions it answers 32 of 33 correctly, by the same judge, where the doc agent answers 29.
 - **Research briefs.** A planner, parallel section writers, an editor and a critic, with every claim validated against its source.
 - **Tools for other AI apps.** An MCP server exposing search, financial queries and the copilot itself.
 - **Measured.** Evaluated on FinanceBench and purpose-built test sets, with 95% confidence intervals on every reported number.
@@ -63,7 +63,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Model-call cache and pacing for free tiers: replay by model, messages and parameters; pauses sized to the tokens each call used | `src/copilot/llm/cache.py`, `pacing.py` |
 | Doc agent: numbered sources within 3,000 tokens, one JSON answer call with citations, a safe calculator, and one retry aimed at what a refusal names as missing | `src/copilot/answer/` ([ADR-0013](docs/decisions/0013-answer-format.md), [guide](docs/concepts/grounded-generation.md)) |
 | Answer evaluation: an LLM judge with a rubric and code-computed comparisons of figures, checked against reference labels; faithfulness and citation precision; error categories, latency and cost | `src/copilot/eval/judge.py`, `faithfulness.py`, `errors.py` ([ADR-0014](docs/decisions/0014-answer-judge.md), [report](docs/eval/doc-agent-dev.md)) |
-| Data agent: text2sql-analyst's Text-to-SQL pipeline over the facts database, with value linking (company, metric and coverage hints) and its model calls on the gateway; every dev SQL question answered correctly. A typed answer for other components: status, SQL, rows, exact statistics and a chart spec | `src/copilot/sql/` ([ADR-0015](docs/decisions/0015-reuse-text2sql-analyst.md), [guide](docs/concepts/text-to-sql-agent.md), [value linking](docs/concepts/value-linking.md)) |
+| Data agent: text2sql-analyst's Text-to-SQL pipeline over the facts database, with value linking (company, metric and coverage hints) and its model calls on the gateway; every dev SQL question answered correctly, and 32 of FinanceBench's 33 dev metrics questions. A typed answer for other components: status, SQL, rows, exact statistics and a chart spec | `src/copilot/sql/` ([ADR-0015](docs/decisions/0015-reuse-text2sql-analyst.md), [guide](docs/concepts/text-to-sql-agent.md), [value linking](docs/concepts/value-linking.md), [report](docs/eval/data-agent-financebench.md)) |
 
 ## Local development
 
@@ -93,6 +93,7 @@ uv run poe check-faithfulness --run doc-agent-v4-full # check each sentence agai
 uv run poe analyse-errors --run doc-agent-v4-full --judge qwen3.8-27b-p2   # error categories, latency, cost
 uv run poe run-sql-agent                              # the data agent on the SQL set, scored
 uv run poe ask-data "How did 3M's capital expenditure change from fiscal 2018 to fiscal 2022?"
+uv run poe answer-with-data                           # FinanceBench's dev metrics questions, by SQL
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).
