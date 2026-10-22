@@ -71,7 +71,16 @@ On the SQL set's 28 dev questions, scored by execution against the gold queries'
 
 Model time is 1.5 seconds a question at the median and 2.1 at p95, for two calls: selection on the fast model (Qwen3.8 27B), SQL on the strong one (gpt-oss-120b), both on Groq. The written analysis adds a third call, on the fast model.
 
-The dev score is no longer a fair test of the combined-measure definitions, which were written after reading the first run's errors; FinanceBench's metrics questions and the SQL test split check the agent on questions it wasn't tuned on.
+On FinanceBench's 33 dev metrics questions, written by other people and graded by the doc agent's judges, with gpt-oss-120b writing both agents' answers ([report](../eval/data-agent-financebench.md)):
+
+| Agent | Correct (exact 95% interval) | Refused | Cost a question |
+|---|---|---|---|
+| **Data agent** | **32 of 33 (0.84 to 1.00)** | 0 | $0.0025 |
+| Doc agent, reading filing pages | 29 of 33 (0.72 to 0.97) | 2 | $0.0010 |
+
+It is right wherever the doc agent is, and also on two calculations across years that the doc agent refused. Its one miss is a rounding question about the reference: the reported $389 million as $0.39 billion, where the reference says $0.40. With three questions between the agents, the difference isn't significant (p = 0.25).
+
+Neither dev score is a fair test any more. The combined-measure definitions were written after reading the SQL set's first errors, and the facts database was checked against FinanceBench's dev metrics questions in Phase 1. The SQL set's test split and FinanceBench's test split check the agent on questions it wasn't tuned on.
 
 ## Pitfalls we hit
 
@@ -86,6 +95,7 @@ The dev score is no longer a fair test of the combined-measure definitions, whic
 3. Why is table selection allowed to decline the question?
 4. When is a repair loop worth its extra model call, and when does it just repeat the mistake?
 5. Why does the typed answer carry statistics computed in code, when the model already wrote an answer?
+6. Why does the data agent answer calculations across years that the doc agent, with the same answer model, refuses?
 
 ## References
 
