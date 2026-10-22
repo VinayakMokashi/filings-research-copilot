@@ -599,7 +599,7 @@ requires-dist = [
     { name = "pypdfium2", specifier = ">=5.14.0" },
     { name = "qdrant-client", specifier = ">=1.19.1" },
     { name = "structlog", specifier = ">=26.1.0" },
-    { name = "text2sql-analyst", git = "https://github.com/VinayakMokashi/text2sql-analyst?rev=2b89c30706220f4d8d4fac57ea9cfc5179fa9cac" },
+    { name = "text2sql-analyst", git = "https://github.com/VinayakMokashi/text2sql-analyst?rev=bfaafdf7fdb212eef15a6e0c5bb4994d7ff38d7b" },
     { name = "tokenizers", specifier = ">=0.23.3" },
 ]
 
@@ -2835,8 +2835,8 @@ wheels = [
 
 [[package]]
 name = "text2sql-analyst"
-version = "0.2.0"
-source = { git = "https://github.com/VinayakMokashi/text2sql-analyst?rev=2b89c30706220f4d8d4fac57ea9cfc5179fa9cac#2b89c30706220f4d8d4fac57ea9cfc5179fa9cac" }
+version = "0.3.0"
+source = { git = "https://github.com/VinayakMokashi/text2sql-analyst?rev=bfaafdf7fdb212eef15a6e0c5bb4994d7ff38d7b#bfaafdf7fdb212eef15a6e0c5bb4994d7ff38d7b" }
 dependencies = [
     { name = "fastembed" },
     { name = "openai" },
