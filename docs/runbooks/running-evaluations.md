@@ -99,6 +99,22 @@ Both need Qdrant with the `fb_page_bge-small` collection and `GROQ_API_KEY`. Eve
 - **What is committed.** The answers file holds filing text and model answers, so it stays local. `eval/results/answers/<run>/dev/` holds only ids and numbers: `answered`, `retried`, `context_hit`, `cites_evidence`, citation counts, invalid citations, failed calculations, tokens and latency.
 - **Correctness** needs the LLM judge (step 3.6); these measures are structural.
 
+## Judge answers and check the judge
+
+The judge ([guide](../concepts/llm-as-judge.md)) grades a run's answers against FinanceBench's reference answers; a sample of reference labels checks the judge:
+
+```bash
+uv run poe judge-answers --run doc-agent-v3-full                         # the default judge (fast role)
+FRC_LLM_FAST_MODEL=groq/openai/gpt-oss-20b uv run poe judge-answers --run doc-agent-v3-full   # a second judge
+uv run poe label-sample --run doc-agent-v3-full                          # the labelling sample, and what the labeller sees
+uv run poe judge-agreement --run doc-agent-v3-full --judge qwen3.8-27b-p2 --judge gpt-oss-20b-p2
+```
+
+- **Resumable and named.** Verdicts are appended to `data/processed/judgements/<run>/<judge>/judgements.jsonl` as they arrive; the judge's name joins the model and the prompt version (`qwen3.8-27b-p2`), so a new rubric never resumes an old one. Outcomes by id go to `eval/results/correctness/<run>--<judge>/dev/`.
+- **Its own cache.** The judge caches its calls in `data/cache/judge.jsonl`, so it can run while an answer run writes `data/cache/llm.jsonl`.
+- **Labels.** `eval/labels/answer-correctness.jsonl` holds one line per labelled answer: id, answers run, labeller and label. The sample's ids are in `answer-correctness-sample.json`; the labeller sees exactly what the judge sees, never its verdicts. The current labels came from a stronger model, not a person ([data card](../data/answer-labels.md)).
+- **Cost.** About 660 tokens a verdict on the fast model, about 66,000 for a 100-question run.
+
 ## Compare two runs
 
 ```bash

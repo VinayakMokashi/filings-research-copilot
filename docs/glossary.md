@@ -16,6 +16,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Chunk** | A piece of a document that gets its own embedding and can be retrieved on its own. |
 | **CIK** | Central Index Key, the SEC's unique ID for each filer. |
 | **Citation precision** | The share of cited sources that actually support the claim they're attached to. |
+| **Cohen's kappa** | Agreement between two raters corrected for the agreement chance alone would give: 1 is perfect, 0 is no better than chance. |
 | **Company facts** | SEC's per-company JSON of every XBRL fact the company has filed, without dimensions, from `data.sec.gov/api/xbrl/companyfacts`. |
 | **Context budget** | The most retrieved text, in tokens, that the answer prompt may hold: 3,000 here. |
 | **Context hit** | Whether at least one evidence page is among the sources the answer model sees. An answer can't be better than its context. |
@@ -45,7 +46,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **LangGraph** | A library for building LLM workflows as state graphs with branches, loops and checkpoints. |
 | **Late chunking** | Run long stretches of a document through a long-context embedding model, then average each chunk's token vectors, so the chunk's vector keeps the surrounding context. |
 | **LiteLLM** | A library and proxy that gives one interface to many LLM providers, with retries and fallbacks. |
-| **LLM-as-judge** | Using a model to grade answers. The judge itself has to be checked against human labels. |
+| **LLM-as-judge** | Using a model to grade answers against a reference by a written rubric. The judge itself has to be checked against human labels. |
 | **LoRA** | Low-Rank Adaptation: fine-tuning by training small low-rank adapter matrices instead of all the weights. |
 | **McNemar's test** | A paired test for two systems' right-or-wrong outcomes that looks only at the questions where they disagree. |
 | **MCP** | Model Context Protocol: a standard for connecting AI apps (hosts) to tools and data (servers). |
@@ -65,6 +66,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Program-aided arithmetic** | The model writes a calculation as an expression and a safe evaluator computes it, instead of the model doing the arithmetic in its head (after PAL, Gao et al. 2022). |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
+| **Reference labels** | Labels a judge is checked against, made by someone or something other than the judge: ideally a person, here a stronger model. |
 | **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |
 | **Query decomposition** | Splitting a question into the separate facts it needs (both parts of a ratio, both years of a change) and searching for each. |
 | **Query understanding** | Reading the company, period and form out of a question and searching only the filings that match. |
@@ -72,6 +74,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Running header** | Text repeated at the top or bottom of most pages, such as a "Table of Contents" link or a page number. The parser removes it. |
 | **Self-consistency** | Sample several reasoning paths and keep the majority answer. |
 | **Self-Discover** | The model selects, adapts and structures reasoning modules into a plan, then follows the plan. |
+| **Self-preference bias** | A model judge's tendency to rate text like its own more highly; one reason the judge here is a different model family from the answer model. |
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
 | **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries. |
 | **Sparse vector** | A vector stored as its few non-zero dimensions, such as one weight for each word in a text. Qdrant stores BM25 this way. |
