@@ -2,7 +2,10 @@
 
 `--agent hybrid` answers each question in eval/hybrid/questions.jsonl with the hybrid agent
 (`copilot.answer.hybrid`): the data agent's query result and the doc agent's pages in one
-cited answer. `--agent doc` answers them with the doc agent alone, for comparison. Each
+cited answer. `--agent hybrid-v2` uses version 2 (`copilot.answer.hybrid_v2`, step 5.1),
+which routes by need, splits the question between the agents, answers in part and retries;
+its rows record the path it took and whether it retried. `--agent doc` answers them with
+the doc agent alone, for comparison. Each
 answer is appended as it arrives to data/processed/hybrid/<run>/answers.jsonl, with its
 sources, and a rerun skips the questions already there. Then each answer's sentences are
 checked against the sources they cite (`copilot.eval.faithfulness`, the Qwen judge, with its
@@ -22,6 +25,7 @@ hybrid agent, the SQL and rows. Filing text stays in the local file.
 
 Usage: uv run poe run-hybrid --agent hybrid --run hybrid-v1     (needs Qdrant and GROQ_API_KEY)
        uv run poe run-hybrid --agent hybrid --run hybrid-smoke --limit 2
+       uv run poe run-hybrid --agent hybrid-v2 --run hybrid-v2
        uv run poe run-hybrid --agent doc --run doc-agent-v4
 """
 
@@ -30,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import statistics
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -39,6 +44,8 @@ from typing import Any
 from copilot.answer.agent import build_agent
 from copilot.answer.generate import Answer
 from copilot.answer.hybrid import DATABASE, HybridAgent
+from copilot.answer.hybrid_v2 import PROMPT_VERSION as HYBRID_V2_PROMPT
+from copilot.answer.hybrid_v2 import HybridAgentV2
 from copilot.config import get_settings
 from copilot.eval.faithfulness import PROMPT_VERSION, check
 from copilot.eval.hybrid import HybridQuestion, expected_values, gives, load_questions
@@ -112,7 +119,7 @@ def record(
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
-    parser.add_argument("--agent", choices=["hybrid", "doc"], required=True)
+    parser.add_argument("--agent", choices=["hybrid", "hybrid-v2", "doc"], required=True)
     parser.add_argument("--run", required=True, help="run name")
     parser.add_argument("--limit", type=int, help="answer only the first N questions")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
@@ -128,7 +135,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     doc = build_agent(settings)
     sql_client = batch_client(settings)
-    hybrid = HybridAgent(doc, DataAgent(build_pipeline(settings, sql_client)))
+    data_agent = DataAgent(build_pipeline(settings, sql_client))
+    hybrid = (
+        HybridAgentV2(doc, data_agent)
+        if args.agent == "hybrid-v2"
+        else HybridAgent(doc, data_agent)
+    )
     if not isinstance(doc.llm, PacedLLM):
         raise TypeError("the doc agent's client should be paced")
     clients = [doc.llm, sql_client]
@@ -139,11 +151,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             before = usage(clients)
             latency = sum(client.latency_s for client in clients)
             try:
-                if args.agent == "hybrid":
+                if args.agent in ("hybrid", "hybrid-v2"):
                     result = hybrid.answer(question.question)
                     answer, retrieval = result.answer, result.retrieval
+                    found = result.data
                     extra: dict[str, Any] = {
-                        "data": result.data.model_dump(mode="json", exclude={"question"})
+                        "data": found.model_dump(mode="json", exclude={"question"})
+                        if found is not None
+                        else None,
+                        "path": result.path,
+                        "figures_question": result.figures_question,
+                        "reasons_question": result.reasons_question,
+                        "retried": result.retried,
                     }
                 else:
                     agent_answer = doc.answer(question.question)
@@ -230,13 +249,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "completion_tokens": sum(c for _, c in item["tokens_by_model"].values()),
                 "latency_s": item["latency_s"],
                 "cost_usd": round(sum(known), 6) if len(known) == len(costs) else None,
+                "path": item.get("path", "doc" if args.agent == "doc" else "split"),
+                "retried": float(bool(item.get("retried"))),
             }
         )
         data = item.get("data") or {}
+        plan: dict[str, Any] = {
+            key: item[key]
+            for key in ("path", "figures_question", "reasons_question")
+            if key in item
+        }
         published.append(
             {
                 "id": question.id,
                 "agent": args.agent,
+                **plan,
                 "answerable": item["answerable"],
                 "text": item["text"],
                 "missing": item["missing"],
@@ -260,6 +287,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             "agent": args.agent,
             "questions": f"eval/hybrid/questions.jsonl, {len(questions)} on dev companies",
             "answer_model": settings.llm_strong_model,
+            **(
+                {
+                    "hybrid_prompt": HYBRID_V2_PROMPT,
+                    "paths": dict(Counter(row["path"] for row in rows)),
+                    "retried": sum(int(row["retried"]) for row in rows),
+                }
+                if args.agent == "hybrid-v2"
+                else {}
+            ),
             "faithfulness_judge": f"{settings.llm_fast_model}, prompt {PROMPT_VERSION}",
             "mean_tokens": round(
                 statistics.mean(row["prompt_tokens"] + row["completion_tokens"] for row in rows)
