@@ -1,4 +1,4 @@
-"""Ingestion jobs: one per document, run by a local runner now and an SQS-driven worker in Phase 8.
+"""Ingestion jobs: one per document, run by a local runner now and a queue-fed worker in Phase 8.
 
 A job names one document. A handler does the work (chunk, embed, upsert) and returns a
 `JobResult`. The local runner works through jobs in order, records a failure and moves on,

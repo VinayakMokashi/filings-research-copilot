@@ -17,7 +17,7 @@ An agentic research copilot for public-company filings. Ask a question about a c
 - **Research briefs.** A planner, parallel section writers, an editor and a critic, with every claim validated against its source.
 - **Tools for other AI apps.** An MCP server exposing search, financial queries and the copilot itself.
 - **Measured.** Evaluated on FinanceBench and purpose-built test sets, with 95% confidence intervals on every reported number.
-- **Deployable on demand.** Terraform brings a production-shaped AWS stack (ECS Fargate, RDS, SQS, Secrets Manager) up for a demo and tears it down afterwards.
+- **Deployable on demand.** Terraform deploys a production-shaped Google Cloud stack (Cloud Run, Cloud SQL, Pub/Sub, Secret Manager). The services scale to zero, and the database runs only for demos.
 
 ## Architecture
 

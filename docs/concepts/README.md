@@ -36,8 +36,8 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 30 | `dspy.md` | Optimising prompts against a metric | Khattab et al., DSPy (2023) | 7 | Planned |
 | 31 | `bandit-routing.md` | ε-greedy exploration for choosing models | Sutton and Barto, *Reinforcement Learning* (2018), ch. 2 | 7 | Planned |
 | 32 | `research-briefs.md` | Self-Discover plans and an agent crew | Zhou et al., Self-Discover (2024) | 7 | Planned |
-| 33 | `ecs-fargate.md` | Containers, services, tasks, load balancers | AWS ECS docs | 8 | Planned |
+| 33 | `cloud-run.md` | Containers, services, revisions, scaling to zero | Cloud Run docs | 8 | Planned |
 | 34 | `terraform-basics.md` | Infrastructure as code, state, plans | Terraform docs | 8 | Planned |
-| 35 | `github-oidc.md` | Deploying without stored AWS keys | GitHub docs, OpenID Connect in AWS | 8 | Planned |
+| 35 | `workload-identity-federation.md` | Deploying without stored keys | Google Cloud docs, Workload Identity Federation with deployment pipelines | 8 | Planned |
 | 36 | `online-evaluation.md` | Nightly evals, interleaving, drift checks | Chapelle et al., interleaved evaluation (2012) | 9 | Planned |
 | 37 | `preference-data.md` | From thumbs-up/down to preference tuning | Rafailov et al., DPO (2023) | 9 | Planned |
