@@ -67,9 +67,11 @@ class Copilot:
         values = self.graph.get_state(_config(thread_id)).values
         return list(values.get("history", []))
 
-    def stream(self, question: str, *, thread_id: str) -> Iterator[dict[str, Any]]:
+    def stream(
+        self, question: str, *, thread_id: str, user_id: str = "default"
+    ) -> Iterator[dict[str, Any]]:
         """The run's events as they happen; the last one is the response."""
-        config = _config(thread_id)
+        config = _config(thread_id, user_id)
         base = {
             "run": uuid.uuid4().hex[:12],
             "thread": thread_id,
@@ -105,14 +107,14 @@ class Copilot:
         response = self.graph.get_state(config).values.get("response", {})
         yield event("response", **response)
 
-    def ask(self, question: str, *, thread_id: str) -> dict[str, Any]:
+    def ask(self, question: str, *, thread_id: str, user_id: str = "default") -> dict[str, Any]:
         """The response to one question, once the whole run is done."""
         response: dict[str, Any] = {}
-        for item in self.stream(question, thread_id=thread_id):
+        for item in self.stream(question, thread_id=thread_id, user_id=user_id):
             if item["type"] == "response":
                 response = item
         return response
 
 
-def _config(thread_id: str) -> RunnableConfig:
-    return {"configurable": {"thread_id": thread_id}}
+def _config(thread_id: str, user_id: str = "default") -> RunnableConfig:
+    return {"configurable": {"thread_id": thread_id, "user_id": user_id}}

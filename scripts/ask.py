@@ -2,8 +2,10 @@
 
 Each node's start and end, the route and the answer are printed as the graph streams them,
 and every event is appended to data/traces/<thread>.jsonl. With `--thread`, questions join
-one conversation; with `--postgres`, it is kept in the Compose Postgres and outlives the
-process, so a later `poe ask --thread NAME --postgres` continues it.
+one conversation, and a follow-up such as "And in 2019?" is rewritten from it; with
+`--postgres`, the conversation and the notes kept about the user (`--user`) are stored in
+the Compose Postgres and outlive the process, so a later `poe ask --thread NAME --postgres`
+continues the conversation, and a new thread still knows the user's notes.
 
 Usage (needs Qdrant, the facts database and GROQ_API_KEY):
   uv run poe ask "What was 3M's capital expenditure in 2018?"
@@ -20,8 +22,9 @@ from collections.abc import Sequence
 from typing import Any
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.store.base import BaseStore
 
-from copilot.agents.build import build_components, postgres_checkpointer
+from copilot.agents.build import build_components, postgres_checkpointer, postgres_store
 from copilot.agents.runner import Copilot, TraceWriter
 from copilot.config import get_settings
 from copilot.llm import LLMError
@@ -50,6 +53,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("question")
     parser.add_argument("--thread", help="conversation id (default: a new one)")
     parser.add_argument("--postgres", action="store_true", help="keep the conversation")
+    parser.add_argument("--user", default="default", help="whose notes to use and keep")
     parser.add_argument("--verbose", action="store_true", help="print every event")
     args = parser.parse_args(argv)
 
@@ -59,13 +63,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     trace = TraceWriter(settings.data_dir / "traces" / f"{thread}.jsonl")
     with contextlib.ExitStack() as stack:
         checkpointer: BaseCheckpointSaver[Any] | None = None
+        store: BaseStore | None = None
         if args.postgres:
             checkpointer = stack.enter_context(postgres_checkpointer(settings))
-        copilot = Copilot(build_components(settings), checkpointer, trace)
+            store = stack.enter_context(postgres_store(settings))
+        copilot = Copilot(build_components(settings, store=store), checkpointer, trace)
         print(f"thread {thread}, turn {len(copilot.history(thread)) + 1}")
         response: dict[str, Any] = {}
         try:
-            for event in copilot.stream(args.question, thread_id=thread):
+            for event in copilot.stream(args.question, thread_id=thread, user_id=args.user):
                 show(event, args.verbose)
                 if event["type"] == "response":
                     response = event
