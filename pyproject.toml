@@ -145,3 +145,8 @@ filterwarnings = [
 
 [tool.uv.sources]
 text2sql-analyst = { git = "https://github.com/VinayakMokashi/text2sql-analyst", rev = "bfaafdf7fdb212eef15a6e0c5bb4994d7ff38d7b" }
+
+[tool.uv]
+# FastEmbed caps Pillow below 13, but Pillow's security fixes landed in 13.0.0. Only
+# FastEmbed's image models use Pillow, and this project runs its text models alone.
+override-dependencies = ["pillow>=13.0.0"]
