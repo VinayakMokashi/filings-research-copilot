@@ -7,7 +7,8 @@ pause, or, when it knows the limit, the time the limit takes to earn back the to
 call used, whichever is longer. An answer call of 4,000 tokens under a limit of 8,000 a
 minute waits 30 seconds; a short rewrite waits the fixed pause. It also retries a
 rate-limited call after a growing pause, and adds up the latency and tokens of the calls
-it makes, in all and by model, so a run can report what it cost.
+it makes, in all and by model, so a run can report what it cost. Interactive use asks for
+one attempt: a quick fallback or apology beats minutes of waiting for a quota.
 """
 
 from __future__ import annotations
@@ -27,11 +28,16 @@ class PacedLLM:
     """Wraps a client for batch work; see the module docstring."""
 
     def __init__(
-        self, client: LLMClient, pause_s: float = 3.0, tokens_per_minute: int | None = None
+        self,
+        client: LLMClient,
+        pause_s: float = 3.0,
+        tokens_per_minute: int | None = None,
+        attempts: int = ATTEMPTS,
     ) -> None:
         self._client = client
         self._pause_s = pause_s
         self._tokens_per_minute = tokens_per_minute
+        self._attempts = max(1, attempts)
         self.calls = 0
         self.latency_s = 0.0
         self.prompt_tokens = 0
@@ -70,14 +76,14 @@ class PacedLLM:
         max_tokens: int | None = None,
         **extra: Any,
     ) -> LLMResponse:
-        for attempt in range(1, ATTEMPTS + 1):
+        for attempt in range(1, self._attempts + 1):
             try:
                 response = self._client.complete(
                     messages, role=role, temperature=temperature, max_tokens=max_tokens, **extra
                 )
                 break
             except LLMError as exc:
-                if not exc.rate_limited or attempt == ATTEMPTS:
+                if not exc.rate_limited or attempt == self._attempts:
                     raise
                 time.sleep(RETRY_PAUSE_S * attempt)
         self._count(response)
@@ -94,14 +100,14 @@ class PacedLLM:
         max_tokens: int | None = None,
         **extra: Any,
     ) -> LLMResponse:
-        for attempt in range(1, ATTEMPTS + 1):
+        for attempt in range(1, self._attempts + 1):
             try:
                 response = await self._client.acomplete(
                     messages, role=role, temperature=temperature, max_tokens=max_tokens, **extra
                 )
                 break
             except LLMError as exc:
-                if not exc.rate_limited or attempt == ATTEMPTS:
+                if not exc.rate_limited or attempt == self._attempts:
                     raise
                 await asyncio.sleep(RETRY_PAUSE_S * attempt)
         self._count(response)
