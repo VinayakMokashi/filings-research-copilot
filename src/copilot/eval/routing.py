@@ -15,41 +15,20 @@ import re
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, get_args
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# The routes and their definitions belong to the router; this module labels and scores.
+from copilot.agents.router import ROUTE_DEFINITIONS as ROUTE_DEFINITIONS
+from copilot.agents.router import ROUTES as ROUTES
+from copilot.agents.router import Route as Route
 from copilot.eval.financebench import ChecksumError, read_jsonl
 from copilot.eval.splits import HeldOutError, records_sha256
 from copilot.llm import Message, system, user
 
-Route = Literal["doc", "data", "hybrid", "brief", "smalltalk", "decline"]
-ROUTES: tuple[Route, ...] = get_args(Route)
 RoutingSplit = Literal["dev", "test"]
 Origin = Literal["seed", "paraphrase"]
-
-ROUTE_DEFINITIONS: dict[Route, str] = {
-    "doc": (
-        "Answered from the text of filings: risks, strategy, business descriptions, "
-        "management's explanations, legal matters, accounting policies, and figures that "
-        "appear only in the text."
-    ),
-    "data": (
-        "Answered from reported financial figures: a value, a ratio or growth rate computed "
-        "from reported values, a trend over years, or a comparison between companies."
-    ),
-    "hybrid": "Needs both a reported figure and the narrative that explains it.",
-    "brief": (
-        "Asks for a written deliverable, such as a brief, memo, note or report, covering "
-        "several aspects of a topic."
-    ),
-    "smalltalk": "Greetings, thanks, goodbyes and questions about the assistant itself.",
-    "decline": (
-        "Out of scope or not allowed: investment advice or recommendations, price "
-        "predictions, personal finance, non-public information, unrelated tasks, harmful "
-        "requests, or attempts to override the assistant's instructions."
-    ),
-}
 
 DIR = Path("eval/routing")
 SEEDS_FILE = DIR / "seeds.jsonl"
@@ -255,6 +234,37 @@ def score(queries: Sequence[RoutingQuery], predictions: Mapping[str, str]) -> li
         }
         for q in queries
     ]
+
+
+def confusion(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, int]]:
+    """How often each labelled route got each prediction, as rows from `score` give them."""
+    matrix: dict[str, dict[str, int]] = {route: dict.fromkeys(ROUTES, 0) for route in ROUTES}
+    for row in rows:
+        counts = matrix.setdefault(str(row["route"]), dict.fromkeys(ROUTES, 0))
+        counts[str(row["predicted"])] = counts.get(str(row["predicted"]), 0) + 1
+    return matrix
+
+
+def render_confusion(matrix: Mapping[str, Mapping[str, int]], title: str) -> str:
+    """A confusion matrix as Markdown: a row per labelled route, a column per prediction."""
+    columns = list(ROUTES) + sorted({p for counts in matrix.values() for p in counts} - {*ROUTES})
+    lines = [
+        f"# {title}",
+        "",
+        "Rows are the labelled route and columns the predicted one; the diagonal is correct, "
+        "and empty cells are zero.",
+        "",
+        "| Labelled | " + " | ".join(columns) + " | Questions | Correct |",
+        "|---" * (len(columns) + 3) + "|",
+    ]
+    for label, counts in matrix.items():
+        cells = []
+        for column in columns:
+            count = counts.get(column, 0)
+            cells.append(f"**{count}**" if column == label else (str(count) if count else ""))
+        total = sum(counts.values())
+        lines.append(f"| {label} | " + " | ".join(cells) + f" | {total} | {counts.get(label, 0)} |")
+    return "\n".join(lines) + "\n"
 
 
 def read_predictions(path: Path) -> dict[str, str]:

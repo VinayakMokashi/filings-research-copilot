@@ -156,6 +156,32 @@ def test_score_marks_each_prediction(tmp_path: Path) -> None:
     assert routing.read_predictions(path) == {"r001": "doc"}
 
 
+def test_confusion_counts_each_labelled_route_s_predictions() -> None:
+    rows = [
+        {"route": "doc", "predicted": "doc"},
+        {"route": "doc", "predicted": "hybrid"},
+        {"route": "data", "predicted": "data"},
+    ]
+
+    matrix = routing.confusion(rows)
+
+    assert matrix["doc"] == {**dict.fromkeys(routing.ROUTES, 0), "doc": 1, "hybrid": 1}
+    assert matrix["data"]["data"] == 1
+    assert sum(matrix["brief"].values()) == 0
+    table = routing.render_confusion(matrix, "routing: example (dev)")
+    assert table.startswith("# routing: example (dev)\n")
+    assert "| doc | **1** |  | 1 |  |  |  | 2 | 1 |" in table
+
+
+def test_confusion_keeps_a_prediction_outside_the_routes() -> None:
+    matrix = routing.confusion([{"route": "doc", "predicted": "weather"}])
+
+    table = routing.render_confusion(matrix, "routing: odd (dev)")
+
+    assert "| decline | weather | Questions | Correct |" in table
+    assert "| doc | **0** |  |  |  |  |  | 1 | 1 | 0 |" in table
+
+
 @pytest.mark.parametrize(
     ("query", "route"),
     [
