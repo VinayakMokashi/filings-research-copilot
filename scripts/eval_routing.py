@@ -1,5 +1,8 @@
 """Score a router on the routing eval set and write a run to eval/results/routing/.
 
+Each run gets items.jsonl, summary.json, summary.md and confusion.md. `poe run-router`
+runs the Phase 5 routers themselves.
+
 Usage:
   uv run poe eval-routing --baseline keyword                  # the floor to beat
   uv run poe eval-routing --baseline majority
@@ -73,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     directory = args.results_dir / "routing" / run / args.split
     write_run(directory, summary, rows)
+    matrix = routing.render_confusion(routing.confusion(rows), f"routing: {run} ({args.split})")
+    (directory / "confusion.md").write_text(matrix, encoding="utf-8", newline="\n")
     print(render_markdown(summary))
     print(f"Wrote {directory}")
     return 0
