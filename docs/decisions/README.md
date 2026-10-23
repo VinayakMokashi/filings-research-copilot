@@ -4,7 +4,7 @@
 |---|---|---|---|
 | [0001](0001-choose-filings-research-copilot.md) | Build an analyst copilot over SEC filings | Accepted | 2026-10-15 |
 | [0002](0002-documentation-system.md) | Keep all project documentation in the repo | Accepted | 2026-10-15 |
-| [0003](0003-aws-demo-windows.md) | Run the AWS deployment in demo windows | Accepted | 2026-10-15 |
+| [0003](0003-aws-demo-windows.md) | Run the AWS deployment in demo windows | Superseded by 0016 | 2026-10-15 |
 | [0004](0004-tooling-and-workflow.md) | Tooling, repository layout and Git workflow | Accepted | 2026-10-15 |
 | [0005](0005-llm-gateway.md) | One LLM gateway built on LiteLLM's router | Accepted | 2026-10-15 |
 | [0006](0006-evaluation-splits.md) | Split FinanceBench by company into dev and held-out test | Accepted | 2026-10-17 |
@@ -17,5 +17,7 @@
 | [0013](0013-answer-format.md) | Answer from numbered sources in JSON, with a calculator and one retry aimed at what is missing | Accepted | 2026-10-19 |
 | [0014](0014-answer-judge.md) | Grade answers with a rubric-bound model judge, checked against reference labels | Accepted | 2026-10-23 |
 | [0015](0015-reuse-text2sql-analyst.md) | Reuse text2sql-analyst as a pinned dependency, improved upstream first | Accepted | 2026-10-23 |
+| [0016](0016-deploy-on-google-cloud.md) | Deploy on Google Cloud, with services that scale to zero | Accepted | 2026-10-23 |
+| [0016](0016-deploy-on-google-cloud.md) | Deploy on Google Cloud, with services that scale to zero | Accepted | 2026-10-23 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.

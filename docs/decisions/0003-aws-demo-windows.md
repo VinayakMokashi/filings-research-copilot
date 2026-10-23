@@ -1,6 +1,6 @@
 # ADR-0003: Run the AWS deployment in demo windows
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0016](0016-deploy-on-google-cloud.md) (2026-10-23), which moves the deployment to Google Cloud
 - **Date:** 2026-10-15
 - **Phase:** 8 (decided during planning)
 
