@@ -62,6 +62,7 @@ compare-runs = { cmd = "python scripts/compare_runs.py", help = "Paired test of 
 paraphrase-routing-seeds = { cmd = "python scripts/paraphrase_routing_seeds.py", help = "Ask the strong model for paraphrases of the routing seeds, for review" }
 build-routing-set = { cmd = "python scripts/build_routing_set.py", help = "Build the routing eval set from seeds and reviewed paraphrases" }
 eval-routing = { cmd = "python scripts/eval_routing.py", help = "Score a router on the routing set (--baseline keyword or --predictions FILE)" }
+run-router = { cmd = "python scripts/run_router.py", help = "Run the semantic, LLM or cascade router on the routing set and score it, resumably (--router, --run)" }
 fetch-sec = { cmd = "python scripts/fetch_sec.py", help = "Match the companies to SEC filers and download their XBRL company facts" }
 build-facts = { cmd = "python scripts/build_facts_db.py", help = "Build the SQLite facts database from the cached company facts" }
 check-facts = { cmd = "python scripts/check_facts.py", help = "Cross-check the facts database against FinanceBench dev answers" }
