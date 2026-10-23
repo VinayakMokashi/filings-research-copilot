@@ -103,6 +103,7 @@ label-sample = { cmd = "python scripts/sample_labels.py", help = "Pick the answe
 judge-agreement = { cmd = "python scripts/judge_agreement.py", help = "Agreement and Cohen's kappa between a judge and the reference labels" }
 check-faithfulness = { cmd = "python scripts/check_faithfulness.py", help = "Check that each answer sentence is supported by the sources it cites (--run NAME)" }
 ui = { cmd = "streamlit run src/copilot/ui/app.py --server.address 127.0.0.1 --server.port 8501 --browser.gatherUsageStats false --client.toolbarMode minimal", help = "Serve the web UI on 127.0.0.1:8501; it talks to the API at FRC_API_URL (default http://127.0.0.1:8000)" }
+self-consistency = { cmd = "python scripts/self_consistency.py", help = "Sample more answers to a run's figure questions, vote on the figure, and keep a new run (--source, --k, --run)" }
 validate-answers = { cmd = "python scripts/validate_answers.py", help = "Run the validator over a run's stored answers and keep the result as a new run, resumably (--source, --run)" }
 analyse-errors = { cmd = "python scripts/analyse_errors.py", help = "Sort a run's answers into outcomes and error categories, with cost and latency" }
 run-sql-agent = { cmd = "python scripts/run_sql_agent.py", help = "Answer the SQL set with the data agent and score it, resumably" }
