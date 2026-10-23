@@ -144,11 +144,17 @@ def build(
 
 
 def read_decisions(path: Path) -> dict[str, dict[str, Any]]:
+    """The decisions made so far; a line cut short when a run was killed is routed again."""
     if not path.exists():
         return {}
-    lines = path.read_text(encoding="utf-8").splitlines()
-    records = (json.loads(line) for line in lines if line.strip())
-    return {record["id"]: record for record in records}
+    decisions: dict[str, dict[str, Any]] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        decisions[record["id"]] = record
+    return decisions
 
 
 def percentile(values: Sequence[float], share: float) -> float:
