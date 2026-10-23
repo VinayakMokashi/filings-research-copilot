@@ -411,3 +411,15 @@ def test_data_answers_and_refusals_are_not_checked() -> None:
     assert data["validation"] == {"checked": False}
     assert refused["validation"] == {"checked": False}
     assert checker.calls == []
+
+
+def test_a_revision_that_declines_is_reported() -> None:
+    checker = FakeLLM([FAIL])
+    refusal = {"answerable": False, "answer": "", "calculations": [], "missing": "the risks"}
+    pilot = copilot(["doc"], checker=checker, writer=FakeLLM([json.dumps(refusal)]))
+
+    response = pilot.ask("What risks does Netflix name?", thread_id="t")
+
+    assert response["answered"] is False
+    assert response["validation"] == {"checked": True, "refused": True, "revisions": 1}
+    assert len(checker.calls) == 1
