@@ -39,6 +39,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Hit@k** | Whether at least one relevant item appears in the top k results: 1 or 0 for each question. |
 | **HNSW** | A graph-based index for fast approximate nearest-neighbour search. |
 | **Holm–Bonferroni correction** | Adjusts p-values when several comparisons are made at once, so the chance of any false win stays at the chosen level. |
+| **Hybrid answer** | One answer built from two kinds of source: figures from a database query and explanations from document pages, each sentence citing the one it came from. |
 | **Hybrid search** | Combining keyword (BM25) and semantic (dense) search. |
 | **HyDE** | Hypothetical Document Embeddings: write a hypothetical answer, embed it, and search with that instead of the raw question. |
 | **IDF** | Inverse document frequency: how rare a term is across the collection. BM25 multiplies each term's weight by it, so a rare word like a ticker counts for more than "the". |
