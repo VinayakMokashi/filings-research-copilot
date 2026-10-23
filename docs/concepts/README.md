@@ -20,23 +20,24 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 14 | [corrective-rag.md](corrective-rag.md) | Grading the evidence, and searching more widely when it falls short | Yan et al., CRAG (2024); Asai et al., Self-RAG (2023) | 3 | Written |
 | 15 | [text-to-sql-agent.md](text-to-sql-agent.md) | Table selection, guardrails, repair, and a typed answer with exact statistics | Liu et al., NL2SQL survey (2025) | 4 | Written |
 | 16 | [value-linking.md](value-linking.md) | Matching names, metric values and coverage to the database, as hints | Talaei et al., CHESS (2024) | 4 | Written |
-| 17 | `langgraph-orchestration.md` | State graphs, branches, loops, checkpoints | LangGraph docs | 5 | Planned |
-| 18 | `semantic-routing.md` | Routing by embedding similarity | Semantic Router library docs | 5 | Planned |
-| 19 | `validator-loop.md` | Reflection and retry with feedback | Madaan et al., Self-Refine (2023) | 5 | Planned |
-| 20 | `self-consistency.md` | Sampling several answers and voting | Wang et al., Self-Consistency (2023) | 5 | Planned |
-| 21 | `agent-memory.md` | Short-term state and long-term memory | Chhikara et al., Mem0 (2025) | 5 | Planned |
-| 22 | `sse-streaming.md` | Streaming tokens and events to the UI | MDN, *Using server-sent events* | 6 | Planned |
-| 23 | `mcp-server.md` | Hosts, clients and servers; tools, resources and prompts | Model Context Protocol specification | 6 | Planned |
-| 24 | `semantic-cache.md` | Reusing answers to near-duplicate questions | GPTCache docs | 6 | Planned |
-| 25 | `prompt-injection.md` | Treating retrieved text as data | Greshake et al. (2023); OWASP Top 10 for LLM Applications | 6 | Planned |
-| 26 | `observability.md` | Traces, spans, token and cost metrics | Langfuse docs | 6 | Planned |
-| 27 | `contrastive-finetuning.md` | MNRL, in-batch negatives, hard negatives | Henderson et al. (2017); Neelakantan et al. (2022) | 7 | Planned |
-| 28 | `lora-classifier.md` | LoRA adapters for a fast router | Hu et al., LoRA (2021) | 7 | Planned |
-| 29 | `dspy.md` | Optimising prompts against a metric | Khattab et al., DSPy (2023) | 7 | Planned |
-| 30 | `bandit-routing.md` | ε-greedy exploration for choosing models | Sutton and Barto, *Reinforcement Learning* (2018), ch. 2 | 7 | Planned |
-| 31 | `research-briefs.md` | Self-Discover plans and an agent crew | Zhou et al., Self-Discover (2024) | 7 | Planned |
-| 32 | `ecs-fargate.md` | Containers, services, tasks, load balancers | AWS ECS docs | 8 | Planned |
-| 33 | `terraform-basics.md` | Infrastructure as code, state, plans | Terraform docs | 8 | Planned |
-| 34 | `github-oidc.md` | Deploying without stored AWS keys | GitHub docs, OpenID Connect in AWS | 8 | Planned |
-| 35 | `online-evaluation.md` | Nightly evals, interleaving, drift checks | Chapelle et al., interleaved evaluation (2012) | 9 | Planned |
-| 36 | `preference-data.md` | From thumbs-up/down to preference tuning | Rafailov et al., DPO (2023) | 9 | Planned |
+| 17 | [hybrid-answers.md](hybrid-answers.md) | Figures from a database query and explanations from the filing, in one cited answer | Zhu et al., TAT-QA (2021) | 4 | Written |
+| 18 | `langgraph-orchestration.md` | State graphs, branches, loops, checkpoints | LangGraph docs | 5 | Planned |
+| 19 | `semantic-routing.md` | Routing by embedding similarity | Semantic Router library docs | 5 | Planned |
+| 20 | `validator-loop.md` | Reflection and retry with feedback | Madaan et al., Self-Refine (2023) | 5 | Planned |
+| 21 | `self-consistency.md` | Sampling several answers and voting | Wang et al., Self-Consistency (2023) | 5 | Planned |
+| 22 | `agent-memory.md` | Short-term state and long-term memory | Chhikara et al., Mem0 (2025) | 5 | Planned |
+| 23 | `sse-streaming.md` | Streaming tokens and events to the UI | MDN, *Using server-sent events* | 6 | Planned |
+| 24 | `mcp-server.md` | Hosts, clients and servers; tools, resources and prompts | Model Context Protocol specification | 6 | Planned |
+| 25 | `semantic-cache.md` | Reusing answers to near-duplicate questions | GPTCache docs | 6 | Planned |
+| 26 | `prompt-injection.md` | Treating retrieved text as data | Greshake et al. (2023); OWASP Top 10 for LLM Applications | 6 | Planned |
+| 27 | `observability.md` | Traces, spans, token and cost metrics | Langfuse docs | 6 | Planned |
+| 28 | `contrastive-finetuning.md` | MNRL, in-batch negatives, hard negatives | Henderson et al. (2017); Neelakantan et al. (2022) | 7 | Planned |
+| 29 | `lora-classifier.md` | LoRA adapters for a fast router | Hu et al., LoRA (2021) | 7 | Planned |
+| 30 | `dspy.md` | Optimising prompts against a metric | Khattab et al., DSPy (2023) | 7 | Planned |
+| 31 | `bandit-routing.md` | ε-greedy exploration for choosing models | Sutton and Barto, *Reinforcement Learning* (2018), ch. 2 | 7 | Planned |
+| 32 | `research-briefs.md` | Self-Discover plans and an agent crew | Zhou et al., Self-Discover (2024) | 7 | Planned |
+| 33 | `ecs-fargate.md` | Containers, services, tasks, load balancers | AWS ECS docs | 8 | Planned |
+| 34 | `terraform-basics.md` | Infrastructure as code, state, plans | Terraform docs | 8 | Planned |
+| 35 | `github-oidc.md` | Deploying without stored AWS keys | GitHub docs, OpenID Connect in AWS | 8 | Planned |
+| 36 | `online-evaluation.md` | Nightly evals, interleaving, drift checks | Chapelle et al., interleaved evaluation (2012) | 9 | Planned |
+| 37 | `preference-data.md` | From thumbs-up/down to preference tuning | Rafailov et al., DPO (2023) | 9 | Planned |
