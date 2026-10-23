@@ -4,7 +4,7 @@
 
 - the doc agent over the evaluation corpus, the data agent with its answer written on the
   `strong` model, and the hybrid of the two;
-- the router of ADR-0017: the LLM router on the `small` role decides, and the semantic
+- the router of ADR-0017: the LLM router on the `strong` role decides, and the semantic
   router (company names and years masked, the nearest route centroid) decides only when
   the LLM call fails;
 - a client for small talk, on the `small` role.
@@ -71,7 +71,7 @@ def build_components(settings: Settings, *, batch: bool = False) -> Components:
     )
     router = CascadeRouter(
         semantic,
-        LLMRouter(router_llm, role="small"),
+        LLMRouter(router_llm, role="strong"),
         threshold=math.inf,  # the LLM router always decides; see ADR-0017
         fallback_on_error=not batch,
     )
