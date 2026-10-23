@@ -33,6 +33,7 @@ from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by
 from copilot.eval.splits import load_split
 from copilot.llm import LLMGateway, ModelRole
 from copilot.llm.cache import CachedLLM
+from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
 
@@ -67,10 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     answers = read_jsonl(
         settings.data_dir / "processed" / "answers" / args.run / "dev" / "answers.jsonl"
     )
-    models: dict[ModelRole, str] = {
-        "fast": settings.llm_fast_model,
-        "strong": settings.llm_strong_model,
-    }
+    models = role_models(settings)
     name = judge_name(models[role])
     path = settings.data_dir / "processed" / "judgements" / args.run / name / "judgements.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)

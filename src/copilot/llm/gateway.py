@@ -1,8 +1,8 @@
 """The single entry point for model calls.
 
-Every call names a role (`strong` or `fast`) rather than a model. The gateway maps roles
-to LiteLLM model ids from settings, retries transient failures, walks the fallback chain,
-and reports tokens, cost and latency for each call.
+Every call names a role (`strong`, `fast` or `small`) rather than a model. The gateway
+maps roles to LiteLLM model ids from settings, retries transient failures, walks the
+fallback chain, and reports tokens, cost and latency for each call.
 """
 
 from __future__ import annotations
@@ -52,6 +52,15 @@ def api_key_for(model: str, settings: Settings) -> str | None:
     return secret.get_secret_value() if secret is not None else None
 
 
+def role_models(settings: Settings) -> dict[ModelRole, str]:
+    """The model each role resolves to; disk caches key their entries by it."""
+    return {
+        "strong": settings.llm_strong_model,
+        "fast": settings.llm_fast_model,
+        "small": settings.llm_small_model,
+    }
+
+
 def build_router(settings: Settings) -> Router:
     """A LiteLLM router with one deployment per role plus the shared fallback chain."""
 
@@ -62,10 +71,8 @@ def build_router(settings: Settings) -> Router:
             params["api_key"] = key
         return {"model_name": name, "litellm_params": params}
 
-    model_list = [
-        deployment("strong", settings.llm_strong_model),
-        deployment("fast", settings.llm_fast_model),
-    ]
+    roles = role_models(settings)
+    model_list = [deployment(role, model) for role, model in roles.items()]
     fallback_names: list[str] = []
     for index, model in enumerate(settings.fallback_models, start=1):
         name = f"fallback-{index}"
@@ -73,7 +80,7 @@ def build_router(settings: Settings) -> Router:
         fallback_names.append(name)
 
     fallbacks: list[dict[str, list[str]]] = (
-        [{"strong": fallback_names}, {"fast": fallback_names}] if fallback_names else []
+        [{role: fallback_names} for role in roles] if fallback_names else []
     )
     return Router(
         model_list=model_list,

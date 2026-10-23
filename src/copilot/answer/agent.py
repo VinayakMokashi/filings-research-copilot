@@ -30,8 +30,9 @@ from copilot.config import Settings
 from copilot.eval import financebench as fb
 from copilot.ingest.embed import FastEmbedBM25, FastEmbedDense
 from copilot.ingest.universe import read_companies
-from copilot.llm import LLMClient, LLMGateway, ModelRole
+from copilot.llm import LLMClient, LLMGateway
 from copilot.llm.cache import CachedLLM
+from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.retrieval.query import CompanyMatcher, Filing, filings_from, resolve, understand
 from copilot.retrieval.rewrite import REWRITES, Rewrite, Search, expand
@@ -164,10 +165,7 @@ def build_agent(settings: Settings, collection: str = "fb_page_bge-small") -> Do
         FastEmbedDense(cache_dir=cache_dir),
         FastEmbedBM25(cache_dir=cache_dir),
     )
-    models: dict[ModelRole, str] = {
-        "fast": settings.llm_fast_model,
-        "strong": settings.llm_strong_model,
-    }
+    models = role_models(settings)
     cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
     paced = PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
     return DocAgent(searcher, matcher, filings, paced)

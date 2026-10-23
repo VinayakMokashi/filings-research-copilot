@@ -10,7 +10,8 @@ Routers (`--router`):
   would give its route away. Test seeds aren't among the examples, so on the test split
   nothing is left out.
 - `llm`: the route definitions, the labelling rules, the database's measures and a few
-  prompt examples, on a model role (`--role`; FRC_LLM_FAST_MODEL picks the fast model).
+  prompt examples, on a model role (`--role`, `fast` unless given; the FRC_LLM_*_MODEL
+  settings pick each role's model).
   Calls are cached in data/cache/router.jsonl and paced for the free tier.
 - `cascade`: the semantic route when its confidence reaches `--threshold`, the LLM route
   otherwise.
@@ -61,8 +62,9 @@ from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by
 from copilot.eval.splits import HeldOutError
 from copilot.ingest.embed import BGE_MODEL, FastEmbedDense
 from copilot.ingest.universe import read_companies
-from copilot.llm import LLMError, LLMGateway, ModelRole
+from copilot.llm import LLMError, LLMGateway
 from copilot.llm.cache import CachedLLM
+from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
 from copilot.retrieval.query import CompanyMatcher
@@ -74,10 +76,7 @@ Decide = Callable[[routing.RoutingQuery, Sequence[int]], RouteDecision]
 
 def llm_client(settings: Settings) -> PacedLLM:
     """The gateway behind the router's own cache file, paced for the free tier."""
-    models: dict[ModelRole, str] = {
-        "fast": settings.llm_fast_model,
-        "strong": settings.llm_strong_model,
-    }
+    models = role_models(settings)
     cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / CACHE_FILE, models)
     return PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
 
@@ -105,8 +104,7 @@ def configuration(args: argparse.Namespace, settings: Settings) -> dict[str, Any
             "examples": "routing set dev, each question's own seed group left out",
         }
     if args.router in ("llm", "cascade"):
-        model = settings.llm_fast_model if args.role == "fast" else settings.llm_strong_model
-        config |= {"model": model, "prompt_version": PROMPT_VERSION}
+        config |= {"model": role_models(settings)[args.role], "prompt_version": PROMPT_VERSION}
     if args.router == "cascade":
         config["threshold"] = args.threshold
     return config
@@ -175,7 +173,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--instruction", action="store_true", help="embed questions with bge's search instruction"
     )
-    parser.add_argument("--role", choices=("fast", "strong"), default="fast")
+    parser.add_argument("--role", choices=("fast", "strong", "small"), default="fast")
     parser.add_argument(
         "--threshold", type=float, default=1.0, help="vote share the semantic route needs"
     )
