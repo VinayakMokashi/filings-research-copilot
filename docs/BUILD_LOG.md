@@ -15,6 +15,27 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 4 · Hybrid answers
+
+- **Goal:** one answer that takes its figures from the data agent and its reasons from the filings, compared with the doc agent alone (step 4.6).
+- **Done:**
+  - `copilot.answer.hybrid.HybridAgent`. The data agent answers the question with a hint that other sources answer the reasons, and its query result, the SQL with the rows, becomes source [1]. The doc agent's retrieval supplies the pages from [2]. One gpt-oss-120b answer follows the doc agent's rules plus two: figures from the database, and a page that states a figure differently pointed out.
+  - A [hybrid question set](data/hybrid-set.md): 13 questions on dev companies, with expected figures as formulas over annual values, and the figure check in `copilot.eval.hybrid`.
+  - `poe run-hybrid`: either agent on the set, resumably, then the faithfulness judge, the figure and citation checks, and costs. Answers are committed without page text.
+  - A [report](eval/hybrid-prototype.md) and a [guide](concepts/hybrid-answers.md).
+- **Commands:** `uv run poe run-hybrid --agent hybrid --run hybrid-v1`, `uv run poe run-hybrid --agent doc --run doc-agent-v4`, `uv run poe compare-runs eval/results/hybrid/doc-agent-v4/dev eval/results/hybrid/hybrid-v1/dev --metric all_figures`, `uv run poe check`.
+- **Results** (13 questions):
+  - Each agent answered 10 with every expected figure and explained 9. Every sentence was supported by its citations in 8 of the hybrid's answers and 6 of the doc agent's (p = 0.63).
+  - Only the hybrid answered the five-year 3M question, whose 2019 figure is in no filing in the corpus. Only the doc agent answered Boeing's segment question, through its retry.
+  - The hybrid refused three questions whose figures it had, because no retrieved page explained them.
+  - $0.0048 a question, against the doc agent's $0.0030.
+- **Problems and fixes:**
+  - **The narrative half made the data agent decline.** It declined the first smoke run's 3M question as "qualitative commentary". A firmer hint fixed that one; Adobe's still declined in the full run.
+  - **Questions that didn't test the point.** The first ten asked about two years that one filing states, and the doc agent gave every figure too. Three five-year questions, whose middle years aren't in the corpus's filings, were added after that run, and the data card says so.
+  - **Two run loops at once.** A run loop that had been stopped kept running, so two loops took turns until one was killed. No file was damaged, and a loop now starts only after a check that none is running.
+- **Decisions:** neither agent changes now. Thirteen questions written by the same project are design evidence for Phase 5, not a basis for tuning: partial answers, the retry, a planner that splits questions, routing by need, and computed figures written once.
+- **Next:** close Phase 4: the SQL set's held-out test split, the plan, the README and the project page.
+
 ### 2026-10-23 · Phase 4 · The data agent on FinanceBench
 
 - **Goal:** measure the data agent on FinanceBench's figure questions against the doc agent, with the same questions and the same judges (step 4.5).

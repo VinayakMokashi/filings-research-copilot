@@ -143,6 +143,19 @@ uv run poe judge-answers --run data-agent-v1
 
 It needs the facts database (`poe build-facts`) and `GROQ_API_KEY`, not Qdrant. The written answer comes from the strong model, the doc agent's answer model, unless `--analysis-model fast` says otherwise; that keeps a comparison of the two agents to where their numbers come from. Calls are cached in `data/cache/sql.jsonl`. It resumes like the doc agent's runs, and stops with a message when a daily quota runs out. About 4,500 tokens a question. `eval/results/answers/<run>/dev/` holds ids and numbers only: `answered`, `declined`, `failed`, `repaired`, tokens, model latency and cost at list prices; the SQL and rows stay in the local answers file, since they restate the questions' figures.
 
+## Answer the hybrid questions
+
+The [hybrid set](../data/hybrid-set.md) holds thirteen questions that need figures and an explanation. The hybrid agent answers them from the data agent's query result and the doc agent's pages together; the doc agent alone answers them for comparison:
+
+```bash
+uv run poe run-hybrid --agent hybrid --run hybrid-smoke --limit 2   # a smoke run
+uv run poe run-hybrid --agent hybrid --run hybrid-v1
+uv run poe run-hybrid --agent doc --run doc-agent-v4
+uv run poe compare-runs eval/results/hybrid/doc-agent-v4/dev eval/results/hybrid/hybrid-v1/dev --metric all_figures
+```
+
+Both need Qdrant, the facts database and `GROQ_API_KEY`. Each run answers every question, appending to `data/processed/hybrid/<run>/answers.jsonl`, then checks each answer's sentences against the sources it cites, into `faithfulness.jsonl` beside it; both steps resume where they stopped, and a quota or an outage stops the run with a message. `eval/results/hybrid/<run>/dev/` gets the per-question checks (`figures_given`, `all_figures`, `database_cited`, `pages_cited`, `faithful`, `supported`), costs, and `answers.jsonl` with each answer's text, the labels of the sources it cites and the hybrid agent's SQL and rows. These are the project's own questions, so the answers are committed; the pages' text stays local.
+
 ## Judge answers and check the judge
 
 The judge ([guide](../concepts/llm-as-judge.md)) grades a run's answers against FinanceBench's reference answers; a sample of reference labels checks the judge:

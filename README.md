@@ -64,6 +64,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Doc agent: numbered sources within 3,000 tokens, one JSON answer call with citations, a safe calculator, and one retry aimed at what a refusal names as missing | `src/copilot/answer/` ([ADR-0013](docs/decisions/0013-answer-format.md), [guide](docs/concepts/grounded-generation.md)) |
 | Answer evaluation: an LLM judge with a rubric and code-computed comparisons of figures, checked against reference labels; faithfulness and citation precision; error categories, latency and cost | `src/copilot/eval/judge.py`, `faithfulness.py`, `errors.py` ([ADR-0014](docs/decisions/0014-answer-judge.md), [report](docs/eval/doc-agent-dev.md)) |
 | Data agent: text2sql-analyst's Text-to-SQL pipeline over the facts database, with value linking (company, metric and coverage hints) and its model calls on the gateway; every dev SQL question answered correctly, and 32 of FinanceBench's 33 dev metrics questions. A typed answer for other components: status, SQL, rows, exact statistics and a chart spec | `src/copilot/sql/` ([ADR-0015](docs/decisions/0015-reuse-text2sql-analyst.md), [guide](docs/concepts/text-to-sql-agent.md), [value linking](docs/concepts/value-linking.md), [report](docs/eval/data-agent-financebench.md)) |
+| Hybrid answers, a prototype: the data agent's query result and the doc agent's pages as numbered sources for one cited answer. On 13 questions of our own it gives every expected figure for 10, including years that no filing in the corpus holds | `src/copilot/answer/hybrid.py` ([guide](docs/concepts/hybrid-answers.md), [report](docs/eval/hybrid-prototype.md)) |
 
 ## Local development
 
@@ -94,6 +95,7 @@ uv run poe analyse-errors --run doc-agent-v4-full --judge qwen3.8-27b-p2   # err
 uv run poe run-sql-agent                              # the data agent on the SQL set, scored
 uv run poe ask-data "How did 3M's capital expenditure change from fiscal 2018 to fiscal 2022?"
 uv run poe answer-with-data                           # FinanceBench's dev metrics questions, by SQL
+uv run poe run-hybrid --agent hybrid --run hybrid-v1  # figures from SQL, reasons from the filings, one answer
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).
