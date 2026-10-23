@@ -1,0 +1,60 @@
+{
+  "suite": "hybrid",
+  "run": "doc-agent-v4",
+  "split": "dev",
+  "created": "2026-10-23T10:15:01.648547Z",
+  "questions": 13,
+  "test_split_opened": false,
+  "system": {
+    "agent": "doc",
+    "questions": "eval/hybrid/questions.jsonl, 13 on dev companies",
+    "answer_model": "groq/openai/gpt-oss-120b",
+    "faithfulness_judge": "groq/qwen/qwen3.8-27b, prompt 1",
+    "mean_tokens": 7318,
+    "model_latency_s": {
+      "p50": 5.03,
+      "max": 73.16
+    },
+    "cost_usd_per_question": 0.003017
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "answered": {
+      "mean": 0.7692307692307693,
+      "low": 0.5384615384615384,
+      "high": 1.0
+    },
+    "figures_given": {
+      "mean": 0.7692307692307693,
+      "low": 0.5384615384615384,
+      "high": 1.0
+    },
+    "all_figures": {
+      "mean": 0.7692307692307693,
+      "low": 0.5384615384615384,
+      "high": 1.0
+    },
+    "database_cited": {
+      "mean": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "pages_cited": {
+      "mean": 0.7692307692307693,
+      "low": 0.5384615384615384,
+      "high": 1.0
+    },
+    "faithful": {
+      "mean": 0.46153846153846156,
+      "low": 0.23076923076923078,
+      "high": 0.6923076923076923
+    },
+    "supported": {
+      "mean": 0.6666666666666666,
+      "low": 0.4423076923076923,
+      "high": 0.8653846153846154
+    }
+  },
+  "by": {}
+}
