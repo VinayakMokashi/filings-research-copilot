@@ -21,3 +21,4 @@ Each card records:
 | [SQL set](sql-set.md) | 42 questions over the facts database, with verified gold SQL or a reason to decline | 2026-10-17 |
 | [Synthetic pairs](synthetic-pairs.md) | 1,006 LLM-written questions paired with the chunks that answer them, from training filings only, for fine-tuning in Phase 7 | 2026-10-18 |
 | [Answer labels](answer-labels.md) | 41 correctness labels for the doc agent's dev answers, from a Claude model, for checking the answer judge | 2026-10-23 |
+| [Hybrid set](hybrid-set.md) | 10 questions that need figures from the facts database and an explanation from the filing, for the hybrid-answer prototype | 2026-10-23 |
