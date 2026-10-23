@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 3, Doc agent with cited answers (in progress) |
+| **Current phase** | Phase 5, Orchestration with LangGraph (in progress) |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -80,7 +80,7 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then |
 | Terraform, Google Cloud CLI | Not installed | Phase 8 | |
 | Google Cloud project with billing, MFA and a budget alert | Pending | Phase 8 | The free-trial credit ($300) lasts 90 days from activation |
-| Domain name (or CloudFront) for HTTPS | To decide | Phase 8 | ACM only issues certificates for names we control, so the load balancer's own `*.elb.amazonaws.com` address can't serve trusted HTTPS |
+| Custom domain | Optional | Phase 8 | Cloud Run serves every service over HTTPS on its own address ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)) |
 
 ## 6. Technical choices
 
@@ -310,11 +310,9 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 
 ## 8. Open decisions
 
-| Before | Decision | Current thinking |
-|---|---|---|
-| Phase 8 | How to serve HTTPS | A domain we own with an ACM certificate on the load balancer, or CloudFront's default `*.cloudfront.net` certificate in front of it (no domain needed; CloudFront's origin timeout must allow streamed answers) |
+No decisions are open.
 
-Already decided: public repository with an MIT licence ([ADR-0004](decisions/0004-tooling-and-workflow.md)); the deployment runs on Google Cloud, with services that scale to zero and the database in demo windows ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)); the SEC contact is the owner's name and email, kept in `.env`.
+Already decided: public repository with an MIT licence ([ADR-0004](decisions/0004-tooling-and-workflow.md)); the deployment runs on Google Cloud, with services that scale to zero and the database in demo windows, and Cloud Run serves HTTPS itself, so a custom domain is optional ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)); the SEC contact is the owner's name and email, kept in `.env`.
 
 ## 9. Risks
 
@@ -327,7 +325,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | PDF tables flatten badly | Table-aware parsing experiment; numbers come from XBRL instead |
 | Development machine has no CUDA GPU | Train on Kaggle or Colab GPUs; serve small models on CPU with ONNX |
 | Cloud costs | Budget alert first; Cloud Run scales to zero; the database runs only in demo windows, with a scheduled stop; Phase 8's measurements run inside the free-trial credit |
-| Qdrant Cloud free clusters may pause when idle | Collection snapshots in S3; restore during `demo-up` |
+| Qdrant Cloud free clusters may pause when idle | Collection snapshots in Cloud Storage; restore during `demo-up` |
 | FinanceBench licence | Used for evaluation only; licence checked in Phase 1 |
 | Scope | Each phase delivers standalone value; stretch items are marked |
 
@@ -349,6 +347,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-23 | Step 3.6's judge is checked against labels from a stronger model instead of labels by hand | The labels came from a Claude model; judge numbers carry that caveat, and a person check of about 20 answers stays open ([ADR-0014](decisions/0014-answer-judge.md)) |
 | 2026-10-23 | Step 4.5 measures the data agent on FinanceBench's metrics questions, graded like the doc agent's answers | The SQL set's accuracy and errors were measured in steps 4.1 and 4.2; comparing the two agents needs the same questions and the same judge |
 | 2026-10-23 | Phase 8 moves from AWS to Google Cloud | The builder already uses Google Cloud and has its free-trial credit, and Cloud Run scales to zero, so only the database needs demo windows ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)) |
+| 2026-10-24 | The open decision on HTTPS is closed, and the prerequisites and risks drop their AWS terms | Cloud Run serves HTTPS on its own addresses ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)); these lines still described the AWS plan |
 
 ## 11. Status tracker
 
@@ -359,7 +358,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2 Ingestion and retrieval baseline | Done | 2026-10-17 | 2026-10-18 |
 | 3 Doc agent | Done | 2026-10-19 | 2026-10-23 |
 | 4 Data agent | Done | 2026-10-23 | 2026-10-23 |
-| 5 Orchestration | Planned | | |
+| 5 Orchestration | In progress | 2026-10-24 | |
 | 6 API, UI, MCP, observability | Planned | | |
 | 7 Fine-tuning and optimisation | Planned | | |
 | 8 Google Cloud deployment | Planned | | |
