@@ -261,7 +261,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         test_split_opened=False,
         system={
             "agent": args.agent,
-            "questions": "eval/hybrid/questions.jsonl, ten questions on dev companies",
+            "questions": f"eval/hybrid/questions.jsonl, {len(questions)} on dev companies",
             "answer_model": settings.llm_strong_model,
             "faithfulness_judge": f"{settings.llm_fast_model}, prompt {PROMPT_VERSION}",
             "mean_tokens": round(

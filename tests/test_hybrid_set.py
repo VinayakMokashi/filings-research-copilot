@@ -21,11 +21,11 @@ from copilot.facts.formula import lookups
 SPLITS = Path("eval/financebench/splits.json")
 
 
-def test_the_committed_set_holds_ten_dev_questions_with_valid_formulas() -> None:
+def test_the_committed_set_holds_dev_questions_with_valid_formulas() -> None:
     questions = load_questions()
     held_out = set(json.loads(SPLITS.read_text(encoding="utf-8"))["test_companies"])
 
-    assert [q.id for q in questions] == [f"h{n:02d}" for n in range(1, 11)]
+    assert [q.id for q in questions] == [f"h{n:02d}" for n in range(1, 14)]
     assert not {q.company for q in questions} & held_out
     for question in questions:
         assert question.filing.upper().startswith(question.company.upper().split()[0][:4])

@@ -1,6 +1,6 @@
 """The hybrid question set: questions that need figures and an explanation (step 4.6).
 
-eval/hybrid/questions.jsonl holds ten questions written for this project, each about one dev
+eval/hybrid/questions.jsonl holds questions written for this project, each about one dev
 company and one of its filings in the corpus, such as "How did 3M's capital expenditure
 change from 2017 to 2018, and what did the company say it was investing in?". Each lists:
 

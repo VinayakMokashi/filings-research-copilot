@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **What it is** | 10 questions that each need figures and an explanation: the figures are in the facts database, the reasons only in the filing's text |
+| **What it is** | 13 questions that each need figures and an explanation: the figures are in the facts database, the reasons only in the filing's text |
 | **Files** | [`eval/hybrid/questions.jsonl`](../../eval/hybrid/questions.jsonl) |
 | **Licence** | MIT, like the rest of the repository; written for this project |
 | **Built** | 2026-10-23, against the facts database and the 84-filing corpus of that date |
@@ -24,8 +24,13 @@ Each question names one dev company and is answered from one of its filings in t
 | h08 | Block | 10-K, 2020 | Revenue in 2019 and 2020, and what drove the change |
 | h09 | General Mills | 10-K, fiscal 2020 | Free cash flow in fiscal 2020, and what drove cash from operations |
 | h10 | Boeing | 10-K, 2022 | Commercial Airplanes revenue in 2021 and 2022, and why it changed |
+| h11 | 3M | 10-K, 2022 | Capital expenditure in each year from 2018 to 2022, and what drove it |
+| h12 | Coca-Cola | 10-K, 2021 | Net income in each year from 2017 to 2021, and what drove the 2021 result |
+| h13 | Boeing | 10-K, 2022 | Revenue in each year from 2018 to 2022, and what drove the recovery since 2020 |
 
-Two questions test the edges:
+The first ten ask about two years that one filing states side by side. **h11 to h13 were added after the first run**, which showed the doc agent alone giving every figure those ten ask for: they ask for five years, and a middle year is in no filing in the corpus (3M's and Boeing's 2019) or only deep in one (Coca-Cola's 2018 net income, on PDF page 122 of the 2021 10-K, outside the statements). That is the case the database is for, since the text corpus will never hold every filing.
+
+Two of the first ten test the edges:
 
 - **h06, a restated figure.** Boeing adopted the new revenue standard in 2018 and restated 2017: $93,392 million as first reported, $94,005 million in the 2018 10-K. The database holds both (`value` and `latest_value`), and either counts.
 - **h10, a figure the database doesn't hold.** SEC's company facts have no segment figures ([data card](sec-company-facts.md)), so the database holds only Boeing's total revenue, $66,608 million for 2022. A right answer takes the segment's figures from the filing (PDF page 24), and the total mustn't stand in for them.
@@ -44,4 +49,4 @@ Two questions test the edges:
 
 ## Limits
 
-Ten questions show whether the approach works and how it fails; they can't measure a rate precisely, since each question is ten points. The same project wrote the questions and the agents, so they test the intended use rather than unexpected wording.
+A set this small shows whether the approach works and how it fails; it can't measure a rate precisely. The same project wrote the questions and the agents, so they test the intended use rather than unexpected wording.
