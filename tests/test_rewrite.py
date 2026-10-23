@@ -102,6 +102,18 @@ def test_paced_llm_retries_rate_limits_and_adds_up_usage(monkeypatch: pytest.Mon
     assert (paced.calls, paced.tokens_by_model) == (0, {})
 
 
+def test_paced_llm_with_one_attempt_fails_fast(monkeypatch: pytest.MonkeyPatch) -> None:
+    pauses: list[float] = []
+    monkeypatch.setattr("copilot.llm.pacing.time.sleep", pauses.append)
+    flaky = _Flaky()
+
+    with pytest.raises(LLMError):
+        PacedLLM(flaky, pause_s=0.0, attempts=1).complete([])
+
+    assert flaky.attempts == 1
+    assert pauses == []
+
+
 def test_paced_llm_waits_long_enough_to_earn_back_the_tokens() -> None:
     paced = PacedLLM(FakeLLM([]), pause_s=3.0, tokens_per_minute=8000)
     answer = LLMResponse("ok", "strong", "fake", 1.0, prompt_tokens=3800, completion_tokens=200)
