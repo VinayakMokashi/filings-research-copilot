@@ -6,21 +6,25 @@ decline. A router reads one standalone question (the graph rewrites follow-ups f
 picks one route.
 
 - `SemanticRouter` embeds the question with bge-small and compares it with labelled
-  example questions. The k most similar examples vote for their routes, each vote weighted
-  by its similarity. There is no model call: a few milliseconds on a laptop CPU.
+  example questions: either the k most similar examples vote for their routes, each vote
+  weighted by its similarity, or the question goes to the route whose examples' mean
+  vector (centroid) is closest. Masking company names and years first (`entity_mask`)
+  keeps the comparison on what is asked rather than whom it is about. There is no model
+  call: a few milliseconds on a laptop CPU.
 - `LLMRouter` asks a model for one route as JSON, with the routes' definitions, the
   labelling rules for close calls, the measures the database holds and a few examples
   written for the prompt.
-- `CascadeRouter` takes the semantic router's route when enough of its vote agrees, and
-  asks the LLM router otherwise.
+- `CascadeRouter` takes the semantic router's route when it is decisive enough, and asks
+  the LLM router otherwise.
 
 Each returns a `RouteDecision`: the route, how sure the router was, and what it cost.
 """
 
 from __future__ import annotations
 
+import re
 import time
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Literal, Protocol, get_args
 
@@ -33,6 +37,7 @@ from copilot.ingest.embed import DenseEmbedder, normalise
 from copilot.llm import LLMClient, LLMError, Message, ModelRole, system, user
 from copilot.llm.gateway import token_cost
 from copilot.llm.parsing import json_object
+from copilot.retrieval.query import CompanyMatcher
 
 Route = Literal["doc", "data", "hybrid", "brief", "smalltalk", "decline"]
 ROUTES: tuple[Route, ...] = get_args(Route)
@@ -76,9 +81,11 @@ LABELLING_RULES: tuple[str, ...] = (
 class RouteDecision:
     """One routing decision: the route, how sure the router was, and what it cost.
 
-    `confidence` is the semantic vote's share for the route (1.0 when every voting example
-    agrees); the LLM router gives none. `model` names the model that decided, so a
-    cascade decision without one came from the semantic router alone.
+    `confidence` says how decisive the semantic router was: with a vote, the route's share
+    of it (1.0 when every voting example agrees); with centroids, the margin between the
+    closest centroid's similarity and the runner-up's. The LLM router gives none. `model`
+    names the model that decided, so a cascade decision without one came from the
+    semantic router alone.
     """
 
     route: Route
@@ -104,6 +111,27 @@ class Router(Protocol):
 # ---------------------------------------------------------------------------------------
 
 K = 5
+Method = Literal["vote", "centroid"]
+
+COMPANY_PLACEHOLDER = "Acme"
+YEAR_PLACEHOLDER = "2020"
+# A year with an optional "FY" or "fiscal (year)" in front: "2022", "FY2022", "fiscal 2022".
+_PERIOD = re.compile(r"\b(?:FY|fiscal\s+(?:year\s+)?)?(?:19|20)\d{2}\b", re.IGNORECASE)
+
+
+def entity_mask(matcher: CompanyMatcher) -> Callable[[str], str]:
+    """A mask that hides what a route doesn't depend on: company names and years.
+
+    Generic embeddings rate two questions about the same company as similar whatever they
+    ask, so a question's nearest examples tend to share its company rather than its route.
+    Every company the matcher knows becomes "Acme" (a possessive stays), and every year,
+    with any "FY" or "fiscal year" in front, becomes "2020".
+    """
+
+    def mask(text: str) -> str:
+        return _PERIOD.sub(YEAR_PLACEHOLDER, matcher.mask(text, COMPANY_PLACEHOLDER))
+
+    return mask
 
 
 def vote(
@@ -135,12 +163,45 @@ def decide(scores: Mapping[Route, float]) -> tuple[Route, float]:
     return best, (scores.get(best, 0.0) / total if total > 0 else 0.0)
 
 
+def route_centroids(
+    vectors: NDArray[np.float32], labels: Sequence[Route], exclude: Collection[int] = ()
+) -> dict[Route, NDArray[np.float32]]:
+    """Each route's centroid: the normalised mean of its examples' vectors.
+
+    `exclude` leaves examples out by position; a route left without examples has none.
+    """
+    keep = np.ones(len(labels), dtype=bool)
+    if exclude:
+        keep[list(exclude)] = False
+    routes = np.array(labels)
+    centroids: dict[Route, NDArray[np.float32]] = {}
+    for route in ROUTES:
+        members = vectors[keep & (routes == route)]
+        if len(members):
+            centroids[route] = normalise(members.mean(axis=0, keepdims=True))[0]
+    return centroids
+
+
+def nearest(similarities: Mapping[Route, float]) -> tuple[Route, float]:
+    """The route with the most similar centroid, and its margin over the runner-up.
+
+    Ties go to the earlier route in `ROUTES`; a lone route's margin is its similarity.
+    """
+    if not similarities:
+        raise ValueError("No centroids to compare with.")
+    ranked = sorted(similarities.items(), key=lambda item: (-item[1], ROUTES.index(item[0])))
+    best, top = ranked[0]
+    return best, (top - ranked[1][1] if len(ranked) > 1 else top)
+
+
 class SemanticRouter:
     """Routes by similarity to labelled example questions; see the module docstring.
 
-    Questions and examples are embedded alike, without bge's search instruction, since
-    comparing two questions is a symmetric task. `instruction=True` embeds the question
-    with the instruction instead, as a search query against the examples.
+    `method="vote"` lets the `k` most similar examples vote; `method="centroid"` picks the
+    route whose centroid is closest. `mask` rewrites examples and questions alike before
+    they are embedded (see `entity_mask`). Both are embedded without bge's search
+    instruction, since comparing two questions is a symmetric task; `instruction=True`
+    embeds the question with it instead, as a search query against the examples.
     """
 
     name = "semantic"
@@ -150,7 +211,9 @@ class SemanticRouter:
         embedder: DenseEmbedder,
         examples: Sequence[tuple[str, Route]],
         *,
+        method: Method = "vote",
         k: int = K,
+        mask: Callable[[str], str] | None = None,
         instruction: bool = False,
     ) -> None:
         if not examples:
@@ -158,26 +221,45 @@ class SemanticRouter:
         if k < 1:
             raise ValueError("k must be at least 1.")
         self._embedder = embedder
+        self._mask = mask
         self._labels = [route for _, route in examples]
-        self._vectors = normalise(embedder.embed_documents([text for text, _ in examples]))
+        texts = [self._masked(text) for text, _ in examples]
+        self._vectors = normalise(embedder.embed_documents(texts))
+        self._centroids = route_centroids(self._vectors, self._labels)
+        self.method = method
         self.k = k
         self.instruction = instruction
 
     def __len__(self) -> int:
         return len(self._labels)
 
+    def _masked(self, text: str) -> str:
+        return self._mask(text) if self._mask is not None else text
+
     def route(self, question: str, exclude: Collection[int] = ()) -> RouteDecision:
         """`exclude` leaves out examples by position, for leave-one-out evaluation."""
         started = time.perf_counter()
+        text = self._masked(question)
         if self.instruction:
-            vector = self._embedder.embed_query(question)
+            embedded = self._embedder.embed_query(text)
         else:
-            vector = self._embedder.embed_documents([question])[0]
-        similarities = self._vectors @ normalise(vector[np.newaxis, :])[0]
-        if exclude:
-            similarities[list(exclude)] = -np.inf
-        scores = vote(similarities, self._labels, self.k)
-        route, confidence = decide(scores)
+            embedded = self._embedder.embed_documents([text])[0]
+        vector = normalise(embedded[np.newaxis, :])[0]
+        scores: Mapping[Route, float]
+        if self.method == "centroid":
+            centroids = (
+                route_centroids(self._vectors, self._labels, exclude)
+                if exclude
+                else self._centroids
+            )
+            scores = {route: float(centroid @ vector) for route, centroid in centroids.items()}
+            route, confidence = nearest(scores)
+        else:
+            similarities = self._vectors @ vector
+            if exclude:
+                similarities[list(exclude)] = -np.inf
+            scores = vote(similarities, self._labels, self.k)
+            route, confidence = decide(scores)
         return RouteDecision(
             route=route,
             router=self.name,
@@ -334,12 +416,13 @@ class LLMRouter:
 
 
 class CascadeRouter:
-    """The semantic route when its vote is decisive enough, the LLM router's otherwise.
+    """The semantic route when it is decisive enough, the LLM router's otherwise.
 
-    `threshold` is the share of the semantic vote the top route needs: at 1.0 every one of
-    the k nearest examples must agree. When the LLM router fails or its reply can't be
-    read, the semantic route stands, with the error recorded; `fallback_on_error=False`
-    raises a failed call instead, for batch runs that stop and resume.
+    `threshold` is the confidence the semantic route needs (see `RouteDecision`): with a
+    vote, 1.0 means every one of the k nearest examples must agree; with centroids, it is
+    the margin over the runner-up. When the LLM router fails or its reply can't be read,
+    the semantic route stands, with the error recorded; `fallback_on_error=False` raises a
+    failed call instead, for batch runs that stop and resume.
     """
 
     name = "cascade"

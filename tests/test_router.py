@@ -16,13 +16,17 @@ from copilot.agents.router import (
     Route,
     SemanticRouter,
     decide,
+    entity_mask,
+    nearest,
     parse_route,
+    route_centroids,
     vote,
 )
 from copilot.eval import routing
 from copilot.eval.financebench import read_jsonl
 from copilot.ingest.embed import HashingDense
 from copilot.llm import FakeLLM, LLMError
+from copilot.retrieval.query import CompanyMatcher
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,16 +42,18 @@ FIGURE_QUESTION = "What was Nike revenue in 2023"
 
 
 class RecordingEmbedder:
-    """HashingDense that records which texts went in as search queries."""
+    """HashingDense that records the texts it embeds, as documents and as search queries."""
 
     key = "recording"
     dim = 64
 
     def __init__(self) -> None:
         self._inner = HashingDense()
+        self.documents: list[str] = []
         self.queries: list[str] = []
 
     def embed_documents(self, texts: Sequence[str]) -> NDArray[np.float32]:
+        self.documents.extend(texts)
         return self._inner.embed_documents(texts)
 
     def embed_query(self, text: str) -> NDArray[np.float32]:
@@ -125,6 +131,60 @@ def test_semantic_router_needs_examples_and_a_positive_k() -> None:
         SemanticRouter(HashingDense(), [])
     with pytest.raises(ValueError, match="k must"):
         SemanticRouter(HashingDense(), EXAMPLES, k=0)
+
+
+def test_route_centroids_average_each_route_s_examples() -> None:
+    vectors = np.array([[1, 0], [0, 1], [1, 0], [0.6, 0.8]], dtype=np.float32)
+    labels: list[Route] = ["doc", "data", "doc", "data"]
+
+    centroids = route_centroids(vectors, labels)
+
+    assert set(centroids) == {"doc", "data"}
+    np.testing.assert_allclose(centroids["doc"], [1.0, 0.0])
+    assert float(np.linalg.norm(centroids["data"])) == pytest.approx(1.0)
+    assert set(route_centroids(vectors, labels, exclude=[1, 3])) == {"doc"}
+
+
+def test_nearest_takes_the_closest_centroid_with_its_margin() -> None:
+    route, margin = nearest({"doc": 0.5, "data": 0.8, "brief": 0.6})
+
+    assert route == "data"
+    assert margin == pytest.approx(0.2)
+    assert nearest({"data": 0.7, "doc": 0.7}) == ("doc", 0.0)  # ties: the earlier route
+    assert nearest({"brief": 0.4}) == ("brief", 0.4)
+    with pytest.raises(ValueError, match="No centroids"):
+        nearest({})
+
+
+def test_semantic_router_by_centroid_leaves_out_excluded_examples() -> None:
+    semantic = SemanticRouter(HashingDense(), EXAMPLES, method="centroid")
+
+    decision = semantic.route(FIGURE_QUESTION)
+
+    assert decision.route == "data"
+    assert decision.confidence is not None
+    assert decision.confidence > 0
+    assert semantic.route(FIGURE_QUESTION, exclude=[2, 3]).route != "data"
+
+
+def test_semantic_router_masks_examples_and_questions_alike() -> None:
+    embedder = RecordingEmbedder()
+
+    SemanticRouter(embedder, EXAMPLES, mask=str.upper).route("hello there")
+
+    assert embedder.documents == [text.upper() for text, _ in EXAMPLES] + ["HELLO THERE"]
+
+
+def test_entity_mask_hides_companies_and_years() -> None:
+    mask = entity_mask(CompanyMatcher(["Nike", "Coca-Cola"], {"Nike": "NKE", "Coca-Cola": "KO"}))
+
+    assert (
+        mask("What was Nike's revenue in fiscal year 2022?") == "What was Acme's revenue in 2020?"
+    )
+    assert mask("Compare Coca-Cola and NKE for FY2021 and 2019.") == (
+        "Compare Acme and Acme for 2020 and 2020."
+    )
+    assert mask("Hi there!") == "Hi there!"
 
 
 def test_llm_router_prompt_holds_definitions_rules_measures_and_examples() -> None:

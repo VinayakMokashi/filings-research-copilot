@@ -2,16 +2,18 @@
 
 Routers (`--router`):
 
-- `semantic`: bge-small similarity to labelled examples, the routing set's dev questions,
-  with a similarity-weighted vote among the `--k` nearest. Each question is routed with its
-  own seed group (the seed and its two paraphrases) left out of the examples, because a
-  paraphrase of the question among them would give its route away. Test seeds aren't
-  among the examples, so on the test split nothing is left out.
+- `semantic`: bge-small similarity to labelled examples, the routing set's dev questions:
+  a similarity-weighted vote among the `--k` nearest, or the nearest route centroid
+  (`--method centroid`), optionally with company names and years masked (`--mask
+  entities`). Each question is routed with its own seed group (the seed and its two
+  paraphrases) left out of the examples, because a paraphrase of the question among them
+  would give its route away. Test seeds aren't among the examples, so on the test split
+  nothing is left out.
 - `llm`: the route definitions, the labelling rules, the database's measures and a few
   prompt examples, on a model role (`--role`; FRC_LLM_FAST_MODEL picks the fast model).
   Calls are cached in data/cache/router.jsonl and paced for the free tier.
-- `cascade`: the semantic route when its top route has at least `--threshold` of the vote,
-  the LLM route otherwise.
+- `cascade`: the semantic route when its confidence reaches `--threshold`, the LLM route
+  otherwise.
 
 Each decision is appended to data/processed/routing/<run>/<split>/decisions.jsonl as it
 arrives, and a rerun skips the questions already there; a run stopped by a quota or an
@@ -22,6 +24,7 @@ and confusion.md.
 Usage:
   uv run poe run-router --router semantic --run semantic-k5
   uv run poe run-router --router semantic --k 1 --run semantic-k1
+  uv run poe run-router --router semantic --mask entities --method centroid --run NAME
   uv run poe run-router --router llm --run llm-qwen3.8-27b                (needs GROQ_API_KEY)
   uv run poe run-router --router cascade --threshold 1.0 --run cascade-k5-qwen3.8-27b
   uv run poe run-router ... --split test --allow-test                 # milestone evaluations only
@@ -50,16 +53,19 @@ from copilot.agents.router import (
     LLMRouter,
     RouteDecision,
     SemanticRouter,
+    entity_mask,
 )
 from copilot.config import Settings, get_settings
 from copilot.eval import routing
 from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
 from copilot.eval.splits import HeldOutError
 from copilot.ingest.embed import BGE_MODEL, FastEmbedDense
+from copilot.ingest.universe import read_companies
 from copilot.llm import LLMError, LLMGateway, ModelRole
 from copilot.llm.cache import CachedLLM
 from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
+from copilot.retrieval.query import CompanyMatcher
 
 CACHE_FILE = "router.jsonl"
 
@@ -92,7 +98,9 @@ def configuration(args: argparse.Namespace, settings: Settings) -> dict[str, Any
     if args.router in ("semantic", "cascade"):
         config |= {
             "embedder": BGE_MODEL,
-            "k": args.k,
+            "method": args.method,
+            "k": args.k if args.method == "vote" else None,
+            "mask": args.mask,
             "instruction": args.instruction,
             "examples": "routing set dev, each question's own seed group left out",
         }
@@ -110,10 +118,18 @@ def build(
     if args.router == "llm":
         llm = LLMRouter(llm_client(settings), role=args.role)
         return lambda query, _exclude: llm.route(query.query)
+    mask = None
+    if args.mask == "entities":
+        companies = read_companies()
+        mask = entity_mask(
+            CompanyMatcher([c.name for c in companies], {c.name: c.ticker for c in companies})
+        )
     semantic = SemanticRouter(
         FastEmbedDense(cache_dir=settings.data_dir / "models"),
         [(example.query, example.route) for example in examples],
+        method=args.method,
         k=args.k,
+        mask=mask,
         instruction=args.instruction,
     )
     if args.router == "semantic":
@@ -145,7 +161,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--router", choices=("semantic", "llm", "cascade"), required=True)
     parser.add_argument("--run", required=True, help="run name")
+    parser.add_argument("--method", choices=("vote", "centroid"), default="vote")
     parser.add_argument("--k", type=int, default=K, help="examples that vote (semantic)")
+    parser.add_argument(
+        "--mask", choices=("none", "entities"), default="none", help="mask companies and years"
+    )
     parser.add_argument(
         "--instruction", action="store_true", help="embed questions with bge's search instruction"
     )

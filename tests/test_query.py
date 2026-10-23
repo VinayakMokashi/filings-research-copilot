@@ -66,6 +66,23 @@ def test_companies_are_found_by_name_alias_and_ticker(
 
 
 @pytest.mark.parametrize(
+    ("question", "masked"),
+    [
+        ("Did JnJ\u2019s net earnings rise?", "Did Acme's net earnings rise?"),
+        ("Compare Coca-Cola and COST on revenue.", "Compare Acme and Acme on revenue."),
+        ("Compare Costco and KO on revenue.", "Compare Acme and KO on revenue."),  # 2 letters
+        ("Does American Water Works pay a dividend?", "Does Acme pay a dividend?"),
+        (
+            "Was the block of shares sold at a discount?",
+            "Was the block of shares sold at a discount?",
+        ),
+    ],
+)
+def test_mask_replaces_every_company_mention(question: str, masked: str) -> None:
+    assert MATCHER.mask(question, "Acme") == masked
+
+
+@pytest.mark.parametrize(
     ("question", "years", "quarters"),
     [
         ("What is the FY2018 capex?", (2018,), ()),
