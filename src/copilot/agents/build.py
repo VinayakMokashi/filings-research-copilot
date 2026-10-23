@@ -10,7 +10,10 @@
   the LLM call fails;
 - a client for small talk, on the `small` role;
 - the validator's checker on the `small` role, and the doc agent's client as the writer
-  of revisions (step 5.3).
+  of revisions (step 5.3);
+- memory (step 5.5): a rewriter for follow-ups on the `strong` role, and notes about the
+  user on the `small` role, kept in `store` (in memory unless one is given). Batch runs
+  answer independent questions, so they keep no notes.
 
 Every component's model calls go through a disk cache of its own under data/cache/, so a
 repeated question costs nothing. `batch=True` paces the calls for the free tier's
@@ -20,7 +23,7 @@ without retries: the router falls back to its semantic half, and a specialist re
 that the quota is spent.
 
 `postgres_checkpointer` keeps conversations in the Compose Postgres (127.0.0.1:5433), so
-they outlive the process.
+they outlive the process, and `postgres_store` keeps the notes there too.
 """
 
 from __future__ import annotations
@@ -30,6 +33,9 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.store.base import BaseStore
+from langgraph.store.memory import InMemoryStore
+from langgraph.store.postgres import PostgresStore
 
 from copilot.agents.graph import Components
 from copilot.agents.router import CascadeRouter, LLMRouter, SemanticRouter, entity_mask
@@ -48,7 +54,9 @@ from copilot.sql.agent import build_pipeline
 from copilot.sql.tool import DataAgent
 
 
-def build_components(settings: Settings, *, batch: bool = False) -> Components:
+def build_components(
+    settings: Settings, *, batch: bool = False, store: BaseStore | None = None
+) -> Components:
     """The copilot's parts over the evaluation corpus; see the module docstring."""
     models = role_models(settings)
 
@@ -58,8 +66,16 @@ def build_components(settings: Settings, *, batch: bool = False) -> Components:
             return PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
         return PacedLLM(cache, pause_s=0.0, attempts=1)  # counts tokens; no pauses or retries
 
-    names = ("llm.jsonl", "sql.jsonl", "router.jsonl", "chat.jsonl", "validator.jsonl")
-    doc_llm, sql_llm, router_llm, chat, checker = (client(name) for name in names)
+    names = (
+        "llm.jsonl",
+        "sql.jsonl",
+        "router.jsonl",
+        "chat.jsonl",
+        "validator.jsonl",
+        "rewrite.jsonl",
+        "notes.jsonl",
+    )
+    doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes = (client(name) for name in names)
     doc = build_agent(settings, llm=doc_llm)
     data = DataAgent(build_pipeline(settings, sql_llm, analysis_model="strong"))
     companies = read_companies()
@@ -87,11 +103,22 @@ def build_components(settings: Settings, *, batch: bool = False) -> Components:
         matcher=matcher,
         chat=chat,
         companies=[company.name for company in companies],
-        meters=[doc_llm, sql_llm, router_llm, chat, checker],
+        meters=[doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes],
         strict=batch,
         checker=checker,
         writer=doc_llm,
+        rewriter=rewriter,
+        notes=None if batch else notes,
+        store=None if batch else (store if store is not None else InMemoryStore()),
     )
+
+
+@contextmanager
+def postgres_store(settings: Settings) -> Iterator[PostgresStore]:
+    """A store on the configured Postgres for notes about users, with its tables created."""
+    with PostgresStore.from_conn_string(settings.database_url) as store:
+        store.setup()
+        yield store
 
 
 @contextmanager

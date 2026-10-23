@@ -5,8 +5,9 @@ Each question runs through the same nodes:
     rewrite -> understand -> route -> doc | data | hybrid | brief | smalltalk | decline
             -> synthesise -> validate (-> revise -> validate, at most twice) -> respond
 
-- **rewrite** makes a follow-up standalone (a pass-through until step 5.5 adds follow-up
-  rewriting) and clears what the previous turn left in the state.
+- **rewrite** makes a follow-up standalone from the last turns and the notes kept about
+  the user (step 5.5, `copilot.agents.memory`), and clears what the previous turn left
+  in the state.
 - **understand** reads the companies, periods and forms the question names.
 - **route** asks the router (ADR-0017) and branches on its route.
 - The specialists answer: the doc agent, the data agent, the hybrid of the two, a brief
@@ -16,6 +17,7 @@ Each question runs through the same nodes:
   `copilot.agents.validator`). An answer that fails goes to **revise** and back, at most
   twice; after that, only its verified sentences are kept.
 - **respond** writes the reply and adds the turn to the conversation's history.
+- **remember** updates the notes kept about the user from the turn, when a store is set.
 
 The state holds plain JSON values only, so any checkpointer can store it: in memory for
 tests, Postgres for conversations that outlive the process. Nodes report what they did as
@@ -31,11 +33,13 @@ from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from typing import Annotated, Any, Protocol, TypedDict
 
-from langgraph.config import get_stream_writer
+from langgraph.config import get_config, get_stream_writer
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.store.base import BaseStore
 from langgraph.types import Checkpointer
 
+from copilot.agents.memory import MAX_TURNS, apply, extract, recall, reconcile, rewrite_followup
 from copilot.agents.router import ROUTES, Route, RouteDecision
 from copilot.agents.validator import MAX_REVISIONS, check_answer, to_answer, trim, verdict_record
 from copilot.agents.validator import revise as revise_answer
@@ -60,6 +64,7 @@ NODES = (
     "validate",
     "revise",
     "respond",
+    "remember",
 )
 
 
@@ -138,7 +143,8 @@ class Components:
     `strict=True` lets a rate-limited model call stop the run, for batch evaluations that
     resume later; otherwise the reply asks the user to try again. `checker` checks cited
     answers on the `small` role and `writer` revises them on the `strong` role; without
-    both, answers pass unchecked.
+    both, answers pass unchecked. `rewriter` makes follow-ups standalone; `notes` and
+    `store` keep notes about the user across conversations, when both are set.
     """
 
     router: Router
@@ -152,6 +158,9 @@ class Components:
     strict: bool = False
     checker: LLMClient | None = None
     writer: LLMClient | None = None
+    rewriter: LLMClient | None = None
+    notes: LLMClient | None = None
+    store: BaseStore | None = None
 
 
 BRIEF_REPLY = (
@@ -317,6 +326,11 @@ def branch(state: CopilotState) -> Route:
     return "doc"
 
 
+def user_id() -> str:
+    """The user this run is for, from its config (`default` when none is given)."""
+    return str(get_config().get("configurable", {}).get("user_id", "default"))
+
+
 def after_validation(state: CopilotState) -> str:
     """`revise` when the check asked for another draft, else `respond`."""
     return "revise" if state.get("validation", {}).get("next") == "revise" else "respond"
@@ -335,8 +349,28 @@ def build_graph(
 
     def rewrite(state: CopilotState) -> dict[str, Any]:
         question = " ".join(state["question"].split())
-        emit("rewrite", "standalone", standalone=question, rewritten=False)
-        return {**PER_TURN, "standalone": question}
+        turns = [(turn["standalone"], turn["answer"]) for turn in state.get("history", [])]
+        notes = [note.text for note in recall(parts.store, user_id())] if parts.store else []
+        if parts.rewriter is None:
+            emit("rewrite", "standalone", standalone=question, rewritten=False)
+            return {**PER_TURN, "standalone": question}
+        try:
+            result = rewrite_followup(parts.rewriter, turns, question, notes)
+        except LLMError as exc:
+            if parts.strict or not exc.rate_limited:
+                raise
+            emit("rewrite", "quota", error=str(exc)[:200])
+            return {**PER_TURN, "standalone": question}
+        emit(
+            "rewrite",
+            "standalone",
+            standalone=result.standalone,
+            rewritten=result.rewritten,
+            turns=min(len(turns), MAX_TURNS),
+            notes=len(notes),
+            error=result.error,
+        )
+        return {**PER_TURN, "standalone": result.standalone}
 
     def understand_question(state: CopilotState) -> dict[str, Any]:
         cues = understand(state["standalone"], parts.matcher)
@@ -533,6 +567,24 @@ def build_graph(
         }
         return {"response": response, "history": [turn]}
 
+    def remember(state: CopilotState) -> dict[str, Any]:
+        if parts.store is None or parts.notes is None:
+            emit("remember", "skipped", reason="no store")
+            return {}
+        user = user_id()
+        response = state.get("response", {})
+        try:
+            facts = extract(parts.notes, state["question"], response.get("text", ""))
+            operations = reconcile(parts.notes, recall(parts.store, user), facts)
+        except LLMError as exc:
+            if parts.strict or not exc.rate_limited:
+                raise
+            emit("remember", "quota", error=str(exc)[:200])
+            return {}
+        done = apply(parts.store, user, operations)
+        emit("remember", "notes", facts=len(facts), **done)
+        return {}
+
     nodes: dict[str, Node] = {
         "rewrite": rewrite,
         "understand": understand_question,
@@ -547,6 +599,7 @@ def build_graph(
         "validate": validate,
         "revise": revise,
         "respond": respond,
+        "remember": remember,
     }
     builder = StateGraph(CopilotState)
     for name, node in nodes.items():
@@ -562,5 +615,6 @@ def build_graph(
         "validate", after_validation, {"revise": "revise", "respond": "respond"}
     )
     builder.add_edge("revise", "validate")
-    builder.add_edge("respond", END)
+    builder.add_edge("respond", "remember")
+    builder.add_edge("remember", END)
     return builder.compile(checkpointer=checkpointer)
