@@ -641,7 +641,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><h3>Serving</h3><div class="chips"><span class="chip">FastAPI</span><span class="chip">SSE</span><span class="chip">Streamlit</span><span class="chip">MCP Python SDK</span><span class="chip">Langfuse</span></div></div>
     <div><h3>Infrastructure</h3><div class="chips"><span class="chip">Docker</span><span class="chip">Terraform</span><span class="chip">GitHub Actions</span><span class="chip">ECS Fargate</span><span class="chip">RDS</span><span class="chip">S3</span><span class="chip">SQS</span><span class="chip">DynamoDB</span><span class="chip">Secrets Manager</span><span class="chip">CloudWatch</span></div></div>
   </div>
-  <p class="tnote">In use after Phases 0 to 3: LiteLLM with Groq (gpt-oss-120b answers, Qwen rewrites and judges), Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts, the evaluation harness, pypdfium2, and FastEmbed's bge-small, BM25 and cross-encoder models on ONNX Runtime. The rest is confirmed in a decision record when its phase lands.</p>
+  <p class="tnote">In use after Phases 0 to 4: LiteLLM with Groq (gpt-oss-120b for answers and SQL, Qwen for rewrites, table selection and judging), Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts queried through text2sql-analyst and sqlglot, the evaluation harness, pypdfium2, and FastEmbed's bge-small, BM25 and cross-encoder models on ONNX Runtime. The rest is confirmed in a decision record when its phase lands.</p>
 </section>
 </main>
 
