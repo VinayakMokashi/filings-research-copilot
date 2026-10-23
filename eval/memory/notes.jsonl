@@ -1,0 +1,6 @@
+{"user": "u1", "present": ["Netflix", "billion"], "absent": []}
+{"user": "u2", "present": ["Boeing"], "absent": []}
+{"user": "u3", "present": [], "absent": []}
+{"user": "u4", "present": [], "absent": []}
+{"user": "u5", "present": ["short"], "absent": []}
+{"user": "u6", "present": ["AMD"], "absent": ["follows Intel"]}
