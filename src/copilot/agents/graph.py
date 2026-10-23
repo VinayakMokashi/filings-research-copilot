@@ -363,15 +363,20 @@ def build_graph(
         except LLMError as exc:
             return quota("hybrid", exc)
         record = answer_record(found.answer)
+        data = data_record(found.data) if found.data is not None else None
         emit(
             "hybrid",
             "answer",
+            path=found.path,
+            figures_question=found.figures_question,
+            reasons_question=found.reasons_question,
             answered=record["answerable"],
-            data_status=found.data.status,
+            retried=found.retried,
+            data_status=data["status"] if data else None,
             database_cited=found.database_cited,
             pages_cited=found.pages_cited,
         )
-        result = {"kind": "hybrid", "answer": record, "data": data_record(found.data)}
+        result = {"kind": "hybrid", "answer": record, "data": data, "path": found.path}
         return {"result": result | {"filings": found.retrieval.filings}}
 
     def brief(state: CopilotState) -> dict[str, Any]:
@@ -418,6 +423,7 @@ def build_graph(
             "route": state.get("route", ""),
             "text": draft.get("text", ""),
             "answered": draft.get("answered", False),
+            "missing": draft.get("missing", ""),
             "citations": [
                 {key: value for key, value in citation.items() if key != "text"}
                 for citation in draft.get("citations", [])
