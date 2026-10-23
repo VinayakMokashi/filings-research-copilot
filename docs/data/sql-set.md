@@ -51,6 +51,8 @@ A predicted query is right when its rows match the gold rows under text2sql-anal
 | The data agent, before value linking ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)) | 0.607 (0.429 to 0.786) |
 | The data agent with value linking ([guide](../concepts/value-linking.md)) | 1.000 (exact interval 0.877 to 1.000) |
 
+The held-out test split was opened once, when Phase 4 closed. The data agent with value linking got all 14 of its questions right, answering the 11 it could and declining the 3 it couldn't: 1.000, exact 95% interval 0.77 to 1.00 ([run](../../eval/results/sql/sql-agent-v2/test/summary.md)).
+
 ## Known issues
 
 - **Tied to one build of the facts database.** The gold rows reflect the data as fetched on 2026-10-17. After a refresh, `uv run pytest -m integration` re-runs every gold query and reports any whose rows changed.

@@ -73,7 +73,7 @@ The SQL set's 28 dev questions, the same agent with and without the linker ([v1]
 
 - +0.393 (0.21 to 0.57), p = 0.001, paired permutation test. When every answer is right, the bootstrap interval collapses to a point, so the interval above is the exact binomial one.
 - All seven unanswerable questions were declined at table selection, before any SQL was written, with reasons drawn from the hints: "Tesla is not in the list of companies held by the database", "the database only contains annual values for fiscal years 2009 to 2025". One query needed a repair (a syntax error), the same rate as without linking.
-- **Read the perfect score with care.** The definitions of combined measures were written after reading the first run's errors, and the dev set asks for exactly those measures, so dev is no longer a fair test of them. Two checks remain that the hints weren't shaped on: FinanceBench's metrics questions, written by other people (step 4.5), and the SQL set's held-out test split, opened once when Phase 4 closes.
+- **Read the perfect score with care.** The definitions of combined measures were written after reading the first run's errors, and the dev set asks for exactly those measures, so dev is no longer a fair test of them. Two checks followed that the hints weren't shaped on. On FinanceBench's metrics questions, written by other people, the agent answered 32 of 33 correctly ([report](../eval/data-agent-financebench.md)). On the SQL set's held-out test split, opened once when Phase 4 closed, it got all 14 right (exact 95% interval 0.77 to 1.00), declining the 3 it should.
 
 ## Pitfalls we hit
 

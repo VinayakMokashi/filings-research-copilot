@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Phase 4 · Phase 4 complete
+
+- **Goal:** open the SQL set's held-out test split, the milestone run, confirm Phase 4's exit criterion and publish it.
+- **Done:**
+  - **The milestone run:** the data agent as it stood after value linking (step 4.2), unchanged since, on the SQL set's 14 test questions.
+  - **The exit criterion is met:** execution accuracy is reported with intervals (0.61 to 1.00 on dev, 1.00 on test), and the [hybrid prototype](eval/hybrid-prototype.md) answers 10 of its 13 questions with every expected figure.
+  - Updated the plan (status tracker), the README, the guides, the SQL set's data card and the project page (status, the data agent, the worked example, the evaluation table, the guardrails, the roadmap).
+- **Commands:** `uv run poe run-sql-agent --split test --allow-test --run sql-agent-v2`, `uv run poe check`.
+- **Results:**
+  - **Held-out test split:** 14 of 14 right, answering the 11 it could and declining the 3 it couldn't; exact 95% interval 0.77 to 1.00, with one repair and 1.9 s of model time at the median. The definitions written on dev held up on the test split's two ratio questions, which they weren't shaped on.
+  - **Phase 4 in sum:**
+    - execution accuracy 0.61, then 1.00 with value linking on dev, and 1.00 on test;
+    - 32 of FinanceBench's 33 dev figure questions right, where the doc agent gets 29;
+    - a typed answer for the orchestrator;
+    - a hybrid-answer prototype whose failures set Phase 5's agenda.
+- **Problems and fixes:** the free tier's rolling daily caps spread the last runs over about 15 hours. The runs resume, and a loop restarted them every 20 minutes until each finished.
+- **Decisions:** [ADR-0015](decisions/0015-reuse-text2sql-analyst.md) holds the design: text2sql-analyst, improved upstream and pinned. The test split is now spent, so further SQL-set results are on dev only.
+- **Next:** Phase 5, orchestration with LangGraph:
+  - a router, measured on the routing set;
+  - a validator loop;
+  - hybrid answers rebuilt with partial answers, the retry and a planner that splits each question between the agents.
+
 ### 2026-10-23 · Phase 4 · Hybrid answers
 
 - **Goal:** one answer that takes its figures from the data agent and its reasons from the filings, compared with the doc agent alone (step 4.6).

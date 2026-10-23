@@ -80,7 +80,7 @@ On FinanceBench's 33 dev metrics questions, written by other people and graded b
 
 It is right wherever the doc agent is, and also on two calculations across years that the doc agent refused. Its one miss is a rounding question about the reference: the reported $389 million as $0.39 billion, where the reference says $0.40. With three questions between the agents, the difference isn't significant (p = 0.25).
 
-Neither dev score is a fair test any more. The combined-measure definitions were written after reading the SQL set's first errors, and the facts database was checked against FinanceBench's dev metrics questions in Phase 1. The SQL set's test split and FinanceBench's test split check the agent on questions it wasn't tuned on.
+Neither dev score is a fair test any more. The combined-measure definitions were written after reading the SQL set's first errors, and the facts database was checked against FinanceBench's dev metrics questions in Phase 1. The SQL set's held-out test split, opened once when Phase 4 closed, is: the agent got all 14 of its questions right (11 answered, 3 declined; exact 95% interval 0.77 to 1.00), with one repair and 1.9 seconds of model time at the median. FinanceBench's test split waits for the copilot as a whole.
 
 ## Pitfalls we hit
 
