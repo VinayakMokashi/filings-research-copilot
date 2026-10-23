@@ -3,7 +3,7 @@
 Each question runs through the same nodes:
 
     rewrite -> understand -> route -> doc | data | hybrid | brief | smalltalk | decline
-            -> synthesise -> validate -> respond
+            -> synthesise -> validate (-> revise -> validate, at most twice) -> respond
 
 - **rewrite** makes a follow-up standalone (a pass-through until step 5.5 adds follow-up
   rewriting) and clears what the previous turn left in the state.
@@ -12,7 +12,9 @@ Each question runs through the same nodes:
 - The specialists answer: the doc agent, the data agent, the hybrid of the two, a brief
   (Phase 7; a short note until then), a reply to small talk, or a polite decline.
 - **synthesise** puts every specialist's result into one shape, the draft.
-- **validate** checks the draft against its sources (a pass-through until step 5.3).
+- **validate** checks a cited answer's sentences against their sources (step 5.3,
+  `copilot.agents.validator`). An answer that fails goes to **revise** and back, at most
+  twice; after that, only its verified sentences are kept.
 - **respond** writes the reply and adds the turn to the conversation's history.
 
 The state holds plain JSON values only, so any checkpointer can store it: in memory for
@@ -35,16 +37,30 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
 from copilot.agents.router import ROUTES, Route, RouteDecision
+from copilot.agents.validator import MAX_REVISIONS, check_answer, to_answer, trim, verdict_record
+from copilot.agents.validator import revise as revise_answer
 from copilot.answer.agent import AgentAnswer
+from copilot.answer.generate import SYSTEM_PROMPT as DOC_PROMPT
 from copilot.answer.generate import Answer
 from copilot.answer.hybrid import DATABASE, DATABASE_LABEL, HybridAnswer
+from copilot.answer.hybrid_v2 import SYSTEM_PROMPT as HYBRID_PROMPT
+from copilot.eval.faithfulness import SentenceCheck
 from copilot.llm import LLMClient, LLMError, system, user
 from copilot.llm.gateway import token_cost
 from copilot.llm.pacing import PacedLLM
 from copilot.retrieval.query import CompanyMatcher, understand
 from copilot.sql.tool import DataAnswer
 
-NODES = ("rewrite", "understand", "route", *ROUTES, "synthesise", "validate", "respond")
+NODES = (
+    "rewrite",
+    "understand",
+    "route",
+    *ROUTES,
+    "synthesise",
+    "validate",
+    "revise",
+    "respond",
+)
 
 
 # ---------------------------------------------------------------------------------------
@@ -70,6 +86,8 @@ class CopilotState(TypedDict, total=False):
     result: dict[str, Any]  # the specialist's output
     draft: dict[str, Any]  # every specialist's output in one shape
     response: dict[str, Any]  # what the user gets
+    validation: dict[str, Any]  # the latest check of the draft's sentences
+    revisions: int  # how many times the draft was written again after a check
     history: Annotated[list[Turn], operator.add]  # earlier turns, oldest first
 
 
@@ -83,6 +101,8 @@ PER_TURN: dict[str, Any] = {
     "result": {},
     "draft": {},
     "response": {},
+    "validation": {},
+    "revisions": 0,
 }
 
 
@@ -116,7 +136,9 @@ class Components:
     `chat` writes the small-talk replies, on the `small` role. `meters` are the paced
     clients behind the components, whose tokens each node reports as it uses them.
     `strict=True` lets a rate-limited model call stop the run, for batch evaluations that
-    resume later; otherwise the reply asks the user to try again.
+    resume later; otherwise the reply asks the user to try again. `checker` checks cited
+    answers on the `small` role and `writer` revises them on the `strong` role; without
+    both, answers pass unchecked.
     """
 
     router: Router
@@ -128,6 +150,8 @@ class Components:
     companies: Sequence[str] = ()
     meters: Sequence[PacedLLM] = ()
     strict: bool = False
+    checker: LLMClient | None = None
+    writer: LLMClient | None = None
 
 
 BRIEF_REPLY = (
@@ -210,12 +234,14 @@ def metered(name: str, node: Node, meters: Sequence[PacedLLM]) -> Node:
 
 
 def answer_record(answer: Answer) -> dict[str, Any]:
-    """An answer as the state holds it, with the cited sources' text for the validator."""
+    """An answer as the state holds it, with every source's text, for the validator."""
     return {
         "answerable": answer.answerable,
         "text": answer.text,
         "missing": answer.missing,
         "error": answer.error,
+        "cited": list(answer.cited),
+        "sources": [asdict(source) for source in answer.sources],
         "citations": [
             {
                 "number": source.number,
@@ -289,6 +315,11 @@ def branch(state: CopilotState) -> Route:
         if route == known:
             return known
     return "doc"
+
+
+def after_validation(state: CopilotState) -> str:
+    """`revise` when the check asked for another draft, else `respond`."""
+    return "revise" if state.get("validation", {}).get("next") == "revise" else "respond"
 
 
 def build_graph(
@@ -412,8 +443,63 @@ def build_graph(
         return {"draft": draft}
 
     def validate(state: CopilotState) -> dict[str, Any]:
-        emit("validate", "not yet", note="claim checks arrive in step 5.3")
-        return {}
+        result = state.get("result", {})
+        record = result.get("answer")
+        if parts.checker is None or parts.writer is None:
+            emit("validate", "skipped", reason="no checker")
+            return {"validation": {"checked": False}}
+        if result.get("kind") not in ("doc", "hybrid") or not record or not record["answerable"]:
+            emit("validate", "skipped", reason="no cited answer to check")
+            return {"validation": {"checked": False}}
+        answer = to_answer(record, state["standalone"])
+        try:
+            verdict = check_answer(parts.checker, answer)
+        except LLMError as exc:
+            if parts.strict or not exc.rate_limited:
+                raise
+            emit("validate", "quota", error=str(exc)[:200])
+            return {"validation": {"checked": False, "error": "the checker's quota is used up"}}
+        revisions = state.get("revisions", 0)
+        checked = verdict_record(verdict) | {"checked": True, "revisions": revisions}
+        emit(
+            "validate",
+            "verdict",
+            faithful=verdict.faithful,
+            sentences=len(verdict.checks),
+            supported=verdict.supported_sentences,
+            revisions=revisions,
+        )
+        if verdict.faithful:
+            return {"validation": checked}
+        if revisions < MAX_REVISIONS:
+            return {"validation": checked | {"next": "revise"}}
+        trimmed, dropped = trim(answer, verdict)
+        emit("validate", "trimmed", kept=verdict.supported_sentences, unverified=len(dropped))
+        kept = result | {"answer": answer_record(trimmed)}
+        return {
+            "result": kept,
+            "draft": to_draft(kept),
+            "validation": checked | {"unverified": dropped},
+        }
+
+    def revise(state: CopilotState) -> dict[str, Any]:
+        result = state["result"]
+        answer = to_answer(result["answer"], state["standalone"])
+        failed = [SentenceCheck(**sentence) for sentence in state["validation"]["failing"]]
+        split = result.get("kind") == "hybrid" and result.get("path") == "split"
+        prompt = HYBRID_PROMPT if split else DOC_PROMPT
+        revisions = state.get("revisions", 0) + 1
+        assert parts.writer is not None  # validate sends answers here only with a writer
+        try:
+            revised = revise_answer(parts.writer, prompt, state["standalone"], answer, failed)
+        except LLMError as exc:
+            if parts.strict or not exc.rate_limited:
+                raise
+            emit("revise", "quota", error=str(exc)[:200])
+            return {"revisions": MAX_REVISIONS}  # stop revising; the next check trims
+        emit("revise", "revised", answered=revised.answerable, revision=revisions)
+        rewritten = result | {"answer": answer_record(revised)}
+        return {"result": rewritten, "draft": to_draft(rewritten), "revisions": revisions}
 
     def respond(state: CopilotState) -> dict[str, Any]:
         draft = state.get("draft", {})
@@ -429,6 +515,11 @@ def build_graph(
                 for citation in draft.get("citations", [])
             ],
             "sql": draft.get("sql"),
+            "validation": {
+                key: value
+                for key, value in state.get("validation", {}).items()
+                if key in ("checked", "faithful", "revisions", "unverified")
+            },
         }
         turn: Turn = {
             "question": state["question"],
@@ -450,6 +541,7 @@ def build_graph(
         "decline": decline,
         "synthesise": synthesise,
         "validate": validate,
+        "revise": revise,
         "respond": respond,
     }
     builder = StateGraph(CopilotState)
@@ -462,6 +554,9 @@ def build_graph(
     for name in ROUTES:
         builder.add_edge(name, "synthesise")
     builder.add_edge("synthesise", "validate")
-    builder.add_edge("validate", "respond")
+    builder.add_conditional_edges(
+        "validate", after_validation, {"revise": "revise", "respond": "respond"}
+    )
+    builder.add_edge("revise", "validate")
     builder.add_edge("respond", END)
     return builder.compile(checkpointer=checkpointer)

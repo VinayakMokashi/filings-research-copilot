@@ -8,7 +8,9 @@
 - the router of ADR-0017: the LLM router on the `strong` role decides, and the semantic
   router (company names and years masked, the nearest route centroid) decides only when
   the LLM call fails;
-- a client for small talk, on the `small` role.
+- a client for small talk, on the `small` role;
+- the validator's checker on the `small` role, and the doc agent's client as the writer
+  of revisions (step 5.3).
 
 Every component's model calls go through a disk cache of its own under data/cache/, so a
 repeated question costs nothing. `batch=True` paces the calls for the free tier's
@@ -56,9 +58,8 @@ def build_components(settings: Settings, *, batch: bool = False) -> Components:
             return PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
         return PacedLLM(cache, pause_s=0.0, attempts=1)  # counts tokens; no pauses or retries
 
-    doc_llm, sql_llm, router_llm, chat = (
-        client(name) for name in ("llm.jsonl", "sql.jsonl", "router.jsonl", "chat.jsonl")
-    )
+    names = ("llm.jsonl", "sql.jsonl", "router.jsonl", "chat.jsonl", "validator.jsonl")
+    doc_llm, sql_llm, router_llm, chat, checker = (client(name) for name in names)
     doc = build_agent(settings, llm=doc_llm)
     data = DataAgent(build_pipeline(settings, sql_llm, analysis_model="strong"))
     companies = read_companies()
@@ -86,8 +87,10 @@ def build_components(settings: Settings, *, batch: bool = False) -> Components:
         matcher=matcher,
         chat=chat,
         companies=[company.name for company in companies],
-        meters=[doc_llm, sql_llm, router_llm, chat],
+        meters=[doc_llm, sql_llm, router_llm, chat, checker],
         strict=batch,
+        checker=checker,
+        writer=doc_llm,
     )
 
 
