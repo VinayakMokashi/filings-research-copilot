@@ -1,0 +1,62 @@
+{
+  "answers_run": "hybrid-v1",
+  "method": "Each answer read against its question's explain field and the pages it cites: does it give the reasons the filing gives? A refusal counts as no.",
+  "explains": {
+    "yes": 9,
+    "no": 4
+  },
+  "items": {
+    "h01": {
+      "explains": "yes",
+      "note": "What the spending went to: renewal and maintenance, growth capacity, IT and laboratories, and where it was spent."
+    },
+    "h02": {
+      "explains": "yes",
+      "note": "The much higher tax expense (effective rate 82.5%), lower revenue and higher other operating charges; it doesn't name the US tax reform behind the tax charge."
+    },
+    "h03": {
+      "explains": "yes",
+      "note": "Sales growth and productivity, offset by investment in eCommerce, technology and wages; Flipkart in International."
+    },
+    "h04": {
+      "explains": "yes",
+      "note": "NIKE Direct and digital sales, footwear and apparel, and growth in every region. One long sentence packs in ranges and regional contributions the pages don't all state, so the faithfulness judge doesn't support it."
+    },
+    "h05": {
+      "explains": "yes",
+      "note": "COVID-19 closures, reduced operations and travel restrictions."
+    },
+    "h06": {
+      "explains": "yes",
+      "note": "Segment by segment. Gives both 2017 figures, first reported and restated, but doesn't say which is the restated one. Its last sentence sums the segments' growth itself ($7.8 billion) instead of using the calculator, so the judge doesn't count it as supported."
+    },
+    "h07": {
+      "explains": "yes",
+      "note": "Creative Cloud subscriptions, Digital Marketing and a 53-week year. The data agent declined, so the figures came from the pages."
+    },
+    "h08": {
+      "explains": "yes",
+      "note": "Bitcoin revenue, then subscription and services."
+    },
+    "h09": {
+      "explains": "no",
+      "note": "Restates operating cash flow ($3,676 million) instead of what drove it. The explanation is on PDF page 27, which retrieval missed; pages 26 and 28 were among the sources."
+    },
+    "h10": {
+      "explains": "no",
+      "note": "Refused. The segment's figures were in its sources (the segment table, PDF page 62), but no page explained the change, and the rules allow no partial answer. The data agent declined rather than offer Boeing's total revenue, though for the narrative half, not for the missing segment figures."
+    },
+    "h11": {
+      "explains": "yes",
+      "note": "All five years from the database, which the corpus's filings don't hold, and what the spending went to from the 2018 and 2022 10-Ks. Shows each change twice, as the model's own figure and again as a calculator placeholder ('$122 million ... 122,000,000')."
+    },
+    "h12": {
+      "explains": "no",
+      "note": "Refused. The query gave all five years and their changes, but no retrieved page explained the 2021 result, and the rules allow no partial answer."
+    },
+    "h13": {
+      "explains": "no",
+      "note": "Refused. The query gave all five years, but no retrieved page described the recovery since 2020, and the rules allow no partial answer."
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "answers_run": "doc-agent-v4",
+  "method": "Each answer read against its question's explain field and the pages it cites: does it give the reasons the filing gives? A refusal counts as no.",
+  "explains": {
+    "yes": 9,
+    "no": 4
+  },
+  "items": {
+    "h01": {
+      "explains": "yes",
+      "note": "The same reasons as the hybrid answer, from the same pages. Shows '$204 million 204': the model wrote the change itself and also a placeholder for it."
+    },
+    "h02": {
+      "explains": "yes",
+      "note": "The higher tax expense and a larger loss in other income."
+    },
+    "h03": {
+      "explains": "yes",
+      "note": "Sales growth and productivity, offset by eCommerce and wage investments."
+    },
+    "h04": {
+      "explains": "yes",
+      "note": "NIKE Direct, digital and comparable-store growth, footwear and apparel, every region."
+    },
+    "h05": {
+      "explains": "yes",
+      "note": "COVID-19 closures and restrictions."
+    },
+    "h06": {
+      "explains": "yes",
+      "note": "Segment by segment; gives the restated 2017 revenue, as the 2018 10-K shows it."
+    },
+    "h07": {
+      "explains": "yes",
+      "note": "Creative Cloud subscriptions, Marketing Cloud and the 53-week year."
+    },
+    "h08": {
+      "explains": "yes",
+      "note": "Bitcoin revenue, then subscription and services, and Cash App."
+    },
+    "h09": {
+      "explains": "no",
+      "note": "Says cash came from net earnings at a 166% conversion rate, not what drove the change; the page that explains it (PDF page 27) wasn't retrieved."
+    },
+    "h10": {
+      "explains": "yes",
+      "note": "Its first answer lacked the reason; the retry, searching for what was missing, found 737 MAX deliveries and the resumption of 787 deliveries (PDF page 43). The hybrid agent has no retry and refused. The faithfulness judge doesn't support its last sentence, which adds that the deliveries 'improved inventory'."
+    },
+    "h11": {
+      "explains": "no",
+      "note": "Refused: says capital expenditure for 2019 and 2020 is missing, with the commentary. The 2019 figure is in no filing in the corpus."
+    },
+    "h12": {
+      "explains": "no",
+      "note": "Refused: says 2018 net income and the 2021 explanation are missing."
+    },
+    "h13": {
+      "explains": "no",
+      "note": "Refused: says 2019 revenue and the 2022 10-K's account of the recovery are missing. The 2019 figure is in no filing in the corpus."
+    }
+  }
+}
