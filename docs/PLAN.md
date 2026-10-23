@@ -357,7 +357,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 1 Data and evaluation sets | Done | 2026-10-17 | 2026-10-17 |
 | 2 Ingestion and retrieval baseline | Done | 2026-10-17 | 2026-10-18 |
 | 3 Doc agent | Done | 2026-10-19 | 2026-10-23 |
-| 4 Data agent | In progress | 2026-10-23 | |
+| 4 Data agent | Done | 2026-10-23 | 2026-10-23 |
 | 5 Orchestration | Planned | | |
 | 6 API, UI, MCP, observability | Planned | | |
 | 7 Fine-tuning and optimisation | Planned | | |
