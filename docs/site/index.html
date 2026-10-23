@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Filings Research Copilot</title>
-<meta name="description" content="An agentic research copilot for public-company filings, in development: cited answers from 10-K and 10-Q text and XBRL financial facts, to be evaluated on FinanceBench and deployed to AWS on demand.">
+<meta name="description" content="An agentic research copilot for public-company filings, in development: cited answers from 10-K and 10-Q text and Text-to-SQL over XBRL financial facts, evaluated on FinanceBench, to be deployed on Google Cloud.">
 <meta property="og:title" content="Filings Research Copilot">
-<meta property="og:description" content="In development: cited answers from SEC filings and XBRL financial facts, planned with hybrid retrieval, Text-to-SQL, validated agents, fine-tuned components and on-demand AWS deployment.">
+<meta property="og:description" content="In development: cited answers from SEC filings and Text-to-SQL over XBRL financial facts, evaluated on FinanceBench; next come orchestration, validated answers, fine-tuned components and a Google Cloud deployment that scales to zero.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://vinayakmokashi.github.io/filings-research-copilot/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%2314202A'/%3E%3Crect x='6' y='8' width='20' height='6' fill='%23F5D547'/%3E%3Crect x='6' y='18' width='20' height='2' fill='%2367BE95'/%3E%3Crect x='6' y='22' width='20' height='2' fill='%2367BE95'/%3E%3C/svg%3E">
@@ -216,7 +216,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><dt>Builder</dt><dd>Vinayak Mokashi</dd></div>
     <div><dt>Sources</dt><dd>10-K and 10-Q text · XBRL company facts</dd></div>
     <div><dt>Benchmark</dt><dd>FinanceBench public sample</dd></div>
-    <div><dt>Target platform</dt><dd>AWS ECS Fargate, on demand · Qdrant · open models on Groq</dd></div>
+    <div><dt>Target platform</dt><dd>Google Cloud Run, scaling to zero · Qdrant · open models on Groq</dd></div>
     <div><dt>Status</dt><dd>Phases 0 to 4 done; Phase 5 next</dd></div>
   </dl>
   <div class="actions">
@@ -461,12 +461,12 @@ td.metric{font-weight:600;white-space:nowrap}
       <div class="guard"><span class="eyebrow">Evidence</span><p>Every claim cites a page or a query. Unsupported claims are dropped, and with no evidence the copilot says so.</p></div>
       <div class="guard"><span class="eyebrow">Retrieved text</span><p>Filing text reaches the model as quoted data, never as instructions, and every tool is read-only.</p></div>
       <div class="guard"><span class="eyebrow">Arithmetic</span><p>The model writes the expression and a sandboxed calculator computes it.</p></div>
-      <div class="guard"><span class="eyebrow">Cost and abuse</span><p>Per-visitor quotas, input limits, a semantic cache for repeat questions, and an AWS budget alarm.</p></div>
-      <div class="guard"><span class="eyebrow">Keys</span><p>Locally, keys sit in a git-ignored <span class="mono">.env</span>, and CI scans the full git history for secrets on every push and pull request. On AWS, GitHub will deploy through OIDC, so no AWS keys are stored, and third-party API keys will be loaded from Secrets Manager.</p></div>
+      <div class="guard"><span class="eyebrow">Cost and abuse</span><p>Per-visitor quotas, input limits, a semantic cache for repeat questions, and a Cloud Billing budget alert.</p></div>
+      <div class="guard"><span class="eyebrow">Keys</span><p>Locally, keys sit in a git-ignored <span class="mono">.env</span>, and CI scans the full git history for secrets on every push and pull request. On Google Cloud, GitHub will deploy through Workload Identity Federation, so no service-account keys are stored, and third-party API keys will be loaded from Secret Manager.</p></div>
     </div>
     <aside class="note" aria-label="Design note">
       <span class="eyebrow">Design note</span>
-      <p>There will be <b>no long-lived AWS credentials</b>: services use IAM task roles and GitHub deploys through OIDC. Third-party API keys are long-lived, so they stay out of code and images and are loaded from Secrets Manager.</p>
+      <p>There will be <b>no long-lived cloud credentials</b>: each service runs as its own service account, and GitHub deploys through Workload Identity Federation. Third-party API keys are long-lived, so they stay out of code and images and are loaded from Secret Manager.</p>
     </aside>
   </div>
 </section>
@@ -481,14 +481,14 @@ td.metric{font-weight:600;white-space:nowrap}
     <figure class="fig">
       <p class="hint">Scroll sideways to see the whole diagram.</p>
       <div class="fig-scroll">
-        <svg class="dg" viewBox="0 0 1000 410" role="img" aria-label="Planned deployment on AWS. Visitors reach a load balancer that sends browsers to the Streamlit web UI and MCP clients to the MCP server on ECS Fargate; both call the API service. GitHub Actions deploys images from ECR through an OIDC role. An ingestion worker takes jobs from SQS and writes filings to S3. The API reads RDS Postgres and DynamoDB, and calls Groq, Qdrant Cloud and Langfuse over HTTPS.">
+        <svg class="dg" viewBox="0 0 1000 410" role="img" aria-label="Planned deployment on Google Cloud. Visitors reach the Streamlit web UI and the MCP server, both Cloud Run services, over HTTPS; both call the API service. GitHub Actions deploys images from Artifact Registry through Workload Identity Federation. An ingestion worker takes jobs from Pub/Sub and writes filings to Cloud Storage. The API reads Cloud SQL and Firestore, and calls Groq, Qdrant Cloud and Langfuse over HTTPS.">
           <defs>
             <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
           </defs>
           <rect class="outline" x="146" y="12" width="642" height="384" rx="6"/>
-          <text class="lbl" x="162" y="32">AWS · ap-south-1</text>
+          <text class="lbl" x="162" y="32">Google Cloud · asia-south1</text>
           <rect class="group" x="320" y="48" width="450" height="176" rx="4"/>
-          <text class="lbl" x="334" y="68">ECS Fargate</text>
+          <text class="lbl" x="334" y="68">Cloud Run</text>
           <text class="lbl" x="812" y="40">outbound HTTPS</text>
 
           <path class="edge" d="M120 107H170" marker-end="url(#a3)"/>
@@ -499,7 +499,7 @@ td.metric{font-weight:600;white-space:nowrap}
           <path class="edge" d="M464 107H478" marker-end="url(#a3)"/>
           <path class="edge" d="M624 107H610" marker-end="url(#a3)"/>
           <path class="edge" d="M128 294H170" marker-end="url(#a3)"/>
-          <text class="lbl" x="149" y="286" text-anchor="middle">OIDC</text>
+          <text class="lbl" x="149" y="286" text-anchor="middle">keyless</text>
           <path class="edge" d="M232 270V190H318" marker-end="url(#a3)"/>
           <text class="lbl" x="240" y="236">deploy</text>
           <path class="edge" d="M603 270V183H466" marker-end="url(#a3)"/>
@@ -518,8 +518,8 @@ td.metric{font-weight:600;white-space:nowrap}
           <text class="t" x="65" y="104" text-anchor="middle">Visitors</text>
           <text class="s" x="65" y="120" text-anchor="middle">browser · MCP</text>
           <rect class="box" x="172" y="84" width="120" height="46" rx="3"/>
-          <text class="t" x="232" y="104" text-anchor="middle">Load balancer</text>
-          <text class="s" x="232" y="120" text-anchor="middle">HTTPS</text>
+          <text class="t" x="232" y="104" text-anchor="middle">HTTPS</text>
+          <text class="s" x="232" y="120" text-anchor="middle">Cloud Run URLs</text>
           <rect class="box" x="336" y="84" width="128" height="46" rx="3"/>
           <text class="t" x="400" y="104" text-anchor="middle">Web UI</text>
           <text class="s" x="400" y="120" text-anchor="middle">Streamlit</text>
@@ -534,24 +534,24 @@ td.metric{font-weight:600;white-space:nowrap}
           <text class="s" x="400" y="196" text-anchor="middle">parse · embed</text>
 
           <rect class="store" x="320" y="270" width="102" height="48" rx="3"/>
-          <text class="t" x="371" y="290" text-anchor="middle">RDS Postgres</text>
-          <text class="s" x="371" y="307" text-anchor="middle">facts · state</text>
+          <text class="t" x="371" y="290" text-anchor="middle">Cloud SQL</text>
+          <text class="s" x="371" y="307" text-anchor="middle">Postgres · state</text>
           <rect class="store" x="436" y="270" width="102" height="48" rx="3"/>
-          <text class="t" x="487" y="290" text-anchor="middle">S3</text>
+          <text class="t" x="487" y="290" text-anchor="middle">Cloud Storage</text>
           <text class="s" x="487" y="307" text-anchor="middle">raw filings</text>
           <rect class="store" x="552" y="270" width="102" height="48" rx="3"/>
-          <text class="t" x="603" y="290" text-anchor="middle">SQS + DLQ</text>
+          <text class="t" x="603" y="290" text-anchor="middle">Pub/Sub</text>
           <text class="s" x="603" y="307" text-anchor="middle">ingest jobs</text>
           <rect class="store" x="668" y="270" width="102" height="48" rx="3"/>
-          <text class="t" x="719" y="290" text-anchor="middle">DynamoDB</text>
+          <text class="t" x="719" y="290" text-anchor="middle">Firestore</text>
           <text class="s" x="719" y="307" text-anchor="middle">quotas</text>
 
           <rect class="box" x="10" y="270" width="118" height="48" rx="3"/>
           <text class="t" x="69" y="290" text-anchor="middle">GitHub Actions</text>
           <text class="s" x="69" y="307" text-anchor="middle">test · build</text>
           <rect class="box" x="172" y="270" width="120" height="48" rx="3"/>
-          <text class="t" x="232" y="290" text-anchor="middle">ECR</text>
-          <text class="s" x="232" y="307" text-anchor="middle">images</text>
+          <text class="t" x="232" y="290" text-anchor="middle">Images</text>
+          <text class="s" x="232" y="307" text-anchor="middle">Artifact Registry</text>
 
           <rect class="box" x="812" y="60" width="178" height="40" rx="3"/>
           <text class="t" x="901" y="76" text-anchor="middle">Groq</text>
@@ -563,15 +563,15 @@ td.metric{font-weight:600;white-space:nowrap}
           <text class="t" x="901" y="196" text-anchor="middle">Langfuse</text>
           <text class="s" x="901" y="212" text-anchor="middle">traces · evals</text>
 
-          <text class="lbl" x="162" y="376">Secrets Manager holds API keys · CloudWatch holds logs, alarms and the budget alert</text>
+          <text class="lbl" x="162" y="376">Secret Manager holds API keys · Cloud Logging and Monitoring hold logs and alerts</text>
         </svg>
       </div>
-      <figcaption>Planned production layout (Phase 8) in AWS Mumbai (ap-south-1). GitHub Actions will deploy through an OIDC role, so no AWS keys are stored. Ingestion runs as queued jobs, separate from the request path. Services reach RDS, S3 and DynamoDB through IAM task roles. HTTPS comes from a custom domain or CloudFront, chosen in Phase 8.</figcaption>
+      <figcaption>Planned production layout (Phase 8) on Google Cloud in Mumbai (asia-south1). GitHub Actions will deploy through Workload Identity Federation, so no service-account keys are stored. Ingestion runs as queued jobs, separate from the request path. Each service runs as its own service account, and Cloud Run serves every one over HTTPS, scaling it to zero between visits.</figcaption>
     </figure>
     <aside class="note" aria-label="Demo windows">
       <span class="eyebrow">Demo windows</span>
-      <p>The stack will run only when it's needed. One Terraform command will bring it up for a demo and another will tear it down, so <b>a demo should cost a few dollars</b> (measured in Phase 8).</p>
-      <p>Data will survive between demos in S3 and an RDS snapshot. Day to day, the project runs locally with Docker Compose.</p>
+      <p>Cloud Run scales the services to zero, so they stay deployed and <b>cost nothing while idle</b>. The database, the one part that costs money idle, runs only in demo windows: one command starts it and another stops it, with costs measured in Phase 8.</p>
+      <p>Its storage stays between demos, with backups in Cloud Storage. Day to day, the project runs locally with Docker Compose.</p>
     </aside>
   </div>
 </section>
@@ -599,7 +599,7 @@ td.metric{font-weight:600;white-space:nowrap}
         <tr><td><span class="ph">5</span>Orchestration</td><td>LangGraph router, validator loop, memory</td><td>One copilot routes, combines and checks</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">6</span>Product surface</td><td>FastAPI with streaming, Streamlit UI, MCP server, Langfuse traces</td><td>People and AI tools can use it</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">7</span>Fine-tuning</td><td>Domain embedder, LoRA router, DSPy, bandit routing, brief crew</td><td>Each change earns its place on the eval set</td><td><span class="pill">Planned</span></td></tr>
-        <tr><td><span class="ph">8</span>AWS deployment</td><td>Terraform, ECS Fargate, RDS, SQS, OIDC deploys, demo-up and demo-down</td><td>It runs in production shape and tears down cleanly</td><td><span class="pill">Planned</span></td></tr>
+        <tr><td><span class="ph">8</span>Cloud deployment</td><td>Terraform, Cloud Run, Cloud SQL, Pub/Sub, keyless deploys, demo-up and demo-down</td><td>It runs in production shape and costs nothing idle</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">9</span>Online evaluation</td><td>Nightly evals, feedback as preference data, drift checks</td><td>Quality stays visible over time</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">10</span>Showcase</td><td>Final README, demo video, this page with measured numbers</td><td>The work is explained and verifiable</td><td><span class="pill">Planned</span></td></tr>
       </tbody>
@@ -622,7 +622,7 @@ td.metric{font-weight:600;white-space:nowrap}
         <tr><td>XBRL tags differ between companies</td><td>A tested mapping from each company's tags to canonical metrics.</td></tr>
         <tr><td>PDF tables flatten badly</td><td>Numbers come from XBRL. Page-sized chunks keep each financial statement whole, which ranked statement evidence first far more often (MRR 0.60 against 0.42 with 480-token chunks).</td></tr>
         <tr><td>No CUDA GPU on the development machine</td><td>Fine-tuning runs on free Kaggle or Colab GPUs; small models are served on CPU with ONNX.</td></tr>
-        <tr><td>Cloud costs</td><td>A budget alarm comes first, the stack runs only in demo windows, and a scheduled job tears down anything left running.</td></tr>
+        <tr><td>Cloud costs</td><td>A budget alert comes first, Cloud Run scales to zero, the database runs only in demo windows, and a scheduled job stops it if it is left running.</td></tr>
       </tbody>
     </table>
   </div>
@@ -639,7 +639,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><h3>Reasoning</h3><div class="chips"><span class="chip">LangGraph</span><span class="chip">LiteLLM</span><span class="chip">Groq</span><span class="chip">text2sql-analyst</span><span class="chip">sqlglot</span></div></div>
     <div><h3>Training</h3><div class="chips"><span class="chip">sentence-transformers</span><span class="chip">PEFT · LoRA</span><span class="chip">DSPy</span><span class="chip">ONNX Runtime</span><span class="chip">Kaggle / Colab GPUs</span></div></div>
     <div><h3>Serving</h3><div class="chips"><span class="chip">FastAPI</span><span class="chip">SSE</span><span class="chip">Streamlit</span><span class="chip">MCP Python SDK</span><span class="chip">Langfuse</span></div></div>
-    <div><h3>Infrastructure</h3><div class="chips"><span class="chip">Docker</span><span class="chip">Terraform</span><span class="chip">GitHub Actions</span><span class="chip">ECS Fargate</span><span class="chip">RDS</span><span class="chip">S3</span><span class="chip">SQS</span><span class="chip">DynamoDB</span><span class="chip">Secrets Manager</span><span class="chip">CloudWatch</span></div></div>
+    <div><h3>Infrastructure</h3><div class="chips"><span class="chip">Docker</span><span class="chip">Terraform</span><span class="chip">GitHub Actions</span><span class="chip">Cloud Run</span><span class="chip">Cloud SQL</span><span class="chip">Cloud Storage</span><span class="chip">Pub/Sub</span><span class="chip">Firestore</span><span class="chip">Secret Manager</span><span class="chip">Cloud Logging</span></div></div>
   </div>
   <p class="tnote">In use after Phases 0 to 4: LiteLLM with Groq (gpt-oss-120b for answers and SQL, Qwen for rewrites, table selection and judging), Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts queried through text2sql-analyst and sqlglot, the evaluation harness, pypdfium2, and FastEmbed's bge-small, BM25 and cross-encoder models on ONNX Runtime. The rest is confirmed in a decision record when its phase lands.</p>
 </section>
@@ -654,7 +654,7 @@ td.metric{font-weight:600;white-space:nowrap}
 (() => {
   const NODES = {
     clients: { title: "Clients", what: "The Streamlit web app and any MCP client, such as Claude Desktop or an IDE agent, use the same API.", tech: ["Server-sent events", "MCP tools, resources and prompts"], refs: "Model Context Protocol specification; the HTML server-sent events standard", phase: "Phase 6" },
-    api: { title: "API service", what: "A FastAPI service that checks per-visitor quotas, answers repeated questions from a semantic cache, and streams answers back as they are written.", tech: ["FastAPI + SSE", "Quotas in DynamoDB", "Semantic cache"], refs: "GPTCache (semantic caching); FastAPI documentation", phase: "Phase 6" },
+    api: { title: "API service", what: "A FastAPI service that checks per-visitor quotas, answers repeated questions from a semantic cache, and streams answers back as they are written.", tech: ["FastAPI + SSE", "Quotas in Firestore", "Semantic cache"], refs: "GPTCache (semantic caching); FastAPI documentation", phase: "Phase 6" },
     router: { title: "Router", what: "Decides which specialists a question needs. Phase 5 compares an LLM router with a semantic router over labelled examples. Phase 7 trains a LoRA classifier on the LLM router's labels and keeps whichever is best on accuracy, latency and cost.", tech: ["Semantic routing", "LoRA classifier", "LLM router as teacher"], refs: "LoRA (Hu et al., 2021); semantic routing over labelled examples", phase: "Phase 5, LoRA router compared in Phase 7" },
     qdrant: { title: "Qdrant", what: "The vector database. Every chunk is stored with a dense vector, a BM25 sparse vector, and metadata for filtering by company, year, form, section and page.", tech: ["Dense + BM25 vectors per chunk", "Payload indexes", "Exact search at this size"], refs: "HNSW (Malkov and Yashunin, 2018); BM25 (Robertson and Zaragoza, 2009)", phase: "Phase 2" },
     doc: { title: "Doc agent", what: "Resolves the filings a question names, rewrites it three ways, searches page-sized chunks with dense vectors and answers from numbered sources in one call, citing every sentence and leaving arithmetic to a calculator. When the sources fall short, it searches once more for what is missing. On FinanceBench dev it answers 65% of questions correctly, 88% of those that ask for a figure.", tech: ["Filings resolved from the question", "Multi-query · HyDE · decomposition, fused", "Dense search over page chunks", "Cited sentences, calculator", "Retry aimed at what is missing"], refs: "HyDE (Gao et al., 2022); reciprocal rank fusion (Cormack et al., 2009); citations (Gao et al., 2023); corrective RAG (Yan et al., 2024)", phase: "Phases 2 and 3, embedder tuned in Phase 7" },
