@@ -113,6 +113,8 @@ def parts(
     chat: LLMClient | None = None,
     meters: Sequence[PacedLLM] = (),
     strict: bool = False,
+    checker: LLMClient | None = None,
+    writer: LLMClient | None = None,
 ) -> Components:
     return Components(
         router=FixedRouter(routes),
@@ -124,6 +126,8 @@ def parts(
         companies=["Netflix", "3M"],
         meters=meters,
         strict=strict,
+        checker=checker,
+        writer=writer,
     )
 
 
@@ -136,8 +140,19 @@ def copilot(
     meters: Sequence[PacedLLM] = (),
     strict: bool = False,
     trace: TraceWriter | None = None,
+    checker: LLMClient | None = None,
+    writer: LLMClient | None = None,
 ) -> Copilot:
-    components = parts(routes, doc=doc, data=data, chat=chat, meters=meters, strict=strict)
+    components = parts(
+        routes,
+        doc=doc,
+        data=data,
+        chat=chat,
+        meters=meters,
+        strict=strict,
+        checker=checker,
+        writer=writer,
+    )
     return Copilot(components, trace=trace)
 
 
@@ -324,3 +339,75 @@ def test_a_postgres_conversation_outlives_its_copilot() -> None:
         later.ask("Thanks!", thread_id=thread)
 
         assert [turn["route"] for turn in later.history(thread)] == ["doc", "smalltalk"]
+
+
+PASS = json.dumps({"sentences": [{"n": 1, "supported": True, "supporting": [1]}]})
+FAIL = json.dumps({"sentences": [{"n": 1, "supported": False, "supporting": []}]})
+FIXED = "The market for entertainment is intensely competitive, Netflix says [1]."
+
+
+def revision(text: str = FIXED) -> str:
+    return json.dumps({"answerable": True, "answer": text, "calculations": [], "missing": ""})
+
+
+def test_without_a_checker_answers_pass_unchecked() -> None:
+    response = copilot(["doc"]).ask("What risks does Netflix name?", thread_id="t")
+
+    assert response["validation"] == {"checked": False}
+
+
+def test_a_faithful_answer_is_checked_once() -> None:
+    checker, writer = FakeLLM([PASS]), FakeLLM([])
+    pilot = copilot(["doc"], checker=checker, writer=writer)
+
+    events = list(pilot.stream("What risks does Netflix name?", thread_id="t"))
+
+    assert "revise" not in nodes_run(events, "start")
+    assert events[-1]["validation"] == {"checked": True, "faithful": True, "revisions": 0}
+    assert checker.calls[0].role == "small"
+    assert writer.calls == []
+
+
+def test_a_failing_answer_is_revised_and_checked_again() -> None:
+    checker, writer = FakeLLM([FAIL, PASS]), FakeLLM([revision()])
+    pilot = copilot(["doc"], checker=checker, writer=writer)
+
+    events = list(pilot.stream("What risks does Netflix name?", thread_id="t"))
+
+    path = nodes_run(events, "start")
+    assert path[-4:] == ["validate", "revise", "validate", "respond"]
+    response = events[-1]
+    assert response["text"] == FIXED
+    assert response["validation"] == {"checked": True, "faithful": True, "revisions": 1}
+    assert writer.calls[0].role == "strong"
+    assert "intense competition as a risk [1]." in writer.calls[0].messages[-1]["content"]
+
+
+def test_two_failed_revisions_leave_only_what_was_verified() -> None:
+    checker = FakeLLM([FAIL, FAIL, FAIL])
+    writer = FakeLLM([revision(), revision()])
+    pilot = copilot(["doc"], checker=checker, writer=writer)
+
+    events = list(pilot.stream("What risks does Netflix name?", thread_id="t"))
+
+    assert nodes_run(events, "start").count("revise") == 2
+    response = events[-1]
+    assert response["answered"] is False
+    assert response["validation"]["revisions"] == 2
+    assert response["validation"]["unverified"] == [FIXED]
+    assert "unverified" in response["text"]
+
+
+def test_data_answers_and_refusals_are_not_checked() -> None:
+    checker = FakeLLM([])
+    pilot = copilot(["data", "doc"], checker=checker, writer=FakeLLM([]))
+    refusing = FakeDoc(answer("", answerable=False))
+
+    data = pilot.ask("What was Netflix's revenue in 2022?", thread_id="t")
+    refused = copilot(["doc"], doc=refusing, checker=checker, writer=FakeLLM([])).ask(
+        "What risks does Netflix name?", thread_id="t"
+    )
+
+    assert data["validation"] == {"checked": False}
+    assert refused["validation"] == {"checked": False}
+    assert checker.calls == []
