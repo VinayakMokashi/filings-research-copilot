@@ -190,6 +190,18 @@ class CompanyMatcher:
                 found[name] = match.start()
         return tuple(sorted(found, key=lambda name: found[name]))
 
+    def mask(self, text: str, placeholder: str) -> str:
+        """`text` with every company mention replaced by `placeholder`, keeping a possessive."""
+
+        def replace(match: re.Match[str]) -> str:
+            mention = match.group(0)
+            return placeholder + ("'s" if mention.endswith("'s") else "")
+
+        text = text.replace("\N{RIGHT SINGLE QUOTATION MARK}", "'")
+        for _name, pattern in self._patterns:
+            text = pattern.sub(replace, text)
+        return text
+
 
 def understand(question: str, matcher: CompanyMatcher) -> QueryCues:
     """The company, periods and forms a question mentions."""
