@@ -143,11 +143,13 @@ class AgentAnswer:
         return self.first is not None
 
 
-def build_agent(settings: Settings, collection: str = "fb_page_bge-small") -> DocAgent:
+def build_agent(
+    settings: Settings, collection: str = "fb_page_bge-small", llm: LLMClient | None = None
+) -> DocAgent:
     """The doc agent over the evaluation corpus: the 84 filings behind FinanceBench's questions.
 
-    Model calls go through the disk cache (data/cache/llm.jsonl) and are paced to stay under
-    the free tier's tokens-a-minute limit.
+    Model calls go through `llm`, or by default through the disk cache
+    (data/cache/llm.jsonl), paced to stay under the free tier's tokens-a-minute limit.
     """
     root = settings.data_dir / "raw" / "financebench"
     corpus = {question.doc_name for question in fb.load_questions(root)}
@@ -165,7 +167,8 @@ def build_agent(settings: Settings, collection: str = "fb_page_bge-small") -> Do
         FastEmbedDense(cache_dir=cache_dir),
         FastEmbedBM25(cache_dir=cache_dir),
     )
-    models = role_models(settings)
-    cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
-    paced = PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
-    return DocAgent(searcher, matcher, filings, paced)
+    if llm is None:
+        models = role_models(settings)
+        cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
+        llm = PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
+    return DocAgent(searcher, matcher, filings, llm)
