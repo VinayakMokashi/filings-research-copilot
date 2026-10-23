@@ -11,8 +11,10 @@
 
 Every component's model calls go through a disk cache of its own under data/cache/, so a
 repeated question costs nothing. `batch=True` paces the calls for the free tier's
-tokens-a-minute limit and lets a spent quota stop the run, as evaluations need; an
-interactive question runs without pauses.
+tokens-a-minute limit, retries a rate-limited call after a pause, and lets a spent quota
+stop the run, as evaluations need. An interactive question runs without pauses and
+without retries: the router falls back to its semantic half, and a specialist replies
+that the quota is spent.
 
 `postgres_checkpointer` keeps conversations in the Compose Postgres (127.0.0.1:5433), so
 they outlive the process.
@@ -51,7 +53,7 @@ def build_components(settings: Settings, *, batch: bool = False) -> Components:
         cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / cache_file, models)
         if batch:
             return PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
-        return PacedLLM(cache, pause_s=0.0)  # counts tokens and retries, without pauses
+        return PacedLLM(cache, pause_s=0.0, attempts=1)  # counts tokens; no pauses or retries
 
     doc_llm, sql_llm, router_llm, chat = (
         client(name) for name in ("llm.jsonl", "sql.jsonl", "router.jsonl", "chat.jsonl")
