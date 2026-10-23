@@ -11,7 +11,7 @@ from copilot.config import get_settings
 from copilot.llm import LLMError, LLMGateway, ModelRole, user
 from copilot.logs import configure_logging
 
-ROLES: tuple[ModelRole, ...] = ("fast", "strong")
+ROLES: tuple[ModelRole, ...] = ("fast", "strong", "small")
 PROMPT = "Reply with exactly one word: ready"
 
 

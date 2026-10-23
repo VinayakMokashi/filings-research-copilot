@@ -13,7 +13,7 @@ from pydantic import SecretStr
 
 from copilot.config import Settings
 from copilot.llm import LLMError, LLMGateway, user
-from copilot.llm.gateway import api_key_for, build_router, provider_of, token_cost
+from copilot.llm.gateway import api_key_for, build_router, provider_of, role_models, token_cost
 
 # --- Happy paths through a real LiteLLM router ---------------------------------------------
 
@@ -270,17 +270,29 @@ def test_router_has_one_deployment_per_role_and_the_fallback_chain() -> None:
     assert [d["model_name"] for d in router.model_list] == [
         "strong",
         "fast",
+        "small",
         "fallback-1",
         "fallback-2",
     ]
     assert router.fallbacks == [
         {"strong": ["fallback-1", "fallback-2"]},
         {"fast": ["fallback-1", "fallback-2"]},
+        {"small": ["fallback-1", "fallback-2"]},
     ]
 
 
 def test_router_without_fallbacks_has_no_chain() -> None:
     router = build_router(Settings(_env_file=None))
 
-    assert [d["model_name"] for d in router.model_list] == ["strong", "fast"]
+    assert [d["model_name"] for d in router.model_list] == ["strong", "fast", "small"]
     assert not router.fallbacks
+
+
+def test_role_models_names_each_role_s_model() -> None:
+    settings = Settings(_env_file=None, llm_small_model="groq/some-small-model")
+
+    assert role_models(settings) == {
+        "strong": "groq/openai/gpt-oss-120b",
+        "fast": "groq/qwen/qwen3.8-27b",
+        "small": "groq/some-small-model",
+    }

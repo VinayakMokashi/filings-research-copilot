@@ -44,9 +44,9 @@ from copilot.eval.faithfulness import PROMPT_VERSION, check
 from copilot.eval.hybrid import HybridQuestion, expected_values, gives, load_questions
 from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, write_run
 from copilot.facts.database import connect_read_only
-from copilot.llm import LLMError, LLMGateway, ModelRole
+from copilot.llm import LLMError, LLMGateway
 from copilot.llm.cache import CachedLLM
-from copilot.llm.gateway import token_cost
+from copilot.llm.gateway import role_models, token_cost
 from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
 from copilot.sql.agent import batch_client, build_pipeline, facts_db_path
@@ -165,10 +165,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"  {number}/{len(todo)} {question.id}: answered={answer.answerable}")
 
     # The faithfulness judge, with a cache file of its own, as `poe check-faithfulness` has.
-    models: dict[ModelRole, str] = {
-        "fast": settings.llm_fast_model,
-        "strong": settings.llm_strong_model,
-    }
+    models = role_models(settings)
     judge = PacedLLM(
         CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "faithfulness.jsonl", models),
         tokens_per_minute=settings.llm_tokens_per_minute,

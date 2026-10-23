@@ -49,8 +49,9 @@ from copilot.eval.splits import HeldOutError, load_split
 from copilot.ingest.embed import DenseEmbedder, FastEmbedBM25, FastEmbedDense
 from copilot.ingest.late_chunking import JinaEmbedder
 from copilot.ingest.universe import read_companies
-from copilot.llm import LLMGateway, ModelRole
+from copilot.llm import LLMGateway
 from copilot.llm.cache import CachedLLM
+from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
 from copilot.retrieval.query import CompanyMatcher, filings_from, resolve, understand
@@ -142,10 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     llm: PacedLLM | None = None
     cache: CachedLLM | None = None
     if kinds:
-        models: dict[ModelRole, str] = {
-            "fast": settings.llm_fast_model,
-            "strong": settings.llm_strong_model,
-        }
+        models = role_models(settings)
         cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
         llm = PacedLLM(cache, pause_s=REWRITE_PAUSE_S)
 

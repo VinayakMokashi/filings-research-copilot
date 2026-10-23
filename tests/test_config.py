@@ -13,6 +13,7 @@ def test_defaults_without_any_configuration() -> None:
 
     assert settings.env == "dev"
     assert settings.llm_strong_model == "groq/openai/gpt-oss-120b"
+    assert settings.llm_small_model == "groq/openai/gpt-oss-20b"
     assert settings.groq_api_key is None
     assert settings.fallback_models == []
 

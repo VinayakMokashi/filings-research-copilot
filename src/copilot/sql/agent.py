@@ -33,6 +33,7 @@ from text2sql.retrieval import AllTablesRetriever, TableSelector
 from copilot.config import Settings
 from copilot.llm import LLMClient, LLMGateway, ModelRole
 from copilot.llm.cache import CachedLLM
+from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.sql.adapter import GatewayLLM
 from copilot.sql.linking import FactsLinker
@@ -47,10 +48,7 @@ def facts_db_path(settings: Settings) -> Path:
 
 def batch_client(settings: Settings) -> PacedLLM:
     """The gateway behind a disk cache of its own, paced for the free tier."""
-    models: dict[ModelRole, str] = {
-        "fast": settings.llm_fast_model,
-        "strong": settings.llm_strong_model,
-    }
+    models = role_models(settings)
     cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / CACHE_FILE, models)
     return PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
 

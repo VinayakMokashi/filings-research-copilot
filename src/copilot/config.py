@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     # Model roles, as LiteLLM model ids ("<provider>/<model>")
     llm_strong_model: str = "groq/openai/gpt-oss-120b"
     llm_fast_model: str = "groq/qwen/qwen3.8-27b"
+    llm_small_model: str = "groq/openai/gpt-oss-20b"
     llm_fallback_models: str = Field(
         default="",
         description="Comma-separated LiteLLM model ids tried in order when a role's model fails.",

@@ -6,8 +6,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol, TypedDict
 
-ModelRole = Literal["strong", "fast"]
-"""`strong` for hard reasoning (SQL, synthesis); `fast` for cheap, frequent calls."""
+ModelRole = Literal["strong", "fast", "small"]
+"""`strong` for hard reasoning (SQL, synthesis); `fast` for quick, frequent calls (query
+rewrites, judging); `small` for short classification calls such as routing, on the
+cheapest capable model."""
 
 
 class Message(TypedDict):
