@@ -9,9 +9,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from langgraph.store.base import BaseStore
+from langgraph.store.memory import InMemoryStore
 
 from copilot.agents.build import postgres_checkpointer
 from copilot.agents.graph import NODES, Components, to_draft
+from copilot.agents.memory import recall
 from copilot.agents.router import Route, RouteDecision
 from copilot.agents.runner import Copilot, TraceWriter
 from copilot.answer.agent import AgentAnswer, Retrieval
@@ -115,6 +118,9 @@ def parts(
     strict: bool = False,
     checker: LLMClient | None = None,
     writer: LLMClient | None = None,
+    rewriter: LLMClient | None = None,
+    notes: LLMClient | None = None,
+    store: BaseStore | None = None,
 ) -> Components:
     return Components(
         router=FixedRouter(routes),
@@ -128,6 +134,9 @@ def parts(
         strict=strict,
         checker=checker,
         writer=writer,
+        rewriter=rewriter,
+        notes=notes,
+        store=store,
     )
 
 
@@ -176,7 +185,16 @@ def test_each_route_runs_its_own_path_through_every_shared_node(
 ) -> None:
     events = list(copilot([route]).stream("What risks does Netflix name?", thread_id="t"))
 
-    expected = ["rewrite", "understand", "route", *path, "synthesise", "validate", "respond"]
+    expected = [
+        "rewrite",
+        "understand",
+        "route",
+        *path,
+        "synthesise",
+        "validate",
+        "respond",
+        "remember",
+    ]
     assert nodes_run(events, "start") == expected
     assert nodes_run(events, "end") == expected
     assert all(event["error"] is None for event in events if event["type"] == "end")
@@ -375,7 +393,7 @@ def test_a_failing_answer_is_revised_and_checked_again() -> None:
     events = list(pilot.stream("What risks does Netflix name?", thread_id="t"))
 
     path = nodes_run(events, "start")
-    assert path[-4:] == ["validate", "revise", "validate", "respond"]
+    assert path[-5:] == ["validate", "revise", "validate", "respond", "remember"]
     response = events[-1]
     assert response["text"] == FIXED
     assert response["validation"] == {"checked": True, "faithful": True, "revisions": 1}
@@ -411,3 +429,51 @@ def test_data_answers_and_refusals_are_not_checked() -> None:
     assert data["validation"] == {"checked": False}
     assert refused["validation"] == {"checked": False}
     assert checker.calls == []
+
+
+def test_a_follow_up_reaches_the_router_as_a_standalone_question() -> None:
+    rewriter = FakeLLM([json.dumps({"standalone": "What was Netflix's revenue in 2021?"})])
+    components = parts(["data", "data"], rewriter=rewriter)
+    pilot = Copilot(components)
+
+    pilot.ask("What was Netflix's revenue in 2022?", thread_id="t")
+    second = pilot.ask("And in 2021?", thread_id="t")
+
+    router = components.router
+    assert isinstance(router, FixedRouter)
+    assert router.questions == [
+        "What was Netflix's revenue in 2022?",
+        "What was Netflix's revenue in 2021?",
+    ]
+    assert second["question"] == "And in 2021?"
+    assert second["standalone"] == "What was Netflix's revenue in 2021?"
+    assert len(rewriter.calls) == 1  # the first question needed no rewrite
+    assert "Q1: What was Netflix's revenue in 2022?" in rewriter.calls[0].messages[1]["content"]
+
+
+def test_notes_carry_over_to_a_new_conversation() -> None:
+    store = InMemoryStore()
+    notes = FakeLLM(
+        [
+            json.dumps({"facts": ["Follows Netflix."]}),
+            json.dumps({"operations": [{"action": "add", "text": "Follows Netflix."}]}),
+            json.dumps({"facts": []}),
+        ]
+    )
+    rewriter = FakeLLM([json.dumps({"standalone": "How did Netflix's revenue change last year?"})])
+    components = parts(["doc", "doc"], rewriter=rewriter, notes=notes, store=store)
+    pilot = Copilot(components)
+
+    pilot.ask("I follow Netflix. What risks does it name?", thread_id="first", user_id="u1")
+    pilot.ask("How did their revenue change last year?", thread_id="second", user_id="u1")
+
+    assert [note.text for note in recall(store, "u1")] == ["Follows Netflix."]
+    assert "- Follows Netflix." in rewriter.calls[0].messages[1]["content"]
+    assert recall(store, "default") == []
+
+
+def test_without_a_store_no_notes_are_kept() -> None:
+    events = list(copilot(["doc"]).stream("What risks does Netflix name?", thread_id="t"))
+
+    remembered = [e for e in events if e["type"] == "event" and e.get("node") == "remember"]
+    assert remembered[0]["event"] == "skipped"
