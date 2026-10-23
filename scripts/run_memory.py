@@ -50,8 +50,10 @@ from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
 from copilot.retrieval.query import CompanyMatcher, understand
 
-CONVERSATIONS = Path("eval/memory/conversations.jsonl")
-NOTES = Path("eval/memory/notes.jsonl")
+# Found beside this script, so it can run from another checkout that holds the data.
+SET_DIR = Path(__file__).resolve().parents[1] / "eval" / "memory"
+CONVERSATIONS = SET_DIR / "conversations.jsonl"
+NOTES = SET_DIR / "notes.jsonl"
 METRICS = ["resolved", "rewritten"]
 
 
@@ -154,7 +156,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         questions=len(rows),
         test_split_opened=False,
         system={
-            "set": f"{CONVERSATIONS}, {len(conversations)} conversations, {len(users)} users",
+            "set": f"eval/memory, {len(conversations)} conversations, {len(users)} users",
             "rewrite_model": models["strong"],
             "notes_model": models["small"],
             "prompt_version": PROMPT_VERSION,
