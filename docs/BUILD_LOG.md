@@ -15,6 +15,23 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-23 · Planning · Google Cloud for the deployment
+
+- **Goal:** move the planned deployment (Phase 8) from AWS to Google Cloud while no cloud code exists, so the change costs nothing.
+- **Done:**
+  - [ADR-0016](decisions/0016-deploy-on-google-cloud.md), superseding [ADR-0003](decisions/0003-aws-demo-windows.md).
+  - Rewrote Phase 8's steps and the definition of done, and updated the prerequisites, technical choices, risks and change log.
+  - Updated the README, the glossary, the planned guides and the project page (the platform, the deployment diagram, the guardrails, the risks, the roadmap and the stack).
+- **Commands:** `uv run poe check`.
+- **Results:** no code changes beyond one docstring.
+- **Problems and fixes:** none.
+- **Decisions:**
+  - **Services:** Cloud Run services that scale to zero, and a Pub/Sub-fed worker for ingestion.
+  - **Data:** Cloud SQL for PostgreSQL, started only for demos; Firestore for quotas.
+  - **Delivery and secrets:** Artifact Registry, Secret Manager, deploys through Workload Identity Federation, and Terraform; region `asia-south1`.
+  - **Credit:** the free-trial credit lasts 90 days, so Phase 8's cost measurements should run inside it.
+- **Next:** Phase 5, orchestration with LangGraph.
+
 ### 2026-10-23 · Phase 4 · Phase 4 complete
 
 - **Goal:** open the SQL set's held-out test split, the milestone run, confirm Phase 4's exit criterion and publish it.

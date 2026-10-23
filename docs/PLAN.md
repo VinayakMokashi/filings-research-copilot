@@ -30,12 +30,12 @@ It also drafts longer research briefs with a small crew of agents, and exposes i
 
 The project is finished when all of these are true:
 
-1. **Deployable on demand.** One command brings up a public HTTPS deployment on AWS (ECS Fargate) with per-visitor quotas and a budget alarm; one command tears it down ([ADR-0003](decisions/0003-aws-demo-windows.md)). HTTPS comes from a custom domain or CloudFront (decided in Phase 8, see §8).
+1. **Deployable on demand.** A public HTTPS deployment on Google Cloud (Cloud Run) with per-visitor quotas and a budget alert. Its services scale to zero, and one command starts the database for a demo while another stops it ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)).
 2. **Grounded.** Every answer cites the filing pages or SQL it came from, and the copilot declines when the evidence isn't there.
 3. **Measured.** FinanceBench held-out results, retrieval recall@k, SQL execution accuracy, routing accuracy, latency and cost per answer, all reported with 95% confidence intervals.
 4. **Trained where it pays.** The domain embedder and the LoRA router are fine-tuned and compared with their baselines on fixed eval sets; each is adopted only on a significant gain (Phase 7).
 5. **Connected.** An MCP server that works from a standard MCP client such as Claude Desktop.
-6. **Automated.** CI runs lint, types, tests and an eval gate on every pull request; deploys go through GitHub Actions with OIDC, so no AWS keys are stored.
+6. **Automated.** CI runs lint, types, tests and an eval gate on every pull request; deploys go through GitHub Actions with Workload Identity Federation, so no service-account keys are stored.
 7. **Documented.** Build log, decision records, concept guides, runbooks, README and project page are complete.
 
 Accuracy targets are set after the Phase 2 and Phase 3 baselines, not before. A change ships when its paired improvement is statistically significant on the dev set.
@@ -78,8 +78,8 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Langfuse Cloud (free tier) | Pending | Phase 6 | Tracing |
 | Kaggle or Colab GPU (free tier) | Pending | Phase 7 | Fine-tuning |
 | Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then |
-| Terraform, AWS CLI v2 | Not installed | Phase 8 | |
-| AWS account with MFA and a budget alarm | Pending | Phase 8 | |
+| Terraform, Google Cloud CLI | Not installed | Phase 8 | |
+| Google Cloud project with billing, MFA and a budget alert | Pending | Phase 8 | The free-trial credit ($300) lasts 90 days from activation |
 | Domain name (or CloudFront) for HTTPS | To decide | Phase 8 | ACM only issues certificates for names we control, so the load balancer's own `*.elb.amazonaws.com` address can't serve trusted HTTPS |
 
 ## 6. Technical choices
@@ -89,7 +89,7 @@ Starting points, each confirmed by an ADR when its phase lands.
 | Area | Choice | Why | Confirmed in |
 |---|---|---|---|
 | Packaging and tasks | uv with a lockfile, hatchling, `src/` layout, Python 3.12; `poethepoet` tasks | Fast, reproducible, same commands on every OS | [ADR-0004](decisions/0004-tooling-and-workflow.md) |
-| Config | `pydantic-settings`; `.env` locally, Secrets Manager on AWS | Typed config, no keys in code | Phase 0 |
+| Config | `pydantic-settings`; `.env` locally, Secret Manager on Google Cloud | Typed config, no keys in code | Phase 0 |
 | LLM access | LiteLLM router behind one gateway: model roles, fallbacks, cost tracking | Provider-agnostic; one place for retries and accounting | [ADR-0005](decisions/0005-llm-gateway.md) |
 | PDF parsing | `pypdfium2` page text; table-aware parsing deferred, since numbers come from XBRL | Permissive licence (PyMuPDF is AGPL); 126 of 127 dev evidence pages line up | [ADR-0009](decisions/0009-pdf-parsing.md) |
 | Chunking | One chunk per page, long pages split within the page; token windows, semantic and late chunking measured against it | Ranks the evidence page first most often, and citations are exact pages | [ADR-0011](decisions/0011-retrieval-baseline.md) |
@@ -98,15 +98,15 @@ Starting points, each confirmed by an ADR when its phase lands.
 | Vector database | Qdrant: dense and sparse named vectors, payload indexes; rank fusion done in our code | Dense and keyword search on one point; free cloud tier | [ADR-0010](decisions/0010-vector-store-and-embeddings.md) |
 | Reranker | None in the baseline: MiniLM-L6, jina-turbo and bge-reranker-base didn't beat dense search; re-tested after query rewriting | Measured on FinanceBench dev | [ADR-0011](decisions/0011-retrieval-baseline.md); Phase 3 |
 | Numbers | SEC company facts → SQLite for the curated companies; Postgres in production | text2sql-analyst runs on SQLite as-is | [ADR-0008](decisions/0008-xbrl-normalisation.md); Phase 8 |
-| App state | Postgres: the Compose container locally (127.0.0.1:5433), RDS on AWS. LangGraph checkpoints (Phase 5), feedback (Phases 6 and 9), and testing the Postgres executor for the facts tables (Phase 8). No code uses it in Phase 0 | One engine locally and in production | Phases 5, 6 and 8 |
+| App state | Postgres: the Compose container locally (127.0.0.1:5433), Cloud SQL on Google Cloud. LangGraph checkpoints (Phase 5), feedback (Phases 6 and 9), and testing the Postgres executor for the facts tables (Phase 8). No code uses it in Phase 0 | One engine locally and in production | Phases 5, 6 and 8 |
 | Data agent | text2sql-analyst, an earlier project, as a pinned dependency | Reuses a tested pipeline | Phase 4 |
 | Orchestration | LangGraph state graph with a checkpointer | Routing, loops, streaming, human-in-the-loop | Phase 5 |
 | API and UI | FastAPI with SSE streaming; Streamlit as a thin client | Python end to end | Phase 6 |
 | MCP | Official MCP Python SDK | Works with standard MCP clients | Phase 6 |
 | Observability | Langfuse Cloud traces; JSON logs | Per-step latency, tokens and cost | Phase 6 |
 | Evaluation | Own harness, an LLM judge checked against human labels, bootstrap CIs, paired permutation tests | Deterministic retrieval metrics; fair comparisons | [ADR-0007](decisions/0007-evaluation-statistics.md) |
-| Infrastructure | Docker Compose locally; Terraform → ECS Fargate, RDS, S3, SQS, DynamoDB, Secrets Manager, CloudWatch, in demo windows | Production shape without paying for idle time | [ADR-0003](decisions/0003-aws-demo-windows.md) |
-| CI/CD | GitHub Actions pinned to commit SHAs; a checksum-verified gitleaks scan of the full history; Dependabot updates; AWS access through OIDC | No long-lived keys; reproducible pipelines | Phases 0 and 8 |
+| Infrastructure | Docker Compose locally; Terraform → Cloud Run, Cloud SQL for PostgreSQL, Cloud Storage, Pub/Sub, Firestore, Secret Manager, Cloud Logging and Monitoring | Services that scale to zero; only the database runs in demo windows | [ADR-0016](decisions/0016-deploy-on-google-cloud.md) |
+| CI/CD | GitHub Actions pinned to commit SHAs; a checksum-verified gitleaks scan of the full history; Dependabot updates; Google Cloud access through Workload Identity Federation | No long-lived keys; reproducible pipelines | Phases 0 and 8 |
 
 Repository layout. Folders are created when their phase lands:
 
@@ -182,7 +182,7 @@ Size is relative: S < M < L.
 
 - [x] 2.1 Parse PDFs to page text with page numbers; strip running headers and footers; tag pages with their 10-K item (1A, 7, 8 and so on). pypdfium2 ([ADR-0009](decisions/0009-pdf-parsing.md)); 126 of 127 dev evidence pages line up.
 - [x] 2.2 Pluggable chunkers: token-recursive with overlap, page-level, semantic, late chunking. Every chunk keeps company, year, form, section and page span.
-- [x] 2.3 Index into Qdrant: dense and BM25 sparse vectors, payload indexes, recorded HNSW settings, idempotent upserts keyed by content hash. Ingestion runs as jobs (a local runner now, an SQS runner in Phase 8). [ADR-0010](decisions/0010-vector-store-and-embeddings.md).
+- [x] 2.3 Index into Qdrant: dense and BM25 sparse vectors, payload indexes, recorded HNSW settings, idempotent upserts keyed by content hash. Ingestion runs as jobs (a local runner now, a Pub/Sub-fed worker in Phase 8). [ADR-0010](decisions/0010-vector-store-and-embeddings.md).
 - [x] 2.4 Retrieval variants: dense, BM25, hybrid (RRF), then cross-encoder reranking, then neighbouring chunks. None beat dense search on FinanceBench dev ([report](eval/retrieval-baseline.md)).
 - [x] 2.5 Evaluate on FinanceBench dev evidence pages: page recall@5/10/20 and MRR, changing one thing at a time, with confidence intervals and latency ([report](eval/retrieval-baseline.md)).
 - [x] 2.6 Pick the baseline configuration. Generate synthetic question→chunk pairs from training documents only, for Phase 7. Baseline: dense search over page chunks ([ADR-0011](decisions/0011-retrieval-baseline.md)); 1,006 pairs from 195 training filings ([data card](data/synthetic-pairs.md)).
@@ -263,23 +263,23 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 **Done when:** each experiment has its report and ADR, and adopted models run behind flags.
 **Docs:** guides `contrastive-finetuning.md`, `lora-classifier.md`, `dspy.md`, `bandit-routing.md`, `research-briefs.md`.
 
-### Phase 8: Production deployment on AWS, in demo windows (L)
+### Phase 8: Production deployment on Google Cloud (L)
 
-**Goal:** a production-shaped deployment that comes up for a demo and goes away afterwards ([ADR-0003](decisions/0003-aws-demo-windows.md)).
+**Goal:** a production-shaped deployment whose services scale to zero, with the database running only for demos ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)).
 
-- [ ] 8.1 Install Terraform and the AWS CLI. Create the budget alarm before any other resource; MFA on the account; a GitHub OIDC deploy role.
-- [ ] 8.2 Slim, non-root container images; ECR with scan-on-push.
-- [ ] 8.3 Terraform in two layers. **Persistent:** state bucket, ECR repositories, S3 data bucket, budget alarm, OIDC role, and the HTTPS front door chosen in §8 (an ACM certificate for a domain, or a CloudFront distribution). **Demo:** VPC with public subnets only (no NAT gateway), ECS services (api, ui, mcp), an SQS-driven ingestion worker, a load balancer, RDS Postgres restored from a snapshot, SQS with a dead-letter queue, DynamoDB quotas, Secrets Manager, CloudWatch logs, dashboards and alarms.
-- [ ] 8.4 Move the facts tables to Postgres and add a Postgres executor for the data agent; ingest into Qdrant Cloud and keep collection snapshots in S3.
-- [ ] 8.5 `demo-up` and `demo-down` tasks; a scheduled CI job tears the demo layer down if it is left running past a time limit.
-- [ ] 8.6 CD: build and push, deploy, smoke tests; roll back to the previous task definition when needed.
+- [ ] 8.1 Install Terraform and the Google Cloud CLI. Create the budget alert before any other resource; MFA on the account; Workload Identity Federation for GitHub Actions.
+- [ ] 8.2 Slim, non-root container images; Artifact Registry with vulnerability scanning.
+- [ ] 8.3 Terraform: Cloud Run services (api, ui, mcp), a Cloud Run worker fed by Pub/Sub with a dead-letter topic, Cloud SQL for PostgreSQL, Cloud Storage for filings and backups, Firestore quotas, Secret Manager, Cloud Logging and Monitoring with dashboards and alerts, and one least-privilege service account per service.
+- [ ] 8.4 Move the facts tables to Postgres and add a Postgres executor for the data agent; ingest into Qdrant Cloud and keep collection snapshots in Cloud Storage.
+- [ ] 8.5 `demo-up` and `demo-down` start and stop the database; a scheduled job stops it if it is left running past a time limit.
+- [ ] 8.6 CD: build and push, deploy, smoke tests; roll back to the previous Cloud Run revision when needed.
 - [ ] 8.7 Load test with Locust and size the services from the results.
-- [ ] 8.8 Security pass: least-privilege roles, security groups, a read-only SQL user, dependency and image scans.
-- [ ] 8.9 Measure and document the cost of one demo window.
+- [ ] 8.8 Security pass: least-privilege service accounts, a read-only SQL user, dependency and image scans.
+- [ ] 8.9 Measure and document the cost of an idle month and of one demo, inside the free-trial credit's 90 days.
 
-**Done when:** `demo-up` produces a working public URL, dashboards and alarms work, and `demo-down` leaves only the persistent layer.
-**Docs:** ADRs on AWS topology and CI/CD; runbooks for demo-up, demo-down, rollback, key rotation and provider outages; guides `ecs-fargate.md`, `terraform-basics.md`, `github-oidc.md`.
-**Manual steps:** AWS account access; a domain, if that HTTPS option is chosen.
+**Done when:** the public URLs work, dashboards and alerts work, `demo-up` and `demo-down` start and stop the database, and an idle month costs close to nothing.
+**Docs:** ADRs on the Google Cloud topology and CI/CD; runbooks for demo-up, demo-down, rollback, key rotation and provider outages; guides `cloud-run.md`, `terraform-basics.md`, `workload-identity-federation.md`.
+**Manual steps:** a Google Cloud project with billing enabled; a domain, only if a custom one is wanted.
 
 ### Phase 9: Online evaluation and feedback (M)
 
@@ -314,7 +314,7 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 |---|---|---|
 | Phase 8 | How to serve HTTPS | A domain we own with an ACM certificate on the load balancer, or CloudFront's default `*.cloudfront.net` certificate in front of it (no domain needed; CloudFront's origin timeout must allow streamed answers) |
 
-Already decided: public repository with an MIT licence ([ADR-0004](decisions/0004-tooling-and-workflow.md)); AWS runs in demo windows ([ADR-0003](decisions/0003-aws-demo-windows.md)); the SEC contact is the owner's name and email, kept in `.env`.
+Already decided: public repository with an MIT licence ([ADR-0004](decisions/0004-tooling-and-workflow.md)); the deployment runs on Google Cloud, with services that scale to zero and the database in demo windows ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)); the SEC contact is the owner's name and email, kept in `.env`.
 
 ## 9. Risks
 
@@ -326,7 +326,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | XBRL tags differ across companies | A canonical `metrics` mapping with tests |
 | PDF tables flatten badly | Table-aware parsing experiment; numbers come from XBRL instead |
 | Development machine has no CUDA GPU | Train on Kaggle or Colab GPUs; serve small models on CPU with ONNX |
-| AWS costs | Budget alarm first; demo windows; scheduled auto-teardown |
+| Cloud costs | Budget alert first; Cloud Run scales to zero; the database runs only in demo windows, with a scheduled stop; Phase 8's measurements run inside the free-trial credit |
 | Qdrant Cloud free clusters may pause when idle | Collection snapshots in S3; restore during `demo-up` |
 | FinanceBench licence | Used for evaluation only; licence checked in Phase 1 |
 | Scope | Each phase delivers standalone value; stretch items are marked |
@@ -348,6 +348,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-19 | Step 3.4's relevance check is the answer call's own verdict, and the one retry searches for what a refusal names as missing | A grading call per source would add about eight calls a question on the free tier ([ADR-0013](decisions/0013-answer-format.md)) |
 | 2026-10-23 | Step 3.6's judge is checked against labels from a stronger model instead of labels by hand | The labels came from a Claude model; judge numbers carry that caveat, and a person check of about 20 answers stays open ([ADR-0014](decisions/0014-answer-judge.md)) |
 | 2026-10-23 | Step 4.5 measures the data agent on FinanceBench's metrics questions, graded like the doc agent's answers | The SQL set's accuracy and errors were measured in steps 4.1 and 4.2; comparing the two agents needs the same questions and the same judge |
+| 2026-10-23 | Phase 8 moves from AWS to Google Cloud | The builder already uses Google Cloud and has its free-trial credit, and Cloud Run scales to zero, so only the database needs demo windows ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)) |
 
 ## 11. Status tracker
 
@@ -361,6 +362,6 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 5 Orchestration | Planned | | |
 | 6 API, UI, MCP, observability | Planned | | |
 | 7 Fine-tuning and optimisation | Planned | | |
-| 8 AWS deployment (demo windows) | Planned | | |
+| 8 Google Cloud deployment | Planned | | |
 | 9 Online evaluation | Planned | | |
 | 10 Showcase and polish | Planned | | |

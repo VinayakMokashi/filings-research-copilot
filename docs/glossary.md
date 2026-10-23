@@ -16,6 +16,8 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Chunk** | A piece of a document that gets its own embedding and can be retrieved on its own. |
 | **CIK** | Central Index Key, the SEC's unique ID for each filer. |
 | **Citation precision** | The share of cited sources that actually support the claim they're attached to. |
+| **Cloud Run** | Google Cloud's service for running containers without managing servers; a service scales to zero when no requests arrive. |
+| **Cloud Run** | Google Cloud's service for running containers without managing servers; a service scales to zero when no requests arrive. |
 | **Cohen's kappa** | Agreement between two raters corrected for the agreement chance alone would give: 1 is perfect, 0 is no better than chance. |
 | **Company facts** | SEC's per-company JSON of every XBRL fact the company has filed, without dimensions, from `data.sec.gov/api/xbrl/companyfacts`. |
 | **Context budget** | The most retrieved text, in tokens, that the answer prompt may hold: 3,000 here. |
@@ -23,10 +25,9 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Corrective RAG** | Grade the retrieved documents before generating; if they're weak, rewrite the query or fall back. Here the answer model's own refusal is the grade, and the fallback is one search across all of the company's filings. |
 | **Cross-encoder** | A model that reads the query and a passage together to score relevance. Slower than embedding search, but more precise. |
 | **Data card** | A short document describing a dataset: source, licence, size, checksums, fields, splits and known issues. |
-| **Demo window** | A period when the full AWS stack is brought up for a demo and torn down afterwards, so idle time costs nothing. |
+| **Demo window** | A period when the part of the cloud deployment that costs money while idle, here the database, is started for a demo and stopped afterwards. |
 | **DSPy** | A framework that treats prompts as programs and optimises them against a metric. |
 | **Duration and instant facts** | A duration fact covers a period with a start and end date (revenue for a year); an instant fact is measured on one date (total assets at the year end). |
-| **ECS Fargate** | AWS's service for running containers without managing servers. |
 | **Embedding** | A vector that represents meaning; similar texts get nearby vectors. |
 | **Execution accuracy (EX)** | Generated SQL counts as correct when it returns the same result as the gold query. |
 | **Faithfulness** | Whether each sentence of an answer is supported by the sources it cites. An answer can be faithful and wrong (the cited page is the wrong one) or correct and unfaithful (the figure came from memory). |
@@ -58,7 +59,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Model role** | A named job (`strong` or `fast`) that code asks for instead of a specific model; settings decide which model fills it. |
 | **Multi-query retrieval** | Asking a model for several rewordings of a question, searching each, and fusing the rankings. |
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
-| **OIDC (for deploys)** | Lets GitHub Actions assume an AWS role with short-lived tokens, so no AWS keys are stored anywhere. |
+| **OIDC (for deploys)** | Lets GitHub Actions prove who it is to a cloud with short-lived tokens, so no keys are stored; Google Cloud does it through Workload Identity Federation. |
 | **ONNX Runtime** | An engine that runs neural networks exported in the ONNX format quickly on a CPU. FastEmbed runs its models with it. |
 | **Oracle-document setting** | A retrieval evaluation in which each question searches only the filing its evidence is in, isolating finding the page from finding the filing. |
 | **Paired test** | Comparing two systems on the same questions, so that question-to-question noise cancels out. |
@@ -86,4 +87,6 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
 | **Transition report (10-KT)** | An annual report covering a short period, filed when a company changes its fiscal year end. |
 | **Value linking** | Telling a Text-to-SQL model which database values a question refers to (a company's stored name, a metric's real key, the years covered), because the schema alone doesn't. |
+| **Workload Identity Federation** | Google Cloud's way of letting an outside identity, such as a GitHub Actions run, act as a service account without a stored key. |
+| **Workload Identity Federation** | Google Cloud's way of letting an outside identity, such as a GitHub Actions run, act as a service account without a stored key. |
 | **XBRL** | The tagged data format companies use to file financial statements. Each number carries a concept tag, a period and a unit. |

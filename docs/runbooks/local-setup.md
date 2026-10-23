@@ -29,7 +29,7 @@ uv run poe services-up        # Qdrant on 127.0.0.1:6333, Postgres on 127.0.0.1:
 
 Both services listen on 127.0.0.1 only. Postgres is published on **5433** because a local PostgreSQL install often holds 5432. Change either port with `QDRANT_PORT` or `POSTGRES_PORT` in `.env`, and update `FRC_QDRANT_URL` or `FRC_DATABASE_URL` to match.
 
-Nothing reads from either service yet. Qdrant will hold the filing chunks (Phase 2). Postgres will hold app state: LangGraph checkpoints (Phase 5) and feedback (Phase 6). From Phase 8 it is also where the facts tables are tested before they move to RDS. Until then the facts stay in SQLite (see PLAN §6).
+Nothing reads from either service yet. Qdrant will hold the filing chunks (Phase 2). Postgres will hold app state: LangGraph checkpoints (Phase 5) and feedback (Phase 6). From Phase 8 it is also where the facts tables are tested before they move to Cloud SQL. Until then the facts stay in SQLite (see PLAN §6).
 
 ## 4. Run the checks
 
