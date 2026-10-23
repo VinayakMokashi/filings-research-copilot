@@ -449,6 +449,10 @@ def build_graph(
             emit("validate", "skipped", reason="no checker")
             return {"validation": {"checked": False}}
         if result.get("kind") not in ("doc", "hybrid") or not record or not record["answerable"]:
+            revisions = state.get("revisions", 0)
+            if revisions:  # a revision turned the answer into a refusal: nothing left to check
+                emit("validate", "declined after revision", revisions=revisions)
+                return {"validation": {"checked": True, "refused": True, "revisions": revisions}}
             emit("validate", "skipped", reason="no cited answer to check")
             return {"validation": {"checked": False}}
         answer = to_answer(record, state["standalone"])
@@ -518,7 +522,7 @@ def build_graph(
             "validation": {
                 key: value
                 for key, value in state.get("validation", {}).items()
-                if key in ("checked", "faithful", "revisions", "unverified")
+                if key in ("checked", "faithful", "refused", "revisions", "unverified")
             },
         }
         turn: Turn = {
