@@ -105,11 +105,24 @@ def hybrid_messages(question: str, sources: Sequence[Source]) -> list[Message]:
 
 @dataclass(frozen=True, slots=True)
 class HybridAnswer:
-    """The answer, the data agent's result behind its figures, and the pages retrieved."""
+    """The answer, the data agent's result behind its figures, and the pages retrieved.
+
+    Version 2 (`copilot.answer.hybrid_v2`) also records which path it took (`split`, both
+    agents; `doc`, the doc agent alone, with no data result), the two questions it split
+    the question into, and the answer it wrote before a retry, if it retried.
+    """
 
     answer: Answer
-    data: DataAnswer
+    data: DataAnswer | None
     retrieval: Retrieval
+    path: str = "split"
+    figures_question: str = ""
+    reasons_question: str = ""
+    first: Answer | None = None
+
+    @property
+    def retried(self) -> bool:
+        return self.first is not None
 
     @property
     def database_cited(self) -> bool:

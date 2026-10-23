@@ -117,6 +117,7 @@ def test_a_hybrid_answer_cites_the_query_result_and_the_pages(facts_db: Path) ->
     )
     assert "SELECT fiscal_year" in first.text
     assert "2022 | 1,200,000,000" in first.text
+    assert result.data is not None
     assert FIGURES_HINT in result.data.hints
     prompt = writer.calls[0].messages[1]["content"]
     assert prompt.index("[1] Facts database") < prompt.index("[2] Acme")
@@ -128,6 +129,7 @@ def test_without_a_query_result_the_pages_are_numbered_from_one(facts_db: Path) 
 
     result = agent.answer(QUESTION)
 
+    assert result.data is not None
     assert result.data.status == "unanswerable"
     assert [(s.number, s.doc_name) for s in result.answer.sources] == [(1, "ACME_2022_10K")]
     assert (result.database_cited, result.pages_cited) == (False, True)
