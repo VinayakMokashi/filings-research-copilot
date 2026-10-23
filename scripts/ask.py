@@ -74,6 +74,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
     print()
     print(response.get("text", ""))
+    if response.get("answered") and response.get("missing"):
+        print()
+        print(f"Not in the sources: {response['missing']}")
     for citation in response.get("citations", []):
         print(f"  [{citation['number']}] {citation['label']}")
     if response.get("sql"):

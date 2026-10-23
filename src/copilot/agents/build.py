@@ -3,7 +3,8 @@
 `build_components` puts together what the graph's nodes call:
 
 - the doc agent over the evaluation corpus, the data agent with its answer written on the
-  `strong` model, and the hybrid of the two;
+  `strong` model, and hybrid answers from both (version 2: routed by need, split by a
+  planner, partial when the sources are);
 - the router of ADR-0017: the LLM router on the `strong` role decides, and the semantic
   router (company names and years masked, the nearest route centroid) decides only when
   the LLM call fails;
@@ -31,7 +32,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from copilot.agents.graph import Components
 from copilot.agents.router import CascadeRouter, LLMRouter, SemanticRouter, entity_mask
 from copilot.answer.agent import build_agent
-from copilot.answer.hybrid import HybridAgent
+from copilot.answer.hybrid_v2 import HybridAgentV2
 from copilot.config import Settings
 from copilot.eval.routing import load_queries
 from copilot.ingest.embed import FastEmbedDense
@@ -81,7 +82,7 @@ def build_components(settings: Settings, *, batch: bool = False) -> Components:
         router=router,
         doc=doc,
         data=data,
-        hybrid=HybridAgent(doc, data),
+        hybrid=HybridAgentV2(doc, data),
         matcher=matcher,
         chat=chat,
         companies=[company.name for company in companies],
