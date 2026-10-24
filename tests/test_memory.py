@@ -15,6 +15,7 @@ from copilot.agents.memory import (
     Operation,
     apply,
     extract,
+    note_id,
     recall,
     reconcile,
     rewrite_followup,
@@ -121,6 +122,20 @@ def test_apply_adds_updates_and_deletes_notes() -> None:
     assert done == {"add": 0, "update": 1, "delete": 1}
     assert [note.text for note in recall(store, "u1")] == ["Follows Netflix and Boeing."]
     assert recall(store, "another user") == []
+
+
+def test_a_note_has_a_stable_id_and_is_not_added_twice() -> None:
+    store = InMemoryStore()
+    twice = [
+        Operation(action="add", text="Follows Netflix."),
+        Operation(action="add", text="Follows  Netflix."),
+    ]
+
+    done = apply(store, "u1", twice)
+
+    assert done["add"] == 1
+    assert [note.id for note in recall(store, "u1")] == [note_id("u1", "Follows Netflix.")]
+    assert note_id("u2", "Follows Netflix.") != note_id("u1", "Follows Netflix.")
 
 
 def test_the_memory_set_is_consistent() -> None:

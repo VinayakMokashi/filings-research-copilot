@@ -20,7 +20,7 @@ notes run on the `small` role, two short calls a turn.
 
 from __future__ import annotations
 
-import uuid
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
@@ -34,7 +34,7 @@ from copilot.llm.parsing import json_object
 MAX_TURNS = 3  # enough to resolve "those" and "and in 2019?", short enough to keep old topics out
 REWRITE_ROLE: ModelRole = "strong"
 NOTES_ROLE: ModelRole = "small"
-PROMPT_VERSION = "1"
+PROMPT_VERSION = "2"
 
 REWRITE_SYSTEM = (
     "You rewrite the latest question a user asks a research assistant about company filings "
@@ -50,14 +50,15 @@ Reply with JSON only: {"standalone": "the question"}"""
 
 EXTRACT_SYSTEM = """\
 You keep short notes about a user of a research assistant for company filings, so that \
-later conversations go better. From the exchange below, note the facts about the user \
-worth keeping: the companies they follow or care about, how they like answers given \
-(units, length, detail), and their role or purpose, if they say. Each note is one short \
-sentence about the user, such as "Follows Netflix." Don't note what was asked or answered, \
-and don't guess.
+later conversations go better. From the exchange below, note only what the user says about \
+themselves: the companies they say they follow or cover, how they ask for answers to be \
+given (units, length, detail), and their role or purpose. Each note is one short sentence \
+about the user, such as "Follows Nike." Asking about a company is not following it: "What \
+was Walmart's revenue in 2022?" says nothing about the user. Don't note what was asked or \
+answered, and don't guess.
 
-Reply with JSON only: {"facts": ["...", ...]}, with an empty list when nothing is worth \
-keeping."""
+Reply with JSON only: {"facts": ["...", ...]}, with an empty list when the user says \
+nothing about themselves."""
 
 RECONCILE_SYSTEM = """\
 You keep a short list of notes about a user. Compare the new facts with the current \
@@ -204,24 +205,31 @@ def namespace(user_id: str) -> tuple[str, ...]:
     return ("notes", user_id)
 
 
+def note_id(user_id: str, text: str) -> str:
+    """A new note's key, from its user and text, so a rerun sends the same prompts."""
+    return hashlib.sha256(f"{user_id}\n{text}".encode()).hexdigest()[:8]
+
+
 def recall(store: BaseStore, user_id: str, limit: int = 50) -> list[Note]:
     """The user's notes, oldest first."""
     items = store.search(namespace(user_id), limit=limit)
-    ordered = sorted(items, key=lambda item: item.created_at)
+    ordered = sorted(items, key=lambda item: (item.created_at, item.key))
     return [Note(item.key, str(item.value.get("text", ""))) for item in ordered]
 
 
 def apply(store: BaseStore, user_id: str, operations: Sequence[Operation]) -> dict[str, int]:
     """Carry out the operations on the user's notes; returns how many of each were done.
 
-    An update or delete that names an unknown note is skipped, never guessed.
+    An update or delete that names an unknown note is skipped, never guessed, and a note
+    already held isn't added twice.
     """
     known = {note.id for note in recall(store, user_id)}
     done = dict.fromkeys(("add", "update", "delete"), 0)
     for operation in operations:
         text = " ".join(operation.text.split())
-        if operation.action == "add" and text:
-            store.put(namespace(user_id), uuid.uuid4().hex[:8], {"text": text})
+        if operation.action == "add" and text and note_id(user_id, text) not in known:
+            store.put(namespace(user_id), note_id(user_id, text), {"text": text})
+            known.add(note_id(user_id, text))
             done["add"] += 1
         elif operation.action == "update" and operation.id in known and text:
             store.put(namespace(user_id), operation.id, {"text": text})
