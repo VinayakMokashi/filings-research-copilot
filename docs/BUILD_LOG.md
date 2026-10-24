@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-24 · Phase 5 · The copilot as a graph
+
+- **Goal:** one copilot that routes each question and runs every step in view (step 5.1).
+- **Done:**
+  - `copilot.agents.graph`: a LangGraph state graph: rewrite, understand, route, then the doc agent, the data agent, the hybrid, a brief note, small talk or a decline, then synthesise, validate and respond. The state holds plain JSON; the first node clears what the previous turn left; the history only grows.
+  - `copilot.agents.runner`: `Copilot.stream` turns the graph's stream (`tasks` and `custom` parts, `version="v2"`) into events, a start and a timed end for every node, the nodes' own events and the response, and `TraceWriter` keeps them as JSON lines in `data/traces/`.
+  - `copilot.agents.build`: the real agents and the router of ADR-0017, with every component's model calls cached; batch runs are paced and stop on a spent quota, interactive ones make one attempt and fall back. `postgres_checkpointer` keeps conversations in the Compose Postgres.
+  - `poe ask` runs one question through the graph and prints each step; `--thread` and `--postgres` continue a conversation.
+  - [ADR-0018](decisions/0018-graph-design.md) and the [LangGraph orchestration guide](concepts/langgraph-orchestration.md).
+- **Commands:** `uv run poe ask "..." --verbose`, `uv run poe ask "..." --thread smoke-pg --postgres`, `uv run poe check`, and the Postgres test with `pytest -m integration`.
+- **Results:**
+  - 19 tests of the graph with fakes, and one against Postgres: a conversation started by one `Copilot` continues in another.
+  - A live question from the hybrid set, on a day the strong model's quota was spent: the router fell back to its semantic half, which chose `hybrid`, and the hybrid agent answered from its cached calls with the query and three pages cited. The trace held a start and an end for each of its 7 nodes. The route took 12.8 s, the gateway retrying the refused call; the other nodes together under a second.
+  - A two-turn conversation in Postgres: "Hi! Which companies do you cover?" went to small talk, which listed the 40 companies, and "Should I buy Nike stock right now?" was declined, asked from a new process as the thread's second turn.
+- **Problems and fixes:**
+  - **A checkpointer remembers too much:** a prototype showed one turn's answer in the next turn's state, so the first node resets the per-turn keys.
+  - **The trace needs a checkpointer:** `get_state` and the `tasks` stream mode need one, so `Copilot` always has one.
+  - **Event fields that clash:** the synthesise node's `kind` collided with the trace helper's keyword, now positional-only.
+  - **Pacing is for batches:** interactive clients count tokens without pausing and make one attempt, so a spent quota means a quick fallback, not minutes of waiting.
+- **Decisions:** [ADR-0018](decisions/0018-graph-design.md).
+- **Next:** hybrid answers v2 (step 5.1's hybrid node), then the validator (step 5.3).
+
 ### 2026-10-24 · Phase 5 · Routers
 
 - **Goal:** choose the router that sends each question to the right part of the copilot, by measurement (step 5.2).
