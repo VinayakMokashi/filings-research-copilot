@@ -206,11 +206,11 @@ def test_llm_router_reads_the_route_and_reason() -> None:
     assert decision.route == "data"
     assert decision.reason == "Asks for a reported figure."
     assert decision.router == "llm"
-    assert decision.model == "fake/fast"
+    assert decision.model == "fake/strong"
     assert decision.prompt_tokens > 0
     assert decision.error is None
     call = fake.calls[0]
-    assert call.role == "fast"
+    assert call.role == "strong"
     assert call.extra["response_format"] == {"type": "json_object"}
     assert call.messages[0]["content"] == router.router_prompt()
     assert call.messages[1]["content"] == "Question: What was Oracle's revenue in 2022?"
@@ -256,7 +256,7 @@ def test_cascade_asks_the_llm_below_the_threshold() -> None:
 
     assert decision.route == "hybrid"
     assert decision.router == "cascade"
-    assert decision.model == "fake/fast"
+    assert decision.model == "fake/strong"
     assert decision.confidence == 1.0  # the semantic vote is kept for the record
     assert decision.scores
 
@@ -271,7 +271,7 @@ def test_cascade_falls_back_to_the_semantic_route() -> None:
     unreadable = CascadeRouter(semantic, LLMRouter(FakeLLM(["nonsense"])), threshold=1.01)
     decision = unreadable.route(FIGURE_QUESTION)
     assert decision.route == "data"
-    assert decision.model == "fake/fast"
+    assert decision.model == "fake/strong"
     assert decision.error is not None
 
     strict = CascadeRouter(

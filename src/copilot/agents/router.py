@@ -361,9 +361,12 @@ def parse_route(text: str) -> tuple[Route, str]:
 class LLMRouter:
     """Asks a model for the route; see the module docstring.
 
-    A reply that isn't a valid decision gets `fallback` (the doc agent, which declines
-    what its sources don't support) with the error recorded. A failed call raises
-    `LLMError`, so a batch run can stop and resume.
+    It runs on the gateway's `strong` role by default: on the routing set's dev
+    questions, the strong model routed the questions about the assistant itself and the
+    out-of-scope requests that the small one misrouted (ADR-0017). A reply that isn't a
+    valid decision gets `fallback` (the doc agent, which declines what its sources don't
+    support) with the error recorded. A failed call raises `LLMError`, so a batch run can
+    stop and resume.
     """
 
     name = "llm"
@@ -372,7 +375,7 @@ class LLMRouter:
         self,
         llm: LLMClient,
         *,
-        role: ModelRole = "fast",
+        role: ModelRole = "strong",
         examples: Sequence[tuple[str, Route]] = PROMPT_EXAMPLES,
         fallback: Route = "doc",
     ) -> None:

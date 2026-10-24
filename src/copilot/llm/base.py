@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from typing import Any, Literal, Protocol, TypedDict
 
 ModelRole = Literal["strong", "fast", "small"]
-"""`strong` for hard reasoning (SQL, synthesis); `fast` for quick, frequent calls (query
-rewrites, judging); `small` for short classification calls such as routing, on the
+"""`strong` for hard reasoning (SQL, synthesis, routing); `fast` for quick, frequent calls
+(query rewrites, judging); `small` for short, cheap replies such as small talk, on the
 cheapest capable model."""
 
 
