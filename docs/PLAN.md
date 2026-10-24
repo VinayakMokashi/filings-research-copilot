@@ -224,7 +224,7 @@ Size is relative: S < M < L.
 **Goal:** one copilot that routes, combines, checks and remembers.
 
 - [ ] 5.1 The graph: rewrite follow-up → understand → route → doc / data / hybrid / brief / small talk / decline → synthesise → validate → respond, with streamed events.
-- [ ] 5.2 Router v1: an LLM router (also the teacher for Phase 7) and a semantic router over labelled examples; compare accuracy, latency and cost.
+- [x] 5.2 Router v1: an LLM router (also the teacher for Phase 7) and a semantic router over labelled examples; compare accuracy, latency and cost. On routing dev the LLM router on gpt-oss-120b routes all 138 questions correctly (exact 95% interval 0.974 to 1.000), at $0.00019 and 0.5 s a question; gpt-oss-20b scores 0.964 and Qwen3.8 27B 1.000 at four times the cost. The semantic router, evaluated with each seed group left out of its examples, scores 0.391 as first designed and 0.739 with companies and years masked and route centroids; it is the LLM router's fallback ([ADR-0017](decisions/0017-routing.md), [report](eval/routing.md)).
 - [ ] 5.3 Validator loop: claim-level faithfulness check, retry with feedback at most twice, then abstain.
 - [ ] 5.4 Self-consistency for numeric answers, kept only if the gain justifies the cost.
 - [ ] 5.5 Memory: conversation state in a checkpointer; long-term memory in the Mem0 style (extract, compare, then add, update, delete or skip).
@@ -348,6 +348,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-23 | Step 4.5 measures the data agent on FinanceBench's metrics questions, graded like the doc agent's answers | The SQL set's accuracy and errors were measured in steps 4.1 and 4.2; comparing the two agents needs the same questions and the same judge |
 | 2026-10-23 | Phase 8 moves from AWS to Google Cloud | The builder already uses Google Cloud and has its free-trial credit, and Cloud Run scales to zero, so only the database needs demo windows ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)) |
 | 2026-10-24 | The open decision on HTTPS is closed, and the prerequisites and risks drop their AWS terms | Cloud Run serves HTTPS on its own addresses ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)); these lines still described the AWS plan |
+| 2026-10-24 | The gateway gains a third model role, `small`, and step 5.2's router runs on `strong` | The `fast` model costs the most per token; the strong model routed every dev question correctly, where the small one missed five ([ADR-0017](decisions/0017-routing.md)) |
 
 ## 11. Status tracker
 

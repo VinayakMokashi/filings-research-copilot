@@ -65,6 +65,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Answer evaluation: an LLM judge with a rubric and code-computed comparisons of figures, checked against reference labels; faithfulness and citation precision; error categories, latency and cost | `src/copilot/eval/judge.py`, `faithfulness.py`, `errors.py` ([ADR-0014](docs/decisions/0014-answer-judge.md), [report](docs/eval/doc-agent-dev.md)) |
 | Data agent: text2sql-analyst's Text-to-SQL pipeline over the facts database, with value linking (company, metric and coverage hints) and its model calls on the gateway; every SQL question answered correctly, dev and held-out test, and 32 of FinanceBench's 33 dev metrics questions. A typed answer for other components: status, SQL, rows, exact statistics and a chart spec | `src/copilot/sql/` ([ADR-0015](docs/decisions/0015-reuse-text2sql-analyst.md), [guide](docs/concepts/text-to-sql-agent.md), [value linking](docs/concepts/value-linking.md), [report](docs/eval/data-agent-financebench.md)) |
 | Hybrid answers, a prototype: the data agent's query result and the doc agent's pages as numbered sources for one cited answer. On 13 questions of our own it gives every expected figure for 10, including years that no filing in the corpus holds | `src/copilot/answer/hybrid.py` ([guide](docs/concepts/hybrid-answers.md), [report](docs/eval/hybrid-prototype.md)) |
+| Router: an LLM router on gpt-oss-120b that routes all 138 routing-set dev questions correctly, at $0.0002 and half a second a question, with a semantic router (bge-small, companies and years masked, nearest route centroid; 0.74) beside it as the fallback | `src/copilot/agents/router.py` ([ADR-0017](docs/decisions/0017-routing.md), [guide](docs/concepts/semantic-routing.md), [report](docs/eval/routing.md)) |
 
 ## Local development
 
@@ -96,6 +97,7 @@ uv run poe run-sql-agent                              # the data agent on the SQ
 uv run poe ask-data "How did 3M's capital expenditure change from fiscal 2018 to fiscal 2022?"
 uv run poe answer-with-data                           # FinanceBench's dev metrics questions, by SQL
 uv run poe run-hybrid --agent hybrid --run hybrid-v1  # figures from SQL, reasons from the filings, one answer
+uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b   # route the routing set, scored
 ```
 
 Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runbooks/local-setup.md).
