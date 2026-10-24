@@ -1,0 +1,119 @@
+{
+  "suite": "routing",
+  "run": "semantic-centroid",
+  "split": "dev",
+  "created": "2026-10-23T19:21:50.941061Z",
+  "questions": 138,
+  "test_split_opened": false,
+  "system": {
+    "router": "semantic",
+    "embedder": "BAAI/bge-small-en-v1.5",
+    "method": "centroid",
+    "k": null,
+    "mask": "none",
+    "instruction": false,
+    "examples": "routing set dev, each question's own seed group left out",
+    "latency_s": {
+      "p50": 0.0082,
+      "p95": 0.0135
+    },
+    "mean_tokens": 0,
+    "cost_usd_per_question": 0.0,
+    "errors": 0
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.5434782608695652,
+      "low": 0.45652173913043476,
+      "high": 0.6304347826086957
+    }
+  },
+  "by": {
+    "route": {
+      "brief": {
+        "questions": 18,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5555555555555556,
+            "low": 0.3333333333333333,
+            "high": 0.7777777777777778
+          }
+        }
+      },
+      "data": {
+        "questions": 30,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.6333333333333333,
+            "low": 0.4666666666666667,
+            "high": 0.8
+          }
+        }
+      },
+      "decline": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.42857142857142855,
+            "low": 0.23809523809523808,
+            "high": 0.6190476190476191
+          }
+        }
+      },
+      "doc": {
+        "questions": 30,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.6,
+            "low": 0.43333333333333335,
+            "high": 0.7666666666666667
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.19047619047619047,
+            "low": 0.047619047619047616,
+            "high": 0.38095238095238093
+          }
+        }
+      },
+      "smalltalk": {
+        "questions": 18,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.8333333333333334,
+            "low": 0.6666666666666666,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "origin": {
+      "paraphrase": {
+        "questions": 92,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5217391304347826,
+            "low": 0.41304347826086957,
+            "high": 0.6304347826086957
+          }
+        }
+      },
+      "seed": {
+        "questions": 46,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5869565217391305,
+            "low": 0.45652173913043476,
+            "high": 0.7391304347826086
+          }
+        }
+      }
+    }
+  }
+}
