@@ -1,0 +1,77 @@
+{
+  "u1": {
+    "notes": [
+      "Follows Netflix.",
+      "Prefers figures in billions."
+    ],
+    "present": {
+      "Netflix": true,
+      "billion": true
+    },
+    "absent": {}
+  },
+  "u2": {
+    "notes": [
+      "User is an analyst covering Boeing.",
+      "User follows Boeing.",
+      "User prefers concise answers.",
+      "User is interested in 737 MAX production.",
+      "User is interested in company filings."
+    ],
+    "present": {
+      "Boeing": true,
+      "analyst": true
+    },
+    "absent": {
+      "concise": false,
+      "737": false
+    }
+  },
+  "u3": {
+    "notes": [
+      "Follows Coca-Cola.",
+      "Follows PepsiCo."
+    ],
+    "present": {},
+    "absent": {
+      "Coca-Cola": false,
+      "PepsiCo": false
+    }
+  },
+  "u4": {
+    "notes": [
+      "Follows 3M",
+      "Follows Amcor"
+    ],
+    "present": {},
+    "absent": {
+      "3M": false,
+      "Amcor": false
+    }
+  },
+  "u5": {
+    "notes": [
+      "Prefers short answers.",
+      "Follows Microsoft.",
+      "Follows Amazon."
+    ],
+    "present": {
+      "short": true
+    },
+    "absent": {
+      "Microsoft": false,
+      "Amazon": false
+    }
+  },
+  "u6": {
+    "notes": [
+      "Follows AMD."
+    ],
+    "present": {
+      "AMD": true
+    },
+    "absent": {
+      "follows Intel": true
+    }
+  }
+}
