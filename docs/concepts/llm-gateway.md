@@ -6,7 +6,7 @@
 
 ## What it is
 
-A thin layer between the application and the model providers. Code asks for a **role** (`strong` or `fast`) and gets back a normalised response: the text, which model answered, how long it took, how many tokens it used and what it cost.
+A thin layer between the application and the model providers. Code asks for a **role** (`strong`, `fast` or `small`) and gets back a normalised response: the text, which model answered, how long it took, how many tokens it used and what it cost.
 
 ## Why we need it here
 
@@ -23,7 +23,12 @@ flowchart LR
     gateway --> response["LLMResponse<br/>text · model · tokens · cost · latency"]
 ```
 
-1. **Roles, not models.** `strong` maps to `FRC_LLM_STRONG_MODEL` (default `groq/openai/gpt-oss-120b`) for hard reasoning such as SQL, synthesis and validation. `fast` maps to `FRC_LLM_FAST_MODEL` (default `groq/qwen/qwen3.8-27b`) for cheap, frequent calls such as routing and query rewriting.
+1. **Roles, not models.** `role_models()` maps each role to its model:
+   - `strong`: `FRC_LLM_STRONG_MODEL` (default `groq/openai/gpt-oss-120b`), for hard reasoning such as SQL, synthesis and validation, and for routing;
+   - `fast`: `FRC_LLM_FAST_MODEL` (default `groq/qwen/qwen3.8-27b`), for quick, frequent calls such as query rewriting and judging;
+   - `small`: `FRC_LLM_SMALL_MODEL` (default `groq/openai/gpt-oss-20b`), for short, cheap replies such as small talk, on the cheapest capable model. It was added in Phase 5, when measuring the router showed that the `fast` model is not the cheap one: at list prices it costs $0.80 per million input tokens and $4.00 per million output tokens, against gpt-oss-20b's $0.075 and $0.30. The router itself ended up on `strong`, which routed the questions the small model missed ([ADR-0017](../decisions/0017-routing.md)).
+
+   Disk caches key their entries by the model a role resolves to, never by the role, so changing a role's model never replays another model's answers.
 2. **Router deployments.** `build_router()` registers each role as a LiteLLM deployment and attaches the API key that matches the model's provider prefix (`groq/`, `cerebras/`, `openrouter/`).
 3. **Retries, then fallbacks.** The router retries a failing deployment, then tries each model in `FRC_LLM_FALLBACK_MODELS` in order.
 4. **A normalised response.** `LLMResponse` carries:

@@ -18,5 +18,6 @@
 | [0014](0014-answer-judge.md) | Grade answers with a rubric-bound model judge, checked against reference labels | Accepted | 2026-10-23 |
 | [0015](0015-reuse-text2sql-analyst.md) | Reuse text2sql-analyst as a pinned dependency, improved upstream first | Accepted | 2026-10-23 |
 | [0016](0016-deploy-on-google-cloud.md) | Deploy on Google Cloud, with services that scale to zero | Accepted | 2026-10-23 |
+| [0017](0017-routing.md) | Route with an LLM on the strong model, and keep a semantic router as its fallback | Accepted | 2026-10-24 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
