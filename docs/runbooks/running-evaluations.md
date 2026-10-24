@@ -67,7 +67,26 @@ uv run poe eval-routing --baseline keyword        # or --baseline majority
 uv run poe eval-routing --predictions routes.jsonl --run llm-router-v1
 ```
 
-A routing predictions file has one line per dev question: `{"id": "r001", "route": "doc"}`. Runs land in `eval/results/routing/<run>/<split>/`, with accuracy overall, by route and by origin (seed or paraphrase). The set itself is fixed: rebuilding it needs `poe build-routing-set --force` and a note in the build log.
+A routing predictions file has one line per dev question: `{"id": "r001", "route": "doc"}`. Runs land in `eval/results/routing/<run>/<split>/`, with accuracy overall, by route and by origin (seed or paraphrase), and a confusion matrix in `confusion.md`. The set itself is fixed: rebuilding it needs `poe build-routing-set --force` and a note in the build log.
+
+The copilot's own routers ([guide](../concepts/semantic-routing.md)) run with `poe run-router`:
+
+```bash
+uv run poe run-router --router semantic --mask entities --method centroid --run semantic-masked-centroid
+uv run poe run-router --router semantic --k 5 --run semantic-k5              # a vote of the 5 nearest
+uv run poe run-router --router llm --run llm-qwen3.8-27b                     # needs GROQ_API_KEY
+FRC_LLM_FAST_MODEL=groq/openai/gpt-oss-20b uv run poe run-router --router llm --run llm-gpt-oss-20b
+uv run poe run-router --router cascade --mask entities --method centroid --threshold 0.05 --run NAME
+```
+
+| Option | Effect |
+|---|---|
+| `--method vote` (with `--k N`) or `centroid` | A similarity-weighted vote of the N nearest examples, or the nearest route centroid |
+| `--mask entities` | Replace company names and years before embedding |
+| `--instruction` | Embed questions with bge's search instruction |
+| `--threshold T` | For a cascade, the confidence the semantic route needs before the LLM is skipped |
+
+The semantic router's examples are the dev questions, and each one is routed with its own seed group left out. The LLM router's calls are cached in `data/cache/router.jsonl` and paced; each decision is appended to `data/processed/routing/<run>/<split>/decisions.jsonl`, so a run stopped by a quota resumes where it stopped. A run name is tied to its configuration: resuming it with other options stops with an error.
 
 ## Score SQL
 

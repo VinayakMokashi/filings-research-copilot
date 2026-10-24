@@ -6,6 +6,7 @@
 | [Doc agent: dev evaluation](doc-agent-dev.md) | 3 | How often the doc agent answers correctly from filing text, how well its citations hold up, what it costs, and where the wrong answers come from |
 | [Data agent: FinanceBench's metrics questions](data-agent-financebench.md) | 4 | Whether SQL over the facts database answers FinanceBench's figure questions better than reading filing pages, and at what cost |
 | [Hybrid answers: a prototype](hybrid-prototype.md) | 4 | Whether one answer can take its figures from the data agent and its reasons from the filings, and how that compares with the doc agent alone |
+| [Routing: semantic and LLM routers](routing.md) | 5 | Which router should choose each question's route, by embedding similarity, by asking a model, or both, and at what latency and cost |
 
 One report per experiment, with these sections:
 
@@ -54,6 +55,11 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [sql-agent-v2, test](../../eval/results/sql/sql-agent-v2/test/summary.md) | SQL | Test, held out, opened once | accuracy 1.000 (exact 0.77 to 1.00) | The data agent with value linking on the 14 held-out questions, at the close of Phase 4 |
 | [sql-agent-v2](../../eval/results/sql/sql-agent-v2/dev/summary.md) | SQL | Dev | accuracy 1.000 (exact 0.88 to 1.00) | The data agent with value linking ([guide](../concepts/value-linking.md)) |
 | [sql-agent-v1](../../eval/results/sql/sql-agent-v1/dev/summary.md) | SQL | Dev | accuracy 0.607 (0.43 to 0.79) | The data agent: text2sql-analyst over the facts database, before value linking ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)) |
+| [llm-gpt-oss-120b](../../eval/results/routing/llm-gpt-oss-120b/dev/summary.md) | Routing | Dev | accuracy 1.000 (exact 0.974 to 1.000) | The LLM router on the strong model, prompt r1: the copilot's router ([ADR-0017](../decisions/0017-routing.md)) |
+| [llm-gpt-oss-20b](../../eval/results/routing/llm-gpt-oss-20b/dev/summary.md) | Routing | Dev | accuracy 0.964 (0.928 to 0.993) | The same prompt on gpt-oss-20b |
+| [llm-qwen3.8-27b](../../eval/results/routing/llm-qwen3.8-27b/dev/summary.md) | Routing | Dev | accuracy 1.000 (exact 0.974 to 1.000) | The same prompt on Qwen3.8 27B, the fast role, at four times the cost |
+| [semantic-masked-centroid](../../eval/results/routing/semantic-masked-centroid/dev/summary.md) | Routing | Dev | accuracy 0.739 (0.667 to 0.812) | bge-small, companies and years masked, nearest route centroid, each seed group left out: the fallback router; the other semantic variants sit [beside it](../../eval/results/routing/) |
+| [semantic-k5](../../eval/results/routing/semantic-k5/dev/summary.md) | Routing | Dev | accuracy 0.391 (0.312 to 0.471) | The first semantic design: a vote of the five nearest examples |
 | [majority](../../eval/results/routing/majority/dev/summary.md) | Routing | Dev | accuracy 0.217 (0.152 to 0.290) | Always the most common route |
 | [keyword](../../eval/results/routing/keyword/dev/summary.md) | Routing | Dev | accuracy 0.623 (0.543 to 0.703) | Floor: hand-written keyword rules |
 | [financebench-dev-checks](../../eval/results/facts/financebench-dev-checks.md) | Facts database | Dev | 33 of 33 agree exactly | FinanceBench metrics questions as formulas over annual values |

@@ -13,10 +13,11 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Bi-encoder** | A model that embeds the query and each passage separately, so passage vectors can be computed ahead of time and searched quickly. The embedding models here are bi-encoders. |
 | **BM25** | A keyword-ranking formula that scores documents by term frequency, term rarity and document length. Strong for exact terms such as tickers and line items. |
 | **Bootstrap confidence interval** | Resample the eval questions with replacement many times, recompute the metric each time, and take percentiles to see how uncertain the number is. |
+| **Cascade (routing)** | A cheap router decides when it is confident, and a more expensive one is asked otherwise. |
+| **Centroid** | The average of a group's vectors. A route's centroid is the mean embedding of its example questions. |
 | **Chunk** | A piece of a document that gets its own embedding and can be retrieved on its own. |
 | **CIK** | Central Index Key, the SEC's unique ID for each filer. |
 | **Citation precision** | The share of cited sources that actually support the claim they're attached to. |
-| **Cloud Run** | Google Cloud's service for running containers without managing servers; a service scales to zero when no requests arrive. |
 | **Cloud Run** | Google Cloud's service for running containers without managing servers; a service scales to zero when no requests arrive. |
 | **Cohen's kappa** | Agreement between two raters corrected for the agreement chance alone would give: 1 is perfect, 0 is no better than chance. |
 | **Company facts** | SEC's per-company JSON of every XBRL fact the company has filed, without dimensions, from `data.sec.gov/api/xbrl/companyfacts`. |
@@ -29,6 +30,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **DSPy** | A framework that treats prompts as programs and optimises them against a metric. |
 | **Duration and instant facts** | A duration fact covers a period with a start and end date (revenue for a year); an instant fact is measured on one date (total assets at the year end). |
 | **Embedding** | A vector that represents meaning; similar texts get nearby vectors. |
+| **Entity masking** | Replacing names (here company names and years) with placeholders before embedding, so similarity reflects what is asked rather than whom it is about. |
 | **Execution accuracy (EX)** | Generated SQL counts as correct when it returns the same result as the gold query. |
 | **Faithfulness** | Whether each sentence of an answer is supported by the sources it cites. An answer can be faithful and wrong (the cited page is the wrong one) or correct and unfaithful (the figure came from memory). |
 | **Fallback chain** | Models tried in order when a role's own model keeps failing after retries. |
@@ -48,7 +50,9 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **JSON mode** | A provider option that makes the model reply with one valid JSON object, so code can read the answer's fields. |
 | **LangGraph** | A library for building LLM workflows as state graphs with branches, loops and checkpoints. |
 | **Late chunking** | Run long stretches of a document through a long-context embedding model, then average each chunk's token vectors, so the chunk's vector keeps the surrounding context. |
+| **Leave-one-group-out evaluation** | Score each item with its whole group (here a seed and its paraphrases) removed from the examples, so a near-copy can't give the answer away. |
 | **LiteLLM** | A library and proxy that gives one interface to many LLM providers, with retries and fallbacks. |
+| **LLM router** | A router that asks a model which route a question needs, from the route definitions and a few examples. |
 | **LLM-as-judge** | Using a model to grade answers against a reference by a written rubric. The judge itself has to be checked against human labels. |
 | **LoRA** | Low-Rank Adaptation: fine-tuning by training small low-rank adapter matrices instead of all the weights. |
 | **McNemar's test** | A paired test for two systems' right-or-wrong outcomes that looks only at the questions where they disagree. |
@@ -56,7 +60,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Model-call cache** | A file of model responses keyed by model, messages and parameters, so repeated experiment runs replay answers instead of spending quota. |
 | **Mean pooling** | Turning a model's per-token vectors into one vector for the text by averaging them. |
 | **MNRL** | MultipleNegativesRankingLoss: a contrastive loss that treats the other examples in a batch as negatives. |
-| **Model role** | A named job (`strong` or `fast`) that code asks for instead of a specific model; settings decide which model fills it. |
+| **Model role** | A named job (`strong`, `fast` or `small`) that code asks for instead of a specific model; settings decide which model fills it. |
 | **Multi-query retrieval** | Asking a model for several rewordings of a question, searching each, and fusing the rankings. |
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions prove who it is to a cloud with short-lived tokens, so no keys are stored; Google Cloud does it through Workload Identity Federation. |
@@ -68,18 +72,19 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
 | **Program-aided arithmetic** | The model writes a calculation as an expression and a safe evaluator computes it, instead of the model doing the arithmetic in its head (after PAL, Gao et al. 2022). |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
+| **Query decomposition** | Splitting a question into the separate facts it needs (both parts of a ratio, both years of a change) and searching for each. |
+| **Query understanding** | Reading the company, period and form out of a question and searching only the filings that match. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **Reference labels** | Labels a judge is checked against, made by someone or something other than the judge: ideally a person, here a stronger model. |
 | **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |
-| **Query decomposition** | Splitting a question into the separate facts it needs (both parts of a ratio, both years of a change) and searching for each. |
-| **Query understanding** | Reading the company, period and form out of a question and searching only the filings that match. |
+| **Router** | The first decision for every question: which part of the copilot answers it (doc, data, hybrid, brief, small talk or decline). |
 | **RRF** | Reciprocal Rank Fusion: merge ranked lists by summing 1/(k + rank) for each item. |
 | **Running header** | Text repeated at the top or bottom of most pages, such as a "Table of Contents" link or a page number. The parser removes it. |
 | **Self-consistency** | Sample several reasoning paths and keep the majority answer. |
 | **Self-Discover** | The model selects, adapts and structures reasoning modules into a plan, then follows the plan. |
 | **Self-preference bias** | A model judge's tendency to rate text like its own more highly; one reason the judge here is a different model family from the answer model. |
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
-| **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries. |
+| **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries: the nearest examples vote, or the nearest route centroid wins. |
 | **Sparse vector** | A vector stored as its few non-zero dimensions, such as one weight for each word in a text. Qdrant stores BM25 this way. |
 | **SQL guardrails** | The checks that let a model's query run only if it is one read-only SELECT: a parser check, a read-only connection, an authorizer inside SQLite, and caps on rows, value size and time. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
@@ -87,6 +92,5 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
 | **Transition report (10-KT)** | An annual report covering a short period, filed when a company changes its fiscal year end. |
 | **Value linking** | Telling a Text-to-SQL model which database values a question refers to (a company's stored name, a metric's real key, the years covered), because the schema alone doesn't. |
-| **Workload Identity Federation** | Google Cloud's way of letting an outside identity, such as a GitHub Actions run, act as a service account without a stored key. |
 | **Workload Identity Federation** | Google Cloud's way of letting an outside identity, such as a GitHub Actions run, act as a service account without a stored key. |
 | **XBRL** | The tagged data format companies use to file financial statements. Each number carries a concept tag, a period and a unit. |

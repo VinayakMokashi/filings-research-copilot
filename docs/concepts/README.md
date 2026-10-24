@@ -22,7 +22,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 16 | [value-linking.md](value-linking.md) | Matching names, metric values and coverage to the database, as hints | Talaei et al., CHESS (2024) | 4 | Written |
 | 17 | [hybrid-answers.md](hybrid-answers.md) | Figures from a database query and explanations from the filing, in one cited answer | Zhu et al., TAT-QA (2021) | 4 | Written |
 | 18 | `langgraph-orchestration.md` | State graphs, branches, loops, checkpoints | LangGraph docs | 5 | Planned |
-| 19 | `semantic-routing.md` | Routing by embedding similarity | Semantic Router library docs | 5 | Planned |
+| 19 | [semantic-routing.md](semantic-routing.md) | Routing by embedding similarity or by a model, measured leaving one seed group out | Semantic Router library docs | 5 | Written |
 | 20 | `validator-loop.md` | Reflection and retry with feedback | Madaan et al., Self-Refine (2023) | 5 | Planned |
 | 21 | `self-consistency.md` | Sampling several answers and voting | Wang et al., Self-Consistency (2023) | 5 | Planned |
 | 22 | `agent-memory.md` | Short-term state and long-term memory | Chhikara et al., Mem0 (2025) | 5 | Planned |
