@@ -1,6 +1,6 @@
 # Routing: semantic and LLM routers
 
-Phase 5, step 5.2. Routing set dev, 138 questions; the held-out test split was not opened.
+Phase 5, step 5.2. Routing set dev, 138 questions; then the held-out test split, 60 questions, opened once at Phase 5's milestone with the routers frozen.
 
 ## Question
 
@@ -8,7 +8,7 @@ Every question passes through the router before anything else, so its accuracy c
 
 ## Setup
 
-- **Questions:** the [routing set](../data/routing-set.md)'s dev side: 138 questions from 46 hand-written seeds, each seed with two reviewed paraphrases. By route: `doc` 30, `data` 30, `hybrid` 21, `brief` 18, `smalltalk` 18, `decline` 21. The test side (60 questions from 20 other seeds) stays closed until Phase 5's milestone.
+- **Questions:** the [routing set](../data/routing-set.md)'s dev side: 138 questions from 46 hand-written seeds, each seed with two reviewed paraphrases. By route: `doc` 30, `data` 30, `hybrid` 21, `brief` 18, `smalltalk` 18, `decline` 21. The test side (60 questions from 20 other seeds) was opened once, after the decision ([below](#the-test-split)).
 - **Floors:** the majority route (always `doc`) and the keyword rules written with the set. The rules were written while reading the seeds, so they score 0.957 on the dev seeds and 0.457 on the paraphrases.
 - **Semantic router** ([guide](../concepts/semantic-routing.md)):
   - examples: the dev questions themselves, embedded with `BAAI/bge-small-en-v1.5` on the laptop CPU;
@@ -66,7 +66,7 @@ Two changes address that, and each helps on its own:
 - **Masking** the company names (as "Acme") and years (as "2020") removes the strongest topical signal: the vote of five rises from 0.391 to 0.522.
 - **Centroids** average each route's 15 to 30 examples, which washes out the topics the examples happen to share and keeps what they have in common: 0.391 to 0.543 unmasked.
 
-Together they reach 0.739. These were chosen on dev after seeing the first design's errors, so the test split, opened once at the milestone, will say how much of the gain holds.
+Together they reach 0.739. These were chosen on dev after seeing the first design's errors, so the test split, opened once at the milestone, had the last word: 0.800 on seeds the choices never saw ([below](#the-test-split)).
 
 The masked-centroid router still confuses the routes the LLM router has to separate by reading: `hybrid` questions go to `data` (7 of 21), because the figure is the most similar part, and `decline` goes to `smalltalk` (8 of 21), because "Write a poem about the ocean" and "What can you help me with?" are both requests to the assistant. Its confusion matrix is [here](../../eval/results/routing/semantic-masked-centroid/dev/confusion.md).
 
@@ -124,11 +124,36 @@ Route with the LLM router on gpt-oss-120b, the `strong` role, and keep the maske
 - **Qwen3.8 27B** routed every dev question correctly too, faster at the median (0.33 s) but slower at the 95th percentile (1.59 s), at four times the cost ($0.00080); it buys nothing gpt-oss-120b doesn't.
 - **The semantic router** can't route on its own (0.739), but as a fallback it keeps the copilot answering when the model's quota runs out, and it costs nothing to run beside the LLM. A semantic-first cascade would save 8% to 17% of the router calls on dev, $0.00003 a question at most, at thresholds read off dev; the larger saving already costs a misroute.
 
-The test split, with seeds no prompt example or design choice has seen, is opened once at Phase 5's milestone.
+**The decision stands on the test split** (next section): the LLM router routed all 60 held-out questions correctly.
+
+## The test split
+
+Opened once, on 2026-10-24, for Phase 5's milestone, with prompt `r1` and the semantic router's configuration frozen: 60 questions from 20 seeds that no prompt example or design choice had seen. By route: `doc` 15, `data` 15, `hybrid` 9, `brief` 6, `smalltalk` 6, `decline` 9. The semantic router's examples are the 138 dev questions, which share no seed with the test side, so nothing is left out.
+
+| Router | Test accuracy (95% interval) | Seeds | Paraphrases | Dev, for comparison |
+|---|---|---|---|---|
+| Majority (always `doc`) | 0.250 (0.150 to 0.367) | 0.250 | 0.250 | 0.217 |
+| Keyword rules | 0.650 (0.533 to 0.767) | 0.900 | 0.525 | 0.623 |
+| Semantic, masked, nearest centroid | 0.800 (0.700 to 0.900) | 0.800 | 0.800 | 0.739 |
+| **LLM, gpt-oss-120b** | **1.000 (exact 0.940 to 1.000)** | 1.000 | 1.000 | 1.000 |
+
+- **The LLM router** routed all 60 correctly, at 961 tokens and $0.00018 a question, with the median call at 0.83 s. Its 95th-percentile latency, 48 s, measures the free tier rather than the router: the run waited out spent quotas, and a refused call is retried after a pause.
+- **The semantic router's dev choices held.** Masking and centroids, chosen on dev after the first design failed, score 0.800 on new seeds. On paraphrases it beats the keyword rules by +0.275 (+0.100 to +0.450), p = 0.008, as it did on dev (+0.283).
+- **Its confusions moved.** On dev, `decline` requests went to small talk; on test, five of the nine went to `data`: three asking for Amazon's share price next year and two asking for non-public information about Apple's next earnings, whose words are a figure question's words. Two more went to `brief`, among them "Is it a good idea to put my retirement savings into Pfizer?" ([confusion matrix](../../eval/results/routing/semantic-masked-centroid/test/confusion.md)).
+- **The keyword rules** again do best on seeds (0.900) and worst on paraphrases (0.525).
+
+Against the keyword rules, Holm-adjusted across the two routers ([family](../../eval/results/routing/_comparisons/routers-vs-keyword-test.md)):
+
+| Router | Accuracy | Difference (95% interval) | p | Holm p |
+|---|---|---|---|---|
+| Semantic, masked, nearest centroid | 0.800 | +0.150 (+0.000 to +0.300) | 0.080 | 0.080 |
+| LLM, gpt-oss-120b | 1.000 | +0.350 (+0.233 to +0.483) | 0.0001 | 0.0002 |
+
+The LLM router beats the semantic router by +0.200 (+0.100 to +0.300), p = 0.0005: it gets 12 questions the semantic router misses, and misses none that it gets.
 
 ## Logs
 
-- Runs: `eval/results/routing/<run>/dev/`, each with `items.jsonl` (the route, the prediction, the confidence or the model's reason, latency, tokens and cost per question), `summary.md` and `confusion.md`; the family of paired tests in [`eval/results/routing/_comparisons/`](../../eval/results/routing/_comparisons/).
+- Runs: `eval/results/routing/<run>/dev/`, and `<run>/test/` for the four routers run on the test split, each with `items.jsonl` (the route, the prediction, the confidence or the model's reason, latency, tokens and cost per question), `summary.md` and `confusion.md`; the family of paired tests in [`eval/results/routing/_comparisons/`](../../eval/results/routing/_comparisons/).
 - Decisions as they were made, and the model calls: `data/processed/routing/<run>/dev/decisions.jsonl` and `data/cache/router.jsonl` (local, not committed).
 - Reproduce ([runbook](../runbooks/running-evaluations.md)):
 
@@ -137,4 +162,9 @@ The test split, with seeds no prompt example or design choice has seen, is opene
   uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b
   FRC_LLM_FAST_MODEL=groq/openai/gpt-oss-20b uv run poe run-router --router llm --run llm-gpt-oss-20b
   uv run poe run-router --router llm --run llm-qwen3.8-27b
+  # the test split, at the milestone only
+  uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b --split test --allow-test
+  uv run poe run-router --router semantic --mask entities --method centroid --run semantic-masked-centroid --split test --allow-test
+  uv run poe eval-routing --baseline keyword --split test --allow-test   # and --baseline majority
+  uv run poe compare-runs eval/results/routing/keyword/test eval/results/routing/semantic-masked-centroid/test --metric accuracy --where origin=paraphrase
   ```

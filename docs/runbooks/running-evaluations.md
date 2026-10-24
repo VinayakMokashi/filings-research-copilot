@@ -88,6 +88,8 @@ uv run poe run-router --router cascade --mask entities --method centroid --thres
 
 The semantic router's examples are the dev questions, and each one is routed with its own seed group left out. The LLM router's calls are cached in `data/cache/router.jsonl` and paced; each decision is appended to `data/processed/routing/<run>/<split>/decisions.jsonl`, so a run stopped by a quota resumes where it stopped. A run name is tied to its configuration: resuming it with other options stops with an error.
 
+At a milestone, the same commands take `--split test --allow-test`; the semantic router then uses all the dev questions as its examples, since no test seed is among them. `poe compare-runs ... --where origin=paraphrase` compares two routers on the paraphrases alone.
+
 ## Score SQL
 
 Needs the facts database (`uv run poe build-facts`).
