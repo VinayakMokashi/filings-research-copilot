@@ -15,6 +15,21 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-24 · Phase 5 · The routing test split
+
+- **Goal:** the one honest check of the routers, on seeds that no prompt example or design choice had seen, as ADR-0017 set out.
+- **Done:** opened the routing set's held-out test split once, with prompt `r1` and the semantic router's configuration frozen, and ran the LLM router, the semantic fallback and both floors on its 60 questions.
+- **Commands:** `uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b --split test --allow-test`, the same for `--router semantic --mask entities --method centroid --run semantic-masked-centroid`, `uv run poe eval-routing --baseline keyword --split test --allow-test` (and `majority`), and `uv run poe compare-family` against the keyword rules.
+- **Results:**
+  - The LLM router on gpt-oss-120b: 60 of 60 (exact 0.940 to 1.000), $0.00018 a question.
+  - The masked-centroid semantic router: 0.800 (0.700 to 0.900), against 0.739 on dev, so the choices made on dev held. On paraphrases it beats the keyword rules by +0.275 (+0.100 to +0.450), p = 0.008.
+  - The keyword rules 0.650 and the majority route 0.250.
+- **Problems and fixes:**
+  - **The fallback's confusions moved:** five of nine `decline` requests (a share price next year, non-public earnings details) went to `data`, where on dev they went to small talk. ADR-0017's consequences now say so.
+  - **Latency on the free tier:** the run waited out spent quotas, so its 95th-percentile latency (48 s) measures the pauses, not the router.
+- **Decisions:** [ADR-0017](decisions/0017-routing.md) stands, with the test split in its evidence.
+- **Next:** the remaining Phase 5 runs: hybrid answers v2, the validator, self-consistency and the end-to-end evaluation.
+
 ### 2026-10-24 · Phase 5 · The copilot as a graph
 
 - **Goal:** one copilot that routes each question and runs every step in view (step 5.1).
