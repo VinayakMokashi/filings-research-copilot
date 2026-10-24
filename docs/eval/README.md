@@ -24,7 +24,7 @@ One report per experiment, with these sections:
 | FinanceBench dev | 100 questions, 20 companies | [`eval/financebench/splits.json`](../../eval/financebench/splits.json) | Used for all tuning and comparisons |
 | FinanceBench test | 50 questions, 12 companies | Same file | Held out: opened only at milestones, and each report says whether it was ([ADR-0006](../decisions/0006-evaluation-splits.md)) |
 | Routing dev | 138 questions, 46 seeds | [`eval/routing/queries.jsonl`](../../eval/routing/queries.jsonl) | Used for tuning routers ([data card](../data/routing-set.md)) |
-| Routing test | 60 questions, 20 seeds | Same file | Held out, like FinanceBench test |
+| Routing test | 60 questions, 20 seeds | Same file | Held out, like FinanceBench test; opened once, at Phase 5's milestone |
 | SQL dev | 28 questions (21 answerable) | [`eval/sql/questions.jsonl`](../../eval/sql/questions.jsonl) | Used for tuning the data agent ([data card](../data/sql-set.md)) |
 | SQL test | 14 questions (11 answerable) | Same file | Held out |
 
@@ -55,6 +55,8 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [sql-agent-v2, test](../../eval/results/sql/sql-agent-v2/test/summary.md) | SQL | Test, held out, opened once | accuracy 1.000 (exact 0.77 to 1.00) | The data agent with value linking on the 14 held-out questions, at the close of Phase 4 |
 | [sql-agent-v2](../../eval/results/sql/sql-agent-v2/dev/summary.md) | SQL | Dev | accuracy 1.000 (exact 0.88 to 1.00) | The data agent with value linking ([guide](../concepts/value-linking.md)) |
 | [sql-agent-v1](../../eval/results/sql/sql-agent-v1/dev/summary.md) | SQL | Dev | accuracy 0.607 (0.43 to 0.79) | The data agent: text2sql-analyst over the facts database, before value linking ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)) |
+| [llm-gpt-oss-120b, test](../../eval/results/routing/llm-gpt-oss-120b/test/summary.md) | Routing | Test, held out, opened once | accuracy 1.000 (exact 0.940 to 1.000) | The copilot's router on the 60 held-out questions, at Phase 5's milestone ([report](routing.md#the-test-split)) |
+| [semantic-masked-centroid, test](../../eval/results/routing/semantic-masked-centroid/test/summary.md) | Routing | Test, held out, opened once | accuracy 0.800 (0.700 to 0.900) | The fallback router on the same questions; the keyword rules (0.650) and the majority route (0.250) sit [beside it](../../eval/results/routing/) |
 | [llm-gpt-oss-120b](../../eval/results/routing/llm-gpt-oss-120b/dev/summary.md) | Routing | Dev | accuracy 1.000 (exact 0.974 to 1.000) | The LLM router on the strong model, prompt r1: the copilot's router ([ADR-0017](../decisions/0017-routing.md)) |
 | [llm-gpt-oss-20b](../../eval/results/routing/llm-gpt-oss-20b/dev/summary.md) | Routing | Dev | accuracy 0.964 (0.928 to 0.993) | The same prompt on gpt-oss-20b |
 | [llm-qwen3.8-27b](../../eval/results/routing/llm-qwen3.8-27b/dev/summary.md) | Routing | Dev | accuracy 1.000 (exact 0.974 to 1.000) | The same prompt on Qwen3.8 27B, the fast role, at four times the cost |

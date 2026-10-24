@@ -57,12 +57,12 @@ The test side is held out like FinanceBench's: `load_queries("test")` needs `all
 
 ## Baselines
 
-| Router | Dev accuracy (95% interval) |
-|---|---|
-| Majority class (always `doc`) | 0.217 (0.152 to 0.290) |
-| Keyword rules | 0.623 (0.543 to 0.703) |
+| Router | Dev accuracy (95% interval) | Test accuracy (95% interval) |
+|---|---|---|
+| Majority class (always `doc`) | 0.217 (0.152 to 0.290) | 0.250 (0.150 to 0.367) |
+| Keyword rules | 0.623 (0.543 to 0.703) | 0.650 (0.533 to 0.767) |
 
-The keyword rules were written while looking at the seeds. They score 0.957 on the dev seeds and 0.457 on the dev paraphrases, which is exactly why the set includes paraphrases: seed-only testing would have overstated a brittle router.
+The test side was opened once, at Phase 5's milestone, for the copilot's routers ([report](../eval/routing.md#the-test-split)). The keyword rules were written while looking at the seeds. They score 0.957 on the dev seeds and 0.457 on the dev paraphrases, which is exactly why the set includes paraphrases: seed-only testing would have overstated a brittle router.
 
 ## Known issues
 
