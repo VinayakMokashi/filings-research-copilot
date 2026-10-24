@@ -1,0 +1,115 @@
+{
+  "suite": "routing",
+  "run": "llm-gpt-oss-20b",
+  "split": "dev",
+  "created": "2026-10-23T19:53:00.226016Z",
+  "questions": 138,
+  "test_split_opened": false,
+  "system": {
+    "router": "llm",
+    "model": "groq/openai/gpt-oss-20b",
+    "prompt_version": "r1",
+    "latency_s": {
+      "p50": 0.6787,
+      "p95": 1.1593
+    },
+    "mean_tokens": 997,
+    "cost_usd_per_question": 0.0001019,
+    "errors": 0
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.9637681159420289,
+      "low": 0.927536231884058,
+      "high": 0.9927536231884058
+    }
+  },
+  "by": {
+    "route": {
+      "brief": {
+        "questions": 18,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.9444444444444444,
+            "low": 0.8333333333333334,
+            "high": 1.0
+          }
+        }
+      },
+      "data": {
+        "questions": 30,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "decline": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.9047619047619048,
+            "low": 0.7619047619047619,
+            "high": 1.0
+          }
+        }
+      },
+      "doc": {
+        "questions": 30,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "smalltalk": {
+        "questions": 18,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.8888888888888888,
+            "low": 0.7222222222222222,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "origin": {
+      "paraphrase": {
+        "questions": 92,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.967391304347826,
+            "low": 0.9239130434782609,
+            "high": 1.0
+          }
+        }
+      },
+      "seed": {
+        "questions": 46,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.9565217391304348,
+            "low": 0.8913043478260869,
+            "high": 1.0
+          }
+        }
+      }
+    }
+  }
+}
