@@ -45,6 +45,15 @@ uv run poe models             # models the key can use, and whether the configur
 uv run poe smoke              # one call per role through the gateway
 ```
 
+## 6. Ask the copilot (needs `GROQ_API_KEY`, Qdrant and the facts database)
+
+```bash
+uv run poe ask "What was 3M's capital expenditure in 2018?" --verbose   # each step as it runs
+uv run poe ask "Hi! Which companies do you cover?" --thread demo --postgres   # a conversation kept in Postgres
+```
+
+Each node's start and end is printed as the graph streams it, and every event is appended to `data/traces/<thread>.jsonl`. A later `poe ask "..." --thread demo --postgres` continues the same conversation.
+
 ## Stop the services
 
 ```bash
