@@ -15,12 +15,14 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Bootstrap confidence interval** | Resample the eval questions with replacement many times, recompute the metric each time, and take percentiles to see how uncertain the number is. |
 | **Cascade (routing)** | A cheap router decides when it is confident, and a more expensive one is asked otherwise. |
 | **Centroid** | The average of a group's vectors. A route's centroid is the mean embedding of its example questions. |
+| **Checkpointer** | Saves a graph's state after every step under a thread id, so a conversation can continue later, or after a crash, where it stopped. |
 | **Chunk** | A piece of a document that gets its own embedding and can be retrieved on its own. |
 | **CIK** | Central Index Key, the SEC's unique ID for each filer. |
 | **Citation precision** | The share of cited sources that actually support the claim they're attached to. |
 | **Cloud Run** | Google Cloud's service for running containers without managing servers; a service scales to zero when no requests arrive. |
 | **Cohen's kappa** | Agreement between two raters corrected for the agreement chance alone would give: 1 is perfect, 0 is no better than chance. |
 | **Company facts** | SEC's per-company JSON of every XBRL fact the company has filed, without dimensions, from `data.sec.gov/api/xbrl/companyfacts`. |
+| **Conditional edge** | An edge whose destination a function chooses from the state; the router's branch to the six specialists is one. |
 | **Context budget** | The most retrieved text, in tokens, that the answer prompt may hold: 3,000 here. |
 | **Context hit** | Whether at least one evidence page is among the sources the answer model sees. An answer can't be better than its context. |
 | **Corrective RAG** | Grade the retrieved documents before generating; if they're weak, rewrite the query or fall back. Here the answer model's own refusal is the grade, and the fallback is one search across all of the company's filings. |
@@ -88,8 +90,11 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Sparse vector** | A vector stored as its few non-zero dimensions, such as one weight for each word in a text. Qdrant stores BM25 this way. |
 | **SQL guardrails** | The checks that let a model's query run only if it is one read-only SELECT: a parser check, a read-only connection, an authorizer inside SQLite, and caps on rows, value size and time. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
+| **State graph** | A workflow as nodes (steps) and edges (what runs next) around one typed state that every node reads and updates. |
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
+| **Thread** | One conversation's id in a checkpointer: its turns and state live under it. |
+| **Trace** | The record of one run: here every node's start and end with its time, the nodes' own events and the response, as JSON lines. |
 | **Transition report (10-KT)** | An annual report covering a short period, filed when a company changes its fiscal year end. |
 | **Value linking** | Telling a Text-to-SQL model which database values a question refers to (a company's stored name, a metric's real key, the years covered), because the schema alone doesn't. |
 | **Workload Identity Federation** | Google Cloud's way of letting an outside identity, such as a GitHub Actions run, act as a service account without a stored key. |
