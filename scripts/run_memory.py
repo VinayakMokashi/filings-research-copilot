@@ -16,8 +16,10 @@ eval/results/memory/<run>/dev/ gets a row per turn: the rewrite, `resolved` (it 
 exactly the expected companies, the years and the terms) and, for questions that already
 stood alone, `unchanged`. notes.json holds each user's final notes, checked against
 eval/memory/notes.jsonl: the terms they should mention, and those they shouldn't.
+`--rescore` checks a finished run's notes again after notes.jsonl changes, with no calls.
 
-Usage: uv run poe run-memory --run memory-v1      (needs GROQ_API_KEY)
+Usage: uv run poe run-memory --run memory-v2      (needs GROQ_API_KEY)
+       uv run poe run-memory --run memory-v1 --rescore
 """
 
 from __future__ import annotations
@@ -41,7 +43,15 @@ from copilot.agents.memory import (
 )
 from copilot.config import get_settings
 from copilot.eval.financebench import read_jsonl
-from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
+from copilot.eval.report import (
+    RESULTS_DIR,
+    RunSummary,
+    read_rows,
+    read_summary,
+    summarise,
+    summarise_by,
+    write_run,
+)
 from copilot.ingest.universe import read_companies
 from copilot.llm import LLMError, LLMGateway
 from copilot.llm.cache import CachedLLM
@@ -68,16 +78,63 @@ def check(standalone: str, turn: dict[str, Any], matcher: CompanyMatcher) -> boo
     )
 
 
+def score_notes(
+    notes: dict[str, list[str]], expected: dict[str, dict[str, Any]]
+) -> tuple[dict[str, Any], str]:
+    """Each user's notes with the terms they should and shouldn't mention checked, and the
+    count of checks passed."""
+    final: dict[str, Any] = {}
+    for user, texts in sorted(notes.items()):
+        joined = " ".join(texts).lower()
+        terms = expected.get(user, {"present": [], "absent": []})
+        final[user] = {
+            "notes": texts,
+            "present": {term: term.lower() in joined for term in terms["present"]},
+            "absent": {term: term.lower() not in joined for term in terms["absent"]},
+        }
+    checks = [
+        ok
+        for user in final.values()
+        for ok in [*user["present"].values(), *user["absent"].values()]
+    ]
+    return final, f"{sum(checks)} of {len(checks)}"
+
+
+def write_notes(results: Path, final: dict[str, Any]) -> None:
+    (results / "notes.json").write_text(
+        json.dumps(final, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
+
+
+def rescore(results: Path, expected: dict[str, dict[str, Any]]) -> int:
+    """Check a finished run's notes again, against the current notes.jsonl; no model calls."""
+    summary, rows = read_summary(results), read_rows(results)
+    saved = json.loads((results / "notes.json").read_text(encoding="utf-8"))
+    final, passed = score_notes({user: record["notes"] for user, record in saved.items()}, expected)
+    summary.system["note_checks_passed"] = passed
+    write_run(results, summary, rows)
+    write_notes(results, final)
+    print(f"Notes checks: {passed} pass. Wrote {results}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--run", required=True, help="run name")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument(
+        "--rescore", action="store_true", help="check a finished run's notes again, no calls"
+    )
     args = parser.parse_args(argv)
+
+    expected_notes = {record["user"]: record for record in read_jsonl(NOTES)}
+    results = args.results_dir / "memory" / args.run / "dev"
+    if args.rescore:
+        return rescore(results, expected_notes)
 
     settings = get_settings()
     configure_logging(settings.log_level, settings.log_format)
     conversations = read_jsonl(CONVERSATIONS)
-    expected_notes = {record["user"]: record for record in read_jsonl(NOTES)}
     companies = read_companies()
     matcher = CompanyMatcher(
         [company.name for company in companies],
@@ -127,21 +184,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
 
     users = sorted({conversation["user"] for conversation in conversations})
-    final: dict[str, Any] = {}
-    for user in users:
-        texts = [note.text for note in recall(store, user)]
-        joined = " ".join(texts).lower()
-        expected = expected_notes.get(user, {"present": [], "absent": []})
-        final[user] = {
-            "notes": texts,
-            "present": {term: term.lower() in joined for term in expected["present"]},
-            "absent": {term: term.lower() not in joined for term in expected["absent"]},
-        }
-    checks = [
-        ok
-        for user in final.values()
-        for ok in [*user["present"].values(), *user["absent"].values()]
-    ]
+    final, passed = score_notes(
+        {user: [note.text for note in recall(store, user)] for user in users}, expected_notes
+    )
 
     usage = {**rewriter.tokens_by_model}
     for model, (prompt, completion) in noter.tokens_by_model.items():
@@ -162,19 +207,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             "prompt_version": PROMPT_VERSION,
             "unchanged_when_standalone": sum(r["unchanged"] for r in standalone_rows),
             "standalone_turns": len(standalone_rows),
-            "note_checks_passed": f"{sum(checks)} of {len(checks)}",
+            "note_checks_passed": passed,
             "tokens_by_model": {model: list(tokens) for model, tokens in usage.items()},
         },
         metrics=summarise(rows, METRICS),
         by={"kind": summarise_by(rows, METRICS, "kind")},
     )
-    results = args.results_dir / "memory" / args.run / "dev"
     write_run(results, summary, rows)
-    (results / "notes.json").write_text(
-        json.dumps(final, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
-    )
+    write_notes(results, final)
     print({name: round(value.mean, 3) for name, value in summary.metrics.items()})
-    print(f"Notes checks: {sum(checks)} of {len(checks)} pass. Wrote {results}")
+    print(f"Notes checks: {passed} pass. Wrote {results}")
     return 0
 
 
