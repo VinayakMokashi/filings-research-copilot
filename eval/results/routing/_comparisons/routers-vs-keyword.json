@@ -1,0 +1,51 @@
+{
+  "metric": "accuracy",
+  "baseline": "keyword",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "semantic-masked-centroid",
+      "baseline": 0.6232,
+      "candidate": 0.7391,
+      "difference": 0.1159,
+      "low": 0.0072,
+      "high": 0.2246,
+      "p": 0.0511,
+      "holm_p": 0.0511,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "llm-gpt-oss-20b",
+      "baseline": 0.6232,
+      "candidate": 0.9638,
+      "difference": 0.3406,
+      "low": 0.2607,
+      "high": 0.4275,
+      "p": 0.0001,
+      "holm_p": 0.0004,
+      "verdict": "better"
+    },
+    {
+      "run": "llm-gpt-oss-120b",
+      "baseline": 0.6232,
+      "candidate": 1.0,
+      "difference": 0.3768,
+      "low": 0.2971,
+      "high": 0.4565,
+      "p": 0.0001,
+      "holm_p": 0.0004,
+      "verdict": "better"
+    },
+    {
+      "run": "llm-qwen3.8-27b",
+      "baseline": 0.6232,
+      "candidate": 1.0,
+      "difference": 0.3768,
+      "low": 0.2971,
+      "high": 0.4565,
+      "p": 0.0001,
+      "holm_p": 0.0004,
+      "verdict": "better"
+    }
+  ]
+}
