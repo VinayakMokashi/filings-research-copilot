@@ -1,0 +1,106 @@
+{
+  "suite": "routing",
+  "run": "keyword",
+  "split": "test",
+  "created": "2026-10-24T15:22:43.520301Z",
+  "questions": 60,
+  "test_split_opened": true,
+  "system": {
+    "baseline": "keyword"
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.65,
+      "low": 0.5333333333333333,
+      "high": 0.7666666666666667
+    }
+  },
+  "by": {
+    "route": {
+      "brief": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.6666666666666666,
+            "low": 0.3333333333333333,
+            "high": 1.0
+          }
+        }
+      },
+      "data": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.6666666666666666,
+            "low": 0.4,
+            "high": 0.8666666666666667
+          }
+        }
+      },
+      "decline": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5555555555555556,
+            "low": 0.2222222222222222,
+            "high": 0.8888888888888888
+          }
+        }
+      },
+      "doc": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.7333333333333333,
+            "low": 0.5333333333333333,
+            "high": 0.9333333333333333
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5555555555555556,
+            "low": 0.2222222222222222,
+            "high": 0.8888888888888888
+          }
+        }
+      },
+      "smalltalk": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.6666666666666666,
+            "low": 0.3333333333333333,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "origin": {
+      "paraphrase": {
+        "questions": 40,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.525,
+            "low": 0.375,
+            "high": 0.675
+          }
+        }
+      },
+      "seed": {
+        "questions": 20,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.9,
+            "low": 0.75,
+            "high": 1.0
+          }
+        }
+      }
+    }
+  }
+}
