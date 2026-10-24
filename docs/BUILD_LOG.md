@@ -15,6 +15,32 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-24 · Phase 5 · Routers
+
+- **Goal:** choose the router that sends each question to the right part of the copilot, by measurement (step 5.2).
+- **Done:**
+  - `copilot.agents.router`:
+    - a **semantic router** over the routing set's dev questions (bge-small; a vote of the k nearest or the nearest route centroid; company names and years masked);
+    - an **LLM router** (prompt r1: the route definitions, the labelling rules, the database's measures and 13 examples written for it; JSON out);
+    - a **cascade** of the two, used as the LLM router with the semantic router as its fallback.
+  - `poe run-router`, resumable, with latency, tokens and cost per question and a confusion matrix for every routing run, baselines included.
+  - The gateway gained a third model role, `small` (gpt-oss-20b), and `role_models()` replaced seven hand-built maps from roles to models.
+  - A [report](eval/routing.md), [ADR-0017](decisions/0017-routing.md) and the [semantic routing guide](concepts/semantic-routing.md); the runbook, the glossary and the gateway guide updated.
+  - The plan's leftovers from AWS (the open decision on HTTPS, a prerequisite and a risk) and duplicate rows in the decision index and the glossary.
+- **Commands:** `uv run poe run-router --router semantic --mask entities --method centroid --run semantic-masked-centroid` and six other semantic variants; `uv run poe run-router --router llm --run llm-…` on three models; `uv run poe compare-family ...`; `uv run poe check`.
+- **Results** (routing dev, 138 questions):
+  - **LLM router:** gpt-oss-120b 1.000 (exact 95% interval 0.974 to 1.000), $0.00019 and 0.51 s a question; gpt-oss-20b 0.964 (0.928 to 0.993), $0.00010; Qwen3.8 27B 1.000 too, at $0.00080 and 0.33 s. All three were right on every `doc`, `data` and `hybrid` question.
+  - **Semantic router**, with each question's seed group left out of its examples: 0.391 as first designed (a vote of five), 0.739 (0.667 to 0.812) with masking and centroids, 8 ms a question.
+  - **Floors:** the keyword rules 0.623 (0.957 on the seeds they were written on, 0.457 on paraphrases); on paraphrases the masked-centroid router beats them by +0.283, p = 0.0001.
+- **Problems and fixes:**
+  - **A paraphrase in the index is a leak.** A question's own paraphrases are at a median similarity of 0.936 to it, so the semantic router is evaluated with each seed group left out.
+  - **Topic beats intent.** The first semantic design's neighbours shared the question's company or metric, not its route; masking and centroids fixed most of it, chosen on dev.
+  - **Prompt examples near test questions.** Two first drafts came within 0.91 of held-out test questions by embedding similarity, checked by number only, and were replaced.
+  - **The fast model is the costly one.** Qwen3.8 27B costs $0.80 and $4.00 per million tokens in and out, against gpt-oss-20b's $0.075 and $0.30, which is why the gateway gained a `small` role. The full runs then showed gpt-oss-20b misrouting the questions about what the copilot covers and won't do, so the router moved to `strong`, and `small` serves the cheapest calls.
+  - **Daily caps.** Qwen and gpt-oss-120b ran out of their daily quotas mid-run; one loop took turns between the runs and resumed each as its quota came back. A run killed while appending now skips the half-written line.
+- **Decisions:** [ADR-0017](decisions/0017-routing.md): route with the LLM router on gpt-oss-120b, and keep the semantic router as its fallback.
+- **Next:** the graph (step 5.1), with this router in front.
+
 ### 2026-10-23 · Planning · Google Cloud for the deployment
 
 - **Goal:** move the planned deployment (Phase 8) from AWS to Google Cloud while no cloud code exists, so the change costs nothing.
