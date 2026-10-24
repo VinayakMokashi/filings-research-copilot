@@ -1,6 +1,6 @@
 # routing: keyword (dev)
 
-138 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-16 20:29 UTC
+138 questions, 95% bootstrap intervals (10,000 resamples), 2026-10-23 19:24 UTC
 
 | Metric | Mean | 95% interval |
 |---|---|---|
