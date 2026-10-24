@@ -22,3 +22,4 @@ Each card records:
 | [Synthetic pairs](synthetic-pairs.md) | 1,006 LLM-written questions paired with the chunks that answer them, from training filings only, for fine-tuning in Phase 7 | 2026-10-18 |
 | [Answer labels](answer-labels.md) | 41 correctness labels for the doc agent's dev answers, from a Claude model, for checking the answer judge | 2026-10-23 |
 | [Hybrid set](hybrid-set.md) | 13 questions that need figures from the facts database and an explanation from the filing, for the hybrid-answer prototype | 2026-10-23 |
+| [Memory set](memory-set.md) | 10 conversations from 6 users, for follow-up rewriting and the notes kept about users | 2026-10-23 |
