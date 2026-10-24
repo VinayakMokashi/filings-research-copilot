@@ -1,0 +1,115 @@
+{
+  "suite": "routing",
+  "run": "llm-gpt-oss-120b",
+  "split": "test",
+  "created": "2026-10-24T15:18:42.700624Z",
+  "questions": 60,
+  "test_split_opened": true,
+  "system": {
+    "router": "llm",
+    "model": "groq/openai/gpt-oss-120b",
+    "prompt_version": "r1",
+    "latency_s": {
+      "p50": 0.8337,
+      "p95": 47.7384
+    },
+    "mean_tokens": 961,
+    "cost_usd_per_question": 0.0001822,
+    "errors": 0
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    }
+  },
+  "by": {
+    "route": {
+      "brief": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "data": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "decline": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "doc": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "smalltalk": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      }
+    },
+    "origin": {
+      "paraphrase": {
+        "questions": 40,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "seed": {
+        "questions": 20,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      }
+    }
+  }
+}

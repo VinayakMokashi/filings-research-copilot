@@ -1,0 +1,107 @@
+{
+  "suite": "routing",
+  "run": "majority",
+  "split": "test",
+  "created": "2026-10-24T15:22:51.238997Z",
+  "questions": 60,
+  "test_split_opened": true,
+  "system": {
+    "baseline": "majority",
+    "route": "doc"
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.25,
+      "low": 0.15,
+      "high": 0.36666666666666664
+    }
+  },
+  "by": {
+    "route": {
+      "brief": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "data": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "decline": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "doc": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "smalltalk": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      }
+    },
+    "origin": {
+      "paraphrase": {
+        "questions": 40,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.25,
+            "low": 0.125,
+            "high": 0.4
+          }
+        }
+      },
+      "seed": {
+        "questions": 20,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.25,
+            "low": 0.1,
+            "high": 0.45
+          }
+        }
+      }
+    }
+  }
+}
