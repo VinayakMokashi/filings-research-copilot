@@ -1,0 +1,90 @@
+{
+  "suite": "memory",
+  "run": "memory-v1",
+  "split": "dev",
+  "created": "2026-10-23T22:24:28.565232Z",
+  "questions": 20,
+  "test_split_opened": false,
+  "system": {
+    "set": "eval/memory, 10 conversations, 6 users",
+    "rewrite_model": "groq/openai/gpt-oss-120b",
+    "notes_model": "groq/openai/gpt-oss-20b",
+    "prompt_version": "1",
+    "unchanged_when_standalone": 10.0,
+    "standalone_turns": 11,
+    "note_checks_passed": "7 of 15",
+    "tokens_by_model": {
+      "groq/openai/gpt-oss-120b": [
+        4167,
+        1981
+      ],
+      "groq/openai/gpt-oss-20b": [
+        8542,
+        7012
+      ]
+    }
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "resolved": {
+      "mean": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    },
+    "rewritten": {
+      "mean": 0.5,
+      "low": 0.3,
+      "high": 0.7
+    }
+  },
+  "by": {
+    "kind": {
+      "follow-up": {
+        "questions": 7,
+        "metrics": {
+          "resolved": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "rewritten": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "from notes": {
+        "questions": 2,
+        "metrics": {
+          "resolved": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "rewritten": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "standalone": {
+        "questions": 11,
+        "metrics": {
+          "resolved": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "rewritten": {
+            "mean": 0.09090909090909091,
+            "low": 0.0,
+            "high": 0.2727272727272727
+          }
+        }
+      }
+    }
+  }
+}
