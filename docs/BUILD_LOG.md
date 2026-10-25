@@ -15,6 +15,27 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-25 · Phase 5 · Memory
+
+- **Goal:** follow-ups that make sense, and notes about users that carry into their next conversation (step 5.5).
+- **Done:**
+  - `copilot.agents.memory`: `rewrite_followup` turns a follow-up into a standalone question from the last three turns and the user's notes, on the strong role, with no call for a first question from a user without notes; `extract` and `reconcile` keep short notes about the user in the Mem0 style (add, update, delete or nothing), on the small role.
+  - The graph's `rewrite` node now rewrites, and a `remember` node after `respond` updates the notes, kept in a LangGraph store: in memory, or in the Compose Postgres with `poe ask --postgres --user NAME`. Batch runs keep no notes, so single questions behave as before.
+  - A memory set of our own: 10 conversations from 6 users, 20 turns ([data card](data/memory-set.md)), and `poe run-memory` to score the rewrites and the notes.
+  - The [agent memory guide](concepts/agent-memory.md).
+- **Commands:** `uv run poe run-memory --run memory-v2`, `uv run poe run-memory --run memory-v1 --rescore`, `uv run poe ask "..." --thread demo --postgres --user u1`.
+- **Results:**
+  - Every turn resolved with both notes prompts: 7 of 7 follow-ups, 2 of 2 questions answered from an earlier conversation's notes, and 10 of 11 standalone questions left as asked (the eleventh lost a preamble and still named what it must).
+  - Notes, prompt 1: 15 kept, of which 6 said what users had said about themselves; 8 were inferred from questions, and one preference was made up. Its six checks, written before the run, all passed.
+  - Notes, prompt 2: 6 kept, all stated by their users; 15 of 15 checks pass, against 7 of 15 for prompt 1. The checks and the prompt were both written after reading prompt 1's notes, on the same turns.
+  - About $0.0002 a turn at list prices, rewrite and notes together.
+- **Problems and fixes:**
+  - **Asking is not following:** the first prompt's "the companies they follow or care about" turned every question into a note; the second notes only what users say about themselves.
+  - **Checks that only look for what should be there** passed notes that were mostly wrong; the checks now include what mustn't be there, and `--rescore` applies them to a finished run.
+  - **Random note ids** made every rerun's reconcile prompts new; an id is now a hash of the user and the note's text.
+- **Decisions:** none new; the design follows step 5.5 of the plan and is explained in the guide.
+- **Next:** self-consistency (step 5.4) and the end-to-end evaluation (step 5.6).
+
 ### 2026-10-25 · Phase 5 · The validator loop
 
 - **Goal:** check every cited sentence before an answer is shown, and send what fails back to the writer at most twice (step 5.3).
