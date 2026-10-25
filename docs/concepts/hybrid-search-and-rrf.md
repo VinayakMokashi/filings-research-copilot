@@ -26,7 +26,7 @@ A chunk ranked 1st by BM25 and 5th by dense search scores 1/61 + 1/65 with k = 6
 
 ## Why we need it here
 
-Filings mix both kinds of question. "What drove the change in operating margin?" is semantic. "What is the FY2018 capital expenditure for 3M?" depends on matching a line item's exact label, and dense search on a small model blurs it with every other cash-flow line. Neither search alone is reliably better, so the plan measures dense, BM25 and their fusion on the same questions.
+Filings mix both kinds of question. "What drove the change in operating margin?" is semantic. "What was 3M's capital expenditure in fiscal 2018?" depends on matching a line item's exact label, and dense search on a small model blurs it with every other cash-flow line. Neither search alone is reliably better, so the plan measures dense, BM25 and their fusion on the same questions.
 
 Fusing by rank avoids a hard problem: dense cosine scores (around 0.6 to 0.9) and BM25 scores (0 to 30 or more) are on unrelated scales, and the scales shift from question to question. Ranks are always comparable.
 
@@ -67,7 +67,7 @@ Dense, BM25 and hybrid search on the 100 dev questions ([report](../eval/retriev
 | BM25 | 0.440 (worse) | 0.430 (worse) | 0.185 (worse) |
 | Hybrid, RRF k = 60 | 0.540 (not significantly different) | 0.585 (not significant; MRR worse) | 0.315 (worse) |
 
-"Worse" means significantly worse after Holm's adjustment. Hybrid search didn't help on FinanceBench's questions as asked. Two thirds of them come from templates that add instructions ("Round your answer to two decimal places", "If operating margin is not a useful metric for a company like this, then state that and explain why"), and to BM25 those words count as much as the actual subject. On the human-written questions, which carry no template, BM25 beats dense search (0.803 against 0.758 on page chunks within the filing). Phase 3 rewrites questions before searching, and hybrid search gets another look after that.
+"Worse" means significantly worse after Holm's adjustment. Hybrid search didn't help on FinanceBench's questions as asked. Two thirds of them come from templates that add instructions, such as how many decimal places to round to or what to say if a metric doesn't suit the company, and to BM25 those words count as much as the actual subject. On the human-written questions, which carry no template, BM25 beats dense search (0.803 against 0.758 on page chunks within the filing). Phase 3 rewrites questions before searching, and hybrid search gets another look after that.
 
 ## Pitfalls we hit
 

@@ -8,7 +8,7 @@
 
 **Query rewriting** turns one question into several searches before anything is retrieved. Three kinds are measured here:
 
-- **Multi-query**: a model writes three short search queries in the words a filing would use. "What is the FY2018 capital expenditure for 3M?" becomes, among others, "3M cash flow statement purchases of property plant and equipment 2018".
+- **Multi-query**: a model writes three short search queries in the words a filing would use. "What was 3M's capital expenditure in fiscal 2018?" becomes, among others, "3M cash flow statement purchases of property plant and equipment 2018".
 - **HyDE**, hypothetical document embeddings (Gao et al., 2022): a model writes the passage the filing would contain if it answered the question ("Capital expenditures were $1,842 million in 2018, compared with…"). The passage is embedded as a document, so it lands near real passages that look like it. Its figures are invented and don't matter: only its shape and vocabulary are used.
 - **Decomposition**: a model lists the separate facts the answer needs. A quick-ratio question becomes current assets, inventory and current liabilities, each its own search.
 
@@ -16,7 +16,7 @@ Each rewrite is searched separately, inside the same filings, and all the rankin
 
 ## Why we need it here
 
-Phase 2 found that FinanceBench's questions carry instructions that aren't about the topic ("Round your answer to two decimal places", "If the quick ratio is not relevant to measure liquidity, please state that and explain why"), and that they name metrics a filing never prints ("quick ratio", "capital expenditure") instead of the line items it does ("Total current assets", "Purchases of property, plant and equipment"). Rewriting drops the instructions and bridges the vocabulary.
+Phase 2 found that FinanceBench's questions carry instructions that aren't about the topic, such as how many decimal places to round to or what to say if a metric doesn't apply, and that they name metrics a filing never prints ("quick ratio", "capital expenditure") instead of the line items it does ("Total current assets", "Purchases of property, plant and equipment"). Rewriting drops the instructions and bridges the vocabulary.
 
 ## How it works
 

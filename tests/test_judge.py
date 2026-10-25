@@ -19,7 +19,7 @@ from copilot.eval.judge import (
 )
 from copilot.llm import FakeLLM
 
-QUESTION = "What is the FY2018 capital expenditure amount (in USD millions) for 3M?"
+QUESTION = "What was 3M's capital expenditure in fiscal 2018, in USD millions?"
 
 
 def test_the_judge_sees_the_reference_and_the_answer_without_citations() -> None:

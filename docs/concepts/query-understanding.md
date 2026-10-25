@@ -6,7 +6,7 @@
 
 ## What it is
 
-A question like "What is the FY2018 capital expenditure amount for 3M?" carries its own search filter: the company is 3M, the period is fiscal 2018, and capital expenditure is reported in the annual report. **Query understanding** reads those cues out of the question and turns them into a list of filings to search. Everything after it (search, reranking, answering) works inside that list.
+A question like "What was 3M's capital expenditure in fiscal 2018?" carries its own search filter: the company is 3M, the period is fiscal 2018, and capital expenditure is reported in the annual report. **Query understanding** reads those cues out of the question and turns them into a list of filings to search. Everything after it (search, reranking, answering) works inside that list.
 
 ## Why we need it here
 
@@ -52,7 +52,7 @@ On the 100 dev questions, dense search over page chunks ([report](../eval/retrie
 | **Filings resolved from the question** | **0.570** | **0.700** | **0.381** |
 | The question's own filing (ceiling) | 0.630 | 0.770 | 0.423 |
 
-- The resolver found a company in 98 questions and included the question's own filing in all 98, searching 1.5 filings on average. The other two questions name no company ("Were there any board member nominees with substantially more votes against?"), so they search everything.
+- The resolver found a company in 98 questions and included the question's own filing in all 98, searching 1.5 filings on average. The other two questions name no company (one asks about board nominees who drew many votes against), so they search everything.
 - Against all filings, the gain is significant on both metrics (recall@10 +0.155, MRR +0.151, paired permutation test, p = 0.0001).
 - The remaining gap to the ceiling (recall@10 −0.060) comes from six questions: the two with no company, and four about FY2022 where both the 10-K and the fourth-quarter earnings release qualify and the other filing's page ranks first. Both filings contain the figures; FinanceBench labels evidence in only one of them.
 - Hybrid search inside the resolved filings stays behind dense search (0.525, not significantly different).
@@ -60,7 +60,7 @@ On the 100 dev questions, dense search over page chunks ([report](../eval/retrie
 ## Pitfalls we hit
 
 - **One date, three forms.** A question dated August 30, 2023 matched a second-quarter 10-Q and an August 8-K equally until dates were mapped to their quarter; now the 10-Q drops out.
-- **The outlook rule came from one question.** "Is growth in JnJ's adjusted EPS expected to accelerate in FY2023?" is answered by the fourth-quarter 2022 earnings release. The rule is general (guidance is always published before the year it describes), but it was found on dev data, like every rule here; the held-out test set is the check that the rules generalise.
+- **The outlook rule came from one question.** A question about whether Johnson & Johnson's adjusted EPS growth was expected to speed up in fiscal 2023 is answered by its fourth-quarter 2022 earnings release. The rule is general (guidance is always published before the year it describes), but it was found on dev data, like every rule here; the held-out test set is the check that the rules generalise.
 - **Tickers that are words.** Costco's ticker is COST and PepsiCo's is PEP, so tickers match only in upper case.
 
 ## Review questions

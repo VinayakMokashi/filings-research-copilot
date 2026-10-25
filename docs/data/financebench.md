@@ -65,7 +65,7 @@ The split was made once, before any tuning, with `uv run poe split-financebench`
 ## Known issues
 
 - **Page numbers start at 0.** `evidence_page_num` is a PDF page index counted from 0. On 12 evidence passages in three documents, the text of page index *n* matched the evidence (similarity at least 0.98) and page *n* − 1 didn't. Citations shown to people add 1.
-- **Many answers are free text.** Answers like "No, the company is managing its CAPEX…" need an LLM judge checked against human labels (Phase 3), not exact matching.
+- **Many answers are free text.** Answers in prose, such as a yes or no with its reasons, need an LLM judge checked against human labels (Phase 3), not exact matching.
 - **Templates repeat.** Each of the 25 domain-relevant templates is asked of about two companies, so 12 of the 16 test domain-relevant questions share a template with a dev question. Results are reported by question type; novel-generated questions give the cleanest read.
 - **Models may have seen it.** The dataset has been public since November 2023, so language models may have trained on it. Results are read with that in mind (Plan §9).
 - **The test set is small.** At 50 questions, a 95% confidence interval on an accuracy near 50% spans about ±14 points. Decisions rest on paired comparisons on dev (Plan §2).
