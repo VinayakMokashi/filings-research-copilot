@@ -15,6 +15,27 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-25 · Phase 5 · The validator loop
+
+- **Goal:** check every cited sentence before an answer is shown, and send what fails back to the writer at most twice (step 5.3).
+- **Done:**
+  - `copilot.agents.validator`: the check (the faithfulness check of Phase 3, on the `small` role, gpt-oss-20b), the revision (the writer's model and rules, with the failing sentences listed), and `trim`, which keeps the verified sentences or turns the answer into a refusal that says what couldn't be verified.
+  - The graph's `validate` node checks doc and hybrid answers, and a conditional edge sends a failing one to `revise` and back, at most twice; the response reports the check. Answer records keep every source's text, since a revision may need a page the first answer didn't cite.
+  - `poe validate-answers` runs the loop over a stored run, as a new run for the judges.
+  - [ADR-0019](decisions/0019-validator-loop.md), the [dev report](eval/validator-dev.md) and the [validator loop guide](concepts/validator-loop.md).
+- **Commands:** `uv run poe validate-answers --source doc-agent-v4-full --run doc-agent-v4-validated`, then `poe check-faithfulness` and `poe judge-answers` on that run, and `poe compare-runs` against `doc-agent-v4-full`.
+- **Results:**
+  - Faithful answers 0.628 to 0.848 (+0.207 on the 92 answered both times, p = 0.0001); none went from faithful to unfaithful.
+  - Correct 0.65 to 0.61 (p = 0.28): figure questions unchanged at 0.879, domain-relevant questions 0.588 to 0.441 (p = 0.063), as the loop strips judgements that rest on a general benchmark.
+  - 66 of 94 answers passed the first check; 28 were revised; 7 still failed after two revisions and kept only their verified sentences or declined.
+  - $0.0008 an answer at list prices, about 70% on top of the doc agent's $0.0011.
+- **Problems and fixes:**
+  - **The grader in the loop:** the obvious checker was the faithfulness judge's own model; the checker is a third model, so the evaluation stays independent.
+  - **A revision that ends in a refusal** was first reported as unchecked; the response now marks it checked and refused.
+  - **Two days of quota:** the 94 checks and 28 revisions ran across two days of free-tier caps, in the same loop as the other Phase 5 runs.
+- **Decisions:** [ADR-0019](decisions/0019-validator-loop.md).
+- **Next:** memory (step 5.5), self-consistency (step 5.4) and the end-to-end evaluation (step 5.6).
+
 ### 2026-10-25 · Phase 5 · Hybrid answers, version 2
 
 - **Goal:** the graph's hybrid node, with the changes the prototype's report asked for (step 5.1).

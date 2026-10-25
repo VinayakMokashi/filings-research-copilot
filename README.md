@@ -67,6 +67,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Hybrid answers: the data agent's query result and the doc agent's pages as numbered sources for one cited answer. Version 2 routes each question by need, splits it between the agents, answers in part and retries; on 13 questions of our own it gives every expected figure for all 13, where the prototype gave them for 10 | `src/copilot/answer/hybrid.py`, `hybrid_v2.py` ([guide](docs/concepts/hybrid-answers.md), [prototype report](docs/eval/hybrid-prototype.md), [version 2 report](docs/eval/hybrid-v2.md)) |
 | Router: an LLM router on gpt-oss-120b that routes every routing-set question correctly, 138 on dev and 60 on the held-out test split, at $0.0002 and half a second a question, with a semantic router (bge-small, companies and years masked, nearest route centroid; 0.74 on dev, 0.80 on test) beside it as the fallback | `src/copilot/agents/router.py` ([ADR-0017](docs/decisions/0017-routing.md), [guide](docs/concepts/semantic-routing.md), [report](docs/eval/routing.md)) |
 | Orchestration: a LangGraph state graph from the question to the reply (rewrite, understand, route, the specialist, synthesise, validate, respond), with every node's start and end streamed and kept as a JSON-line trace, and conversations kept by a checkpointer, in Postgres when asked; `poe ask` runs one question through it | `src/copilot/agents/` ([ADR-0018](docs/decisions/0018-graph-design.md), [guide](docs/concepts/langgraph-orchestration.md)) |
+| Validator loop: every cited sentence of a doc or hybrid answer checked by a third model before it is shown, and a failing answer revised at most twice, then trimmed to what holds or declined; faithful answers rise from 0.63 to 0.85 on FinanceBench dev, at $0.0008 an answer | `src/copilot/agents/validator.py` ([ADR-0019](docs/decisions/0019-validator-loop.md), [guide](docs/concepts/validator-loop.md), [report](docs/eval/validator-dev.md)) |
 
 ## Local development
 
@@ -99,6 +100,7 @@ uv run poe ask-data "How did 3M's capital expenditure change from fiscal 2018 to
 uv run poe answer-with-data                           # FinanceBench's dev metrics questions, by SQL
 uv run poe run-hybrid --agent hybrid --run hybrid-v1  # figures from SQL, reasons from the filings, one answer
 uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b   # route the routing set, scored
+uv run poe validate-answers --source doc-agent-v4-full --run doc-agent-v4-validated   # the validator loop over stored answers
 uv run poe ask "What was 3M's capital expenditure in 2018?"   # one question through the graph, each step shown
 ```
 
