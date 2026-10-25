@@ -2,7 +2,7 @@
 
 > Take each part of an answer from where it is reliable: figures from a database query, explanations from the filing's pages, each sentence cited to the one it came from.
 
-**Lands in:** Phase 4 (a prototype) · **Code:** `src/copilot/answer/hybrid.py`, `src/copilot/eval/hybrid.py`
+**Lands in:** Phase 4 (a prototype), Phase 5 (version 2) · **Code:** `src/copilot/answer/hybrid.py`, `hybrid_v2.py`, `src/copilot/eval/hybrid.py`
 
 ## What it is
 
@@ -38,6 +38,33 @@ flowchart LR
 
 The prototype always asks both agents and never retries. Deciding which agents a question needs, splitting it into a part for each, and checking the answer before it is shown are Phase 5's router, planner and validator.
 
+## Version 2
+
+The prototype's report set out what to change ([report](../eval/hybrid-prototype.md)), and version 2 (`copilot.answer.hybrid_v2`, step 5.1) is the graph's hybrid node:
+
+```mermaid
+flowchart LR
+    Q["Question"] --> N{"One company, at most two<br/>consecutive years, a 10-K<br/>for the later one?"}
+    N -->|yes| DA["Doc agent alone,<br/>with its retry"]
+    N -->|no| P["Planner: a figures question<br/>and a reasons question"]
+    P --> D["Data agent:<br/>the figures question"]
+    P --> R["Doc agent's retrieval:<br/>the reasons question"]
+    D --> A["One answer call:<br/>answers in part,<br/>names what is missing"]
+    R --> A
+    A -->|something missing| RT["Search all the company's<br/>filings for it, answer again"]
+    A --> O["Answer"]
+    RT --> O
+```
+
+1. **Route by need** (`one_filing`). A 10-K states its fiscal year's figures beside the year before and explains the change, so a question about one company and at most two consecutive years, the later with a 10-K in the corpus, goes to the doc agent alone. On such questions the doc agent gave every figure as often as the prototype, at about 60% of its cost.
+2. **Split** (`make_plan`). One planner call writes two questions: one asking for the figures, naming the company, the measures and every year, for the data agent; and one asking for the explanation, for the doc agent's retrieval. The data agent never sees "what did the company say", which made it decline in the prototype.
+3. **Answer in part** (hybrid prompt 2). When the sources give the figures but not their explanation, the answer gives the figures, sets `missing` to what it couldn't explain, and doesn't write about it.
+4. **Retry.** With something missing, the pages are searched again for it across all of the company's filings, as the doc agent does after a refusal, and the answer is written again from the larger context.
+5. **Arithmetic once, readably** (`fill`). A computed figure comes only from the calculator, and three rules make it read well where it lands:
+   - a placeholder whose result the sentence already states as the model's own number is dropped;
+   - a fall after words that say so ("fell by", "a decline of") loses its minus sign;
+   - a result of a million or more computed only from the facts database's dollars is written in millions or billions. A filing's tables are often in thousands or millions, so a result from their numbers keeps the units the text gives it.
+
 ## Where it lives in the code
 
 | Piece | What it does |
@@ -45,22 +72,26 @@ The prototype always asks both agents and never retries. Deciding which agents a
 | `copilot.answer.hybrid.HybridAgent` | Asks both agents and writes one answer; `answer(question)` returns a `HybridAnswer` |
 | `copilot.answer.hybrid.database_source` | The data agent's result as numbered source [1] |
 | `copilot.answer.hybrid.SYSTEM_PROMPT`, `FIGURES_HINT` | The answer rules for mixed sources, and the data agent's extra hint |
+| `copilot.answer.hybrid_v2.HybridAgentV2` | Version 2: routes by need, splits the question, answers in part and retries; records the path it took and the two questions |
+| `copilot.answer.hybrid_v2.one_filing`, `make_plan` | The routing rule, and the planner call |
+| `copilot.answer.generate.fill` | Each computed result into the answer, readably |
 | `copilot.eval.hybrid` | The [hybrid question set](../data/hybrid-set.md): expected figures as formulas over annual values, and the figure check |
-| `scripts/run_hybrid.py` | `poe run-hybrid`: the set answered by the hybrid agent or the doc agent alone, with figure, citation and faithfulness checks |
+| `scripts/run_hybrid.py` | `poe run-hybrid`: the set answered by either version or the doc agent alone, with figure, citation and faithfulness checks |
 
 ## How we measured it
 
-The [hybrid set](../data/hybrid-set.md)'s 13 questions, answered by the hybrid agent and by the doc agent alone ([report](../eval/hybrid-prototype.md)):
+The [hybrid set](../data/hybrid-set.md)'s 13 questions, answered by both versions and by the doc agent alone ([prototype report](../eval/hybrid-prototype.md), [version 2 report](../eval/hybrid-v2.md)):
 
-| Measure | Hybrid | Doc agent alone |
-|---|---|---|
-| Answered with every expected figure | 10 | 10 |
-| Explained, read by hand | 9 | 9 |
-| Every sentence supported by its citations | 8 | 6 |
-| Five-year questions, a middle year missing from the corpus (3) | 1 answered, all figures held | 0 |
-| Cost a question at list prices | $0.0048 | $0.0030 |
+| Measure | Prototype | Doc agent alone | Version 2 |
+|---|---|---|---|
+| Answered with every expected figure | 10 | 10 | 13 |
+| Every sentence supported by its citations | 8 | 6 | 7 |
+| Five-year questions, a middle year missing from the corpus (3) | 1 answered, all figures held | 0 | 3 |
+| Cost a question at list prices | $0.0048 | $0.0030 | $0.0034 |
 
-Neither answers more: each answers one the other doesn't. The difference is where they fail. The doc agent can't reach years its filings don't hold. The hybrid had the figures for every question it refused, but no page explaining them, and its rules allow only a full answer or a refusal. On two-year questions that one filing states, they tie, and the hybrid's gain is provenance: each figure cited to a query over the reported data.
+Version 2 answers all 13 with every figure: the three five-year questions on the split path, and the other ten through the doc agent alone, so on those ten its faithfulness is the doc agent's. On 13 questions none of the differences is significant (three questions, all one way, is p = 0.25).
+
+The prototype's findings, which shaped version 2: neither it nor the doc agent answered more, and read by hand each explained 9. Each answered one the other didn't. The difference is where they fail. The doc agent can't reach years its filings don't hold. The hybrid had the figures for every question it refused, but no page explaining them, and its rules allow only a full answer or a refusal. On two-year questions that one filing states, they tie, and the hybrid's gain is provenance: each figure cited to a query over the reported data.
 
 ## Pitfalls we hit
 
@@ -68,7 +99,8 @@ Neither answers more: each answers one the other doesn't. The difference is wher
 - **A restated figure, given without its label.** Boeing restated its 2017 revenue for the new revenue standard. The answer gave both the first-reported figure from the database and the restated one from the page, as the rules ask, but without saying which was the restatement.
 - **A page just missed.** General Mills's explanation of its operating cash flow is on PDF page 27; retrieval brought pages 26 and 28, and the answer restated the figure instead of explaining it. The data agent can't help with that half; only retrieval can.
 - **All or nothing.** Three refusals came with every figure in hand: no retrieved page explained the change, and the rules ask for a refusal when the sources fall short. The doc agent's retry, a second search for what is missing, found one of those explanations; partial answers and that retry are the first two things Phase 5 adds.
-- **A change written twice.** The model sometimes writes a year-over-year change itself and then a calculator placeholder for it, so the answer shows "$122 million ... 122,000,000". Each computed figure should come from the calculator once.
+- **A change written twice.** The model sometimes writes a year-over-year change itself and then a calculator placeholder for it, so the answer shows "$122 million ... 122,000,000". It did so again in version 2's first run, in two answers, although both prompts say not to do arithmetic; `fill` now drops the repeat.
+- **Units the calculator can't see.** The calculator computes in the units of its operands: dollars from the database, but often thousands or millions from a filing's table. Writing every large result in billions turned a decline of $7,737,590 thousand into "7.738 million" in a first attempt at the fix, so results are written in millions or billions only when every operand comes from the database.
 
 ## Review questions
 
@@ -76,6 +108,7 @@ Neither answers more: each answers one the other doesn't. The difference is wher
 2. What should an answer do when the database and a page disagree on a figure, and why can both be right?
 3. Why does the data agent need to be told that someone else will answer the "why"?
 4. What would a planner that splits the question do better than one hint?
+5. Why can a question about two consecutive years skip the data agent, and when can't it?
 
 ## References
 

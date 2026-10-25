@@ -72,6 +72,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Payload index** | An index on a field stored with each Qdrant point, such as `company`, that makes searches filtered on that field fast. |
 | **pdfium** | Google's PDF engine (used in Chrome); pypdfium2 is its Python binding and this project's parser. |
 | **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
+| **Planner (hybrid answers)** | A model call that splits a question into the part a database answers (the figures) and the part the filings answer (the explanation), so each agent gets only its own part. |
 | **Program-aided arithmetic** | The model writes a calculation as an expression and a safe evaluator computes it, instead of the model doing the arithmetic in its head (after PAL, Gao et al. 2022). |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Query decomposition** | Splitting a question into the separate facts it needs (both parts of a ratio, both years of a change) and searching for each. |

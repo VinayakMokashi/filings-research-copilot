@@ -6,6 +6,7 @@
 | [Doc agent: dev evaluation](doc-agent-dev.md) | 3 | How often the doc agent answers correctly from filing text, how well its citations hold up, what it costs, and where the wrong answers come from |
 | [Data agent: FinanceBench's metrics questions](data-agent-financebench.md) | 4 | Whether SQL over the facts database answers FinanceBench's figure questions better than reading filing pages, and at what cost |
 | [Hybrid answers: a prototype](hybrid-prototype.md) | 4 | Whether one answer can take its figures from the data agent and its reasons from the filings, and how that compares with the doc agent alone |
+| [Hybrid answers, version 2](hybrid-v2.md) | 5 | Whether routing by need, a question split, partial answers and a retry answer the hybrid questions the prototype refused, and at what cost |
 | [Routing: semantic and LLM routers](routing.md) | 5 | Which router should choose each question's route, by embedding similarity, by asking a model, or both, and at what latency and cost |
 
 One report per experiment, with these sections:
@@ -50,6 +51,7 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [doc-agent-v3-full--gpt-oss-20b-p2](../../eval/results/judge-agreement/doc-agent-v3-full--gpt-oss-20b-p2/dev/summary.md) | Judge agreement | Dev, 41 labelled | agree 0.93 (0.83 to 1.00); kappa 0.84 (0.63 to 1.00) | The second judge against the same labels |
 | [data-agent-v1--qwen3.8-27b-p2](../../eval/results/correctness/data-agent-v1--qwen3.8-27b-p2/dev/summary.md) | Correctness | Dev, 33 metrics | correct 0.97 (exact 0.84 to 1.00) | The data agent on FinanceBench's metrics questions, against the doc agent's 0.88 on the same questions ([report](data-agent-financebench.md)); the second judge sits beside it |
 | [data-agent-v1](../../eval/results/answers/data-agent-v1/dev/summary.md) | Answers | Dev, 33 metrics | answered 1.00; repaired 0.03 | That run: no declines or failures; tokens, model latency and cost |
+| [hybrid-v2](../../eval/results/hybrid/hybrid-v2/dev/summary.md) | Hybrid | 13 own questions | every figure 13 of 13; faithful 0.54 (0.23 to 0.77) | Version 2: routed by need, the question split, partial answers and a retry; the graph's hybrid node ([report](hybrid-v2.md)) |
 | [hybrid-v1](../../eval/results/hybrid/hybrid-v1/dev/summary.md) | Hybrid | 13 own questions | every figure 10 of 13; faithful 0.62 (0.38 to 0.85) | The hybrid agent: the data agent's figures and the doc agent's pages in one cited answer ([report](hybrid-prototype.md)) |
 | [doc-agent-v4](../../eval/results/hybrid/doc-agent-v4/dev/summary.md) | Hybrid | 13 own questions | every figure 10 of 13; faithful 0.46 (0.23 to 0.69) | The doc agent alone on the same questions |
 | [sql-agent-v2, test](../../eval/results/sql/sql-agent-v2/test/summary.md) | SQL | Test, held out, opened once | accuracy 1.000 (exact 0.77 to 1.00) | The data agent with value linking on the 14 held-out questions, at the close of Phase 4 |
