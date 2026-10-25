@@ -37,6 +37,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Faithfulness** | Whether each sentence of an answer is supported by the sources it cites. An answer can be faithful and wrong (the cited page is the wrong one) or correct and unfaithful (the figure came from memory). |
 | **Fallback chain** | Models tried in order when a role's own model keeps failing after retries. |
 | **FinanceBench** | A benchmark of questions over real company filings, with answers and evidence pages. |
+| **Follow-up rewriting** | Turning a question that depends on the conversation ("And in 2021?") into one that stands alone, before anything else runs. |
 | **Git blob id** | The SHA-1 hash git computes over a file's contents. Used here to check every downloaded file against a manifest. |
 | **Grounded answer** | An answer whose every claim cites a retrieved source that states it, so a reader can check it. |
 | **Grouped split** | A split that keeps every item of a group (here, a company) on the same side, so nothing about the group leaks across. |
@@ -56,11 +57,13 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **LiteLLM** | A library and proxy that gives one interface to many LLM providers, with retries and fallbacks. |
 | **LLM router** | A router that asks a model which route a question needs, from the route definitions and a few examples. |
 | **LLM-as-judge** | Using a model to grade answers against a reference by a written rubric. The judge itself has to be checked against human labels. |
+| **Long-term memory** | What an assistant keeps about a user from one conversation to the next; here, short notes in a store, kept up to date by extracting facts and reconciling them with the notes already held. |
 | **LoRA** | Low-Rank Adaptation: fine-tuning by training small low-rank adapter matrices instead of all the weights. |
 | **McNemar's test** | A paired test for two systems' right-or-wrong outcomes that looks only at the questions where they disagree. |
 | **MCP** | Model Context Protocol: a standard for connecting AI apps (hosts) to tools and data (servers). |
 | **Model-call cache** | A file of model responses keyed by model, messages and parameters, so repeated experiment runs replay answers instead of spending quota. |
 | **Mean pooling** | Turning a model's per-token vectors into one vector for the text by averaging them. |
+| **Mem0** | A memory layer for agents (Chhikara et al., 2025) that extracts facts from each exchange and decides, against the stored memories, to add, update, delete or skip each one. |
 | **MNRL** | MultipleNegativesRankingLoss: a contrastive loss that treats the other examples in a batch as negatives. |
 | **Model role** | A named job (`strong`, `fast` or `small`) that code asks for instead of a specific model; settings decide which model fills it. |
 | **Multi-query retrieval** | Asking a model for several rewordings of a question, searching each, and fusing the rankings. |
@@ -93,6 +96,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **SQL guardrails** | The checks that let a model's query run only if it is one read-only SELECT: a parser check, a read-only connection, an authorizer inside SQLite, and caps on rows, value size and time. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
 | **State graph** | A workflow as nodes (steps) and edges (what runs next) around one typed state that every node reads and updates. |
+| **Store (LangGraph)** | LangGraph's key-value storage for data that outlives one thread, organised by namespace; the notes about each user live under `("notes", user_id)`. |
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
 | **Thread** | One conversation's id in a checkpointer: its turns and state live under it. |

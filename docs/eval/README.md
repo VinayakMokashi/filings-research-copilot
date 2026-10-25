@@ -29,6 +29,7 @@ One report per experiment, with these sections:
 | Routing test | 60 questions, 20 seeds | Same file | Held out, like FinanceBench test; opened once, at Phase 5's milestone |
 | SQL dev | 28 questions (21 answerable) | [`eval/sql/questions.jsonl`](../../eval/sql/questions.jsonl) | Used for tuning the data agent ([data card](../data/sql-set.md)) |
 | SQL test | 14 questions (11 answerable) | Same file | Held out |
+| Memory set | 20 turns, 10 conversations, 6 users | [`eval/memory/`](../../eval/memory/) | Used for the memory checks ([data card](../data/memory-set.md)); no held-out side |
 
 ## Runs
 
@@ -69,6 +70,8 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [semantic-k5](../../eval/results/routing/semantic-k5/dev/summary.md) | Routing | Dev | accuracy 0.391 (0.312 to 0.471) | The first semantic design: a vote of the five nearest examples |
 | [majority](../../eval/results/routing/majority/dev/summary.md) | Routing | Dev | accuracy 0.217 (0.152 to 0.290) | Always the most common route |
 | [keyword](../../eval/results/routing/keyword/dev/summary.md) | Routing | Dev | accuracy 0.623 (0.543 to 0.703) | Floor: hand-written keyword rules |
+| [memory-v2](../../eval/results/memory/memory-v2/dev/summary.md) | Memory | 20 turns | resolved 1.000; notes checks 15 of 15 | Follow-up rewriting and notes prompt 2: only what users say about themselves ([guide](../concepts/agent-memory.md)) |
+| [memory-v1](../../eval/results/memory/memory-v1/dev/summary.md) | Memory | 20 turns | resolved 1.000; notes checks 7 of 15 | Notes prompt 1, which turned questions into notes |
 | [financebench-dev-checks](../../eval/results/facts/financebench-dev-checks.md) | Facts database | Dev | 33 of 33 agree exactly | FinanceBench metrics questions as formulas over annual values |
 | [gold](../../eval/results/sql/gold/dev/summary.md) | SQL | Dev | accuracy 1.000 | Gold SQL: a check of the scorer |
 | [decline-all](../../eval/results/sql/decline-all/dev/summary.md) | SQL | Dev | accuracy 0.250 (0.107 to 0.429) | Floor: decline everything |
