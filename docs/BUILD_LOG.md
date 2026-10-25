@@ -15,6 +15,27 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-25 · Phase 5 · Hybrid answers, version 2
+
+- **Goal:** the graph's hybrid node, with the changes the prototype's report asked for (step 5.1).
+- **Done:**
+  - `copilot.answer.hybrid_v2.HybridAgentV2`: questions about one company and at most two consecutive years, the later with a 10-K in the corpus, go to the doc agent alone; any other question is split by a planner call into a figures question for the data agent and a reasons question for the doc agent's retrieval; the answer gives what the sources support and names the rest in `missing`; something missing triggers a second search across the company's filings and a second answer.
+  - The graph's hybrid node uses it, and records the path, the plan and whether it retried; `poe ask` shows what is missing.
+  - `fill` keeps computed figures readable: it drops a placeholder whose result the sentence already states, writes results from the facts database's dollars in millions or billions, and shows a fall without a minus sign after words that say so.
+  - The [version 2 report](eval/hybrid-v2.md), and version 2 in the [hybrid answers guide](concepts/hybrid-answers.md#version-2).
+- **Commands:** `uv run poe run-hybrid --agent hybrid-v2 --run hybrid-v2`, `uv run poe compare-runs eval/results/hybrid/hybrid-v1/dev eval/results/hybrid/hybrid-v2/dev --metric all_figures`.
+- **Results:**
+  - Every one of the 13 hybrid-set questions answered with every expected figure, against 10 for the prototype and for the doc agent alone; the three five-year questions took the split path, the other ten went to the doc agent alone.
+  - Faithful 7 of 13 (0.54), between the prototype's 8 and the doc agent's 6; in two of the three split-path answers, sentences of the explanation were judged unsupported.
+  - $0.0034 a question, 30% below the prototype's $0.0048: $0.0025 on the doc path and $0.0062 on the split path.
+  - On 13 questions none of the differences is significant (three questions all one way: p = 0.25).
+- **Problems and fixes:**
+  - **A change written twice, in raw units:** the model still wrote some computed changes itself and added the placeholder ("$122 million ... 122,000,000"); `fill` now drops the repeat.
+  - **Units the calculator can't see:** a first fix wrote every large result in billions and turned a decline of $7,737,590 thousand into "7.738 million"; results are now compacted only when every operand comes from the facts database. The run was repeated from the cached calls: four answers read differently, and no check changed.
+  - **A day of spent quotas:** the run's three split-path questions waited a day for the strong model's quota; refused calls retried after pauses, which shows in the longest model time, 242 s.
+- **Decisions:** adopt version 2 as the hybrid node ([report](eval/hybrid-v2.md)); no ADR, since it carries out the prototype report's plan.
+- **Next:** the validator (step 5.3), then memory (step 5.5).
+
 ### 2026-10-24 · Phase 5 · The routing test split
 
 - **Goal:** the one honest check of the routers, on seeds that no prompt example or design choice had seen, as ADR-0017 set out.
