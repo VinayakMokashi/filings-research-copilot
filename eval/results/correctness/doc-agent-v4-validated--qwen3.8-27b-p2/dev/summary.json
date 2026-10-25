@@ -1,0 +1,103 @@
+{
+  "suite": "correctness",
+  "run": "doc-agent-v4-validated--qwen3.8-27b-p2",
+  "split": "dev",
+  "created": "2026-10-25T10:09:00.523046Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "answers_run": "doc-agent-v4-validated",
+    "judge_model": "groq/qwen/qwen3.8-27b",
+    "judge_prompt_version": "2",
+    "judge_errors": 0,
+    "judge_tokens": 59316,
+    "verdicts": {
+      "correct": 61,
+      "incorrect": 31,
+      "refused": 8
+    }
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "correct": {
+      "mean": 0.61,
+      "low": 0.51,
+      "high": 0.71
+    },
+    "incorrect": {
+      "mean": 0.31,
+      "low": 0.22,
+      "high": 0.4
+    },
+    "refused": {
+      "mean": 0.08,
+      "low": 0.03,
+      "high": 0.14
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 34,
+        "metrics": {
+          "correct": {
+            "mean": 0.4411764705882353,
+            "low": 0.29411764705882354,
+            "high": 0.6176470588235294
+          },
+          "incorrect": {
+            "mean": 0.5,
+            "low": 0.3235294117647059,
+            "high": 0.6764705882352942
+          },
+          "refused": {
+            "mean": 0.058823529411764705,
+            "low": 0.0,
+            "high": 0.14705882352941177
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "correct": {
+            "mean": 0.8787878787878788,
+            "low": 0.7575757575757576,
+            "high": 0.9696969696969697
+          },
+          "incorrect": {
+            "mean": 0.030303030303030304,
+            "low": 0.0,
+            "high": 0.09090909090909091
+          },
+          "refused": {
+            "mean": 0.09090909090909091,
+            "low": 0.0,
+            "high": 0.21212121212121213
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 33,
+        "metrics": {
+          "correct": {
+            "mean": 0.5151515151515151,
+            "low": 0.3333333333333333,
+            "high": 0.696969696969697
+          },
+          "incorrect": {
+            "mean": 0.3939393939393939,
+            "low": 0.24242424242424243,
+            "high": 0.5757575757575758
+          },
+          "refused": {
+            "mean": 0.09090909090909091,
+            "low": 0.0,
+            "high": 0.21212121212121213
+          }
+        }
+      }
+    }
+  }
+}
