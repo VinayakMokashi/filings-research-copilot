@@ -125,6 +125,22 @@ _OPERATIONS: dict[str, Callable[[float, float], float | None]] = {
     "+": lambda a, b: a + b,
     "-": lambda a, b: a - b,
 }
+_SCALES = {"thousand": 1e3, "million": 1e6, "billion": 1e9, "trillion": 1e12}
+# A number as an answer writes it, with an optional scale word: "$1.577 billion", "122 million".
+_WRITTEN = re.compile(
+    r"(?<![\w.])(\d[\d,]*(?:\.\d+)?)(?:\s*(thousand|million|billion|trillion)\b)?", re.IGNORECASE
+)
+_NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+# Words that already say a figure fell, so its value is shown without a minus sign.
+_FALL = re.compile(
+    r"\b(?:fell|fall|falls|dropped|drop|declined|decline|decreased|decrease|down|lower)"
+    r"(?:\s+(?:by|of))?\s*\$?\s*$",
+    re.IGNORECASE,
+)
+_SCALE_AFTER = re.compile(r"\s*(?:thousand|million|billion|trillion)\b", re.IGNORECASE)
+_SENTENCE_END = re.compile(r"[.!?](?:\[\d+\])*\s+(?=[A-Z])")
+_LOOKBACK = 160  # characters before a placeholder searched for the model's own copy of it
+_TOLERANCE = 0.005
 
 
 def parse_draft(text: str) -> _Draft:
@@ -135,9 +151,89 @@ def parse_draft(text: str) -> _Draft:
         raise ValueError(f"The reply isn't a valid answer object: {exc}") from exc
 
 
-def fill(text: str, calculations: Sequence[Calculation]) -> str:
-    """The answer with each {cN} (or {cN*100}, and so on) replaced by its computed value."""
+def _close(a: float, b: float) -> bool:
+    return abs(a - b) <= _TOLERANCE * max(abs(a), abs(b))
+
+
+def _sentence_before(text: str, index: int) -> str:
+    """The part of the placeholder's sentence that comes before it, at most _LOOKBACK long."""
+    window = text[max(0, index - _LOOKBACK) : index]
+    ends = list(_SENTENCE_END.finditer(window))
+    return window[ends[-1].end() :] if ends else window
+
+
+def numbers_in(text: str) -> list[float]:
+    """Every number in a text, commas removed: "1,577 / 32,765" gives 1577 and 32765."""
+    return [float(number.replace(",", "")) for number in _NUMBER.findall(text)]
+
+
+def _written_out(value: float, before: str, expression: str) -> bool:
+    """Whether the sentence already states `value` as a number of the model's own.
+
+    A written number counts with or without its scale word, since the calculator works in
+    the units of the source ("$7,737,590 thousand" and 7,737,590). Years don't count, nor do
+    the expression's operands, so "from $100 million to $200 million, an increase of {c1}"
+    keeps its computed $100 million; nor do results under 1,000, which collide by chance.
+    """
+    if abs(value) < 1000:
+        return False
+    operands = numbers_in(expression)
+    for match in _WRITTEN.finditer(before):
+        digits, scale = float(match.group(1).replace(",", "")), match.group(2)
+        if scale is None and digits.is_integer() and 1900 <= digits <= 2100:
+            continue
+        readings = [digits, digits * _SCALES[scale.lower()]] if scale else [digits]
+        for written in readings:
+            if _close(written, abs(value)) and not any(_close(written, op) for op in operands):
+                return True
+    return False
+
+
+def _compact(value: float) -> str:
+    """A value of a million or more in millions, billions or trillions: "5.186 billion"."""
+    for word, size in (("trillion", 1e12), ("billion", 1e9), ("million", 1e6)):
+        if abs(value) >= size:
+            return f"{value / size:,.3f}".rstrip("0").rstrip(".") + f" {word}"
+    return f"{value:,}"
+
+
+def _in_raw_units(expression: str, raw: Sequence[float]) -> bool:
+    """Whether every operand is one of the numbers a source states in raw units."""
+    operands = numbers_in(expression)
+    return bool(operands) and all(any(_close(op, number) for number in raw) for op in operands)
+
+
+def _drop_repeats(text: str, by_id: dict[str, Calculation]) -> str:
+    """The text without placeholders whose result the model already wrote out itself."""
+    for match in reversed(list(_PLACEHOLDER.finditer(text))):
+        calculation = by_id.get(match.group(1))
+        if calculation is None or calculation.value is None or match.group(2) is not None:
+            continue
+        before = _sentence_before(text, match.start())
+        if not _written_out(calculation.value, before, calculation.expression):
+            continue
+        start, end = match.start(), match.end()
+        if text[start - 1 : start] == "(" and text[end : end + 1] == ")":
+            start, end = start - 1, end + 1
+        while start > 0 and text[start - 1] == " ":
+            start -= 1
+        text = text[:start] + text[end:]
+    return text
+
+
+def fill(text: str, calculations: Sequence[Calculation], raw: Sequence[float] = ()) -> str:
+    """The answer with each {cN} (or {cN*100}, and so on) replaced by its computed value.
+
+    Three rules keep a computed figure readable where it lands. A result the model has
+    already written out itself, earlier in the same sentence, isn't repeated. A negative
+    result after words that already say it fell ("fell by", "a decline of") loses its minus
+    sign. And a result of a million or more, computed only from `raw`, the numbers a source
+    states in raw units (the facts database's dollars), is written in millions, billions or
+    trillions unless a scale word follows; a filing's tables are often in thousands or
+    millions, so a result from their numbers keeps the units the text gives it.
+    """
     by_id = {calculation.id: calculation for calculation in calculations}
+    text = _drop_repeats(text, by_id)
 
     def replace(match: re.Match[str]) -> str:
         calculation = by_id.get(match.group(1))
@@ -146,9 +242,22 @@ def fill(text: str, calculations: Sequence[Calculation]) -> str:
         operator, operand, decimals = match.group(2), match.group(3), match.group(4)
         if decimals is not None:
             calculation = dataclasses.replace(calculation, decimals=int(decimals))
-        if operator is None or calculation.value is None:
+        if calculation.value is None:
             return calculation.text
-        value = _OPERATIONS[operator](calculation.value, float(operand))
+        value: float | None = calculation.value
+        if operator is not None:
+            value = _OPERATIONS[operator](calculation.value, float(operand))
+        if value is None:
+            return dataclasses.replace(calculation, value=None).text
+        if value < 0 and _FALL.search(_sentence_before(text, match.start())):
+            value = -value
+        if (
+            abs(value) >= 1e6
+            and operator is None
+            and _in_raw_units(calculation.expression, raw)
+            and not _SCALE_AFTER.match(text, match.end())
+        ):
+            return _compact(value)
         return dataclasses.replace(calculation, value=value).text
 
     return _PLACEHOLDER.sub(replace, text)
@@ -192,7 +301,9 @@ def build_answer(question: str, sources: Sequence[Source], response: LLMResponse
             error=str(exc),
         )
     calculations = run_all([(c.id, c.expression, c.decimals) for c in draft.calculations])
-    text = normalise_citations(fill(draft.answer, calculations))
+    # The facts database's source (page -1, not a filing's page) gives values in dollars.
+    raw = [number for source in sources if source.page < 0 for number in numbers_in(source.text)]
+    text = normalise_citations(fill(draft.answer, calculations, raw))
     numbers = {source.number for source in sources}
     cited = citations(text)
     return Answer(
