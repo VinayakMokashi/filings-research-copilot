@@ -25,7 +25,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 19 | [semantic-routing.md](semantic-routing.md) | Routing by embedding similarity or by a model, measured leaving one seed group out | Semantic Router library docs | 5 | Written |
 | 20 | [validator-loop.md](validator-loop.md) | Checking every cited sentence, revising what fails, and keeping only what holds | Madaan et al., Self-Refine (2023) | 5 | Written |
 | 21 | `self-consistency.md` | Sampling several answers and voting | Wang et al., Self-Consistency (2023) | 5 | Planned |
-| 22 | `agent-memory.md` | Short-term state and long-term memory | Chhikara et al., Mem0 (2025) | 5 | Planned |
+| 22 | [agent-memory.md](agent-memory.md) | Follow-up rewriting, and notes about users kept across conversations | Chhikara et al., Mem0 (2025) | 5 | Written |
 | 23 | `sse-streaming.md` | Streaming tokens and events to the UI | MDN, *Using server-sent events* | 6 | Planned |
 | 24 | `mcp-server.md` | Hosts, clients and servers; tools, resources and prompts | Model Context Protocol specification | 6 | Planned |
 | 25 | `semantic-cache.md` | Reusing answers to near-duplicate questions | GPTCache docs | 6 | Planned |

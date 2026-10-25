@@ -190,6 +190,15 @@ uv run poe compare-runs eval/results/hybrid/doc-agent-v4/dev eval/results/hybrid
 
 Both need Qdrant, the facts database and `GROQ_API_KEY`. Each run answers every question, appending to `data/processed/hybrid/<run>/answers.jsonl`, then checks each answer's sentences against the sources it cites, into `faithfulness.jsonl` beside it; both steps resume where they stopped, and a quota or an outage stops the run with a message. `eval/results/hybrid/<run>/dev/` gets the per-question checks (`figures_given`, `all_figures`, `database_cited`, `pages_cited`, `faithful`, `supported`), costs, and `answers.jsonl` with each answer's text, the labels of the sources it cites and the hybrid agent's SQL and rows; version 2's rows also give the path each question took (`doc` or `split`) and whether it retried. These are the project's own questions, so the answers are committed; the pages' text stays local.
 
+## Score memory
+
+```bash
+uv run poe run-memory --run memory-v2              # rewrites and notes on the memory set (needs GROQ_API_KEY)
+uv run poe run-memory --run memory-v1 --rescore    # check a finished run's notes again, with no model calls
+```
+
+The run writes a row per turn (the standalone question, `resolved`, `rewritten`, and `unchanged` for questions that already stood alone) and `notes.json` with each user's final notes and the checks from `eval/memory/notes.jsonl`. Calls are cached in `data/cache/rewrite.jsonl` and `data/cache/notes.jsonl`; a stopped run starts again from the first turn and replays what it paid for.
+
 ## Judge answers and check the judge
 
 The judge ([guide](../concepts/llm-as-judge.md)) grades a run's answers against FinanceBench's reference answers; a sample of reference labels checks the judge:
