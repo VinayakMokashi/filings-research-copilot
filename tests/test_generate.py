@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 
 import pytest
@@ -59,6 +60,70 @@ def test_fill_and_citations() -> None:
         fill("Margin {c1*100}% ({ c1 / 0 }).", ratio) == "Margin 19.1037% ([calculation failed])."
     )
     assert fill("Margin {c1*100:.1f}% or {c1:,.2f}.", ratio) == "Margin 19.1% or 0.19."
+
+
+def test_fill_doesnt_repeat_a_figure_the_model_wrote_out() -> None:
+    changes = [run("c1", "1699000000-1577000000", 0), run("c2", "1501000000-1699000000", 0)]
+    text = (
+        "Capex was $1.577 billion in 2018, increased by $122 million to $1.699 billion in "
+        "2019 {c1}, and decreased by $198 million to $1.501 billion in 2020 ({c2}) [1]."
+    )
+
+    assert fill(text, changes) == (
+        "Capex was $1.577 billion in 2018, increased by $122 million to $1.699 billion in "
+        "2019, and decreased by $198 million to $1.501 billion in 2020 [1]."
+    )
+    # The calculator works in the source's units: a table in thousands gives 7,737,590.
+    thousands = [run("c1", "12899672 - 5162082", 0)]
+    assert fill("A decline of $7,737,590 thousand ({c1}) [1].", thousands) == (
+        "A decline of $7,737,590 thousand [1]."
+    )
+    # A written number that is one of the expression's operands is the input, not a copy.
+    doubled = [run("c1", "200000000 - 100000000", 0)]
+    raw = [100_000_000.0, 200_000_000.0]
+    assert fill("From $100 million to $200 million, up ${c1} [1].", doubled, raw) == (
+        "From $100 million to $200 million, up $100 million [1]."
+    )
+    # Only the placeholder's own sentence counts.
+    assert fill("It rose by $122 million [1]. Then by {c1} [2].", changes[:1]) == (
+        "It rose by $122 million [1]. Then by 122,000,000 [2]."
+    )
+
+
+def test_fill_writes_large_results_and_falls_readably() -> None:
+    changes = [run("c1", "6434000000-1248000000", 0), run("c2", "7747000000-8920000000", 0)]
+    database = [1_248_000_000.0, 6_434_000_000.0, 7_747_000_000.0, 8_920_000_000.0]
+
+    assert fill("Income rose by {c1} and then fell by {c2} [1].", changes, database) == (
+        "Income rose by 5.186 billion and then fell by 1.173 billion [1]."
+    )
+    assert fill("A change of {c2} [1].", changes, database) == "A change of -1.173 billion [1]."
+    assert fill("A decline of ${c2} [1].", changes) == "A decline of $1,173,000,000 [1]."
+    # From a filing's table, perhaps in thousands, a large result keeps the text's units.
+    thousands = [run("c1", "12899672 - 5162082", 0)]
+    assert fill("Revenue fell by ${c1} thousand [1].", thousands) == (
+        "Revenue fell by $7,737,590 thousand [1]."
+    )
+    # A scale word after the placeholder means the model scaled the result itself.
+    assert fill("Up {c1} million [1].", changes, database) == "Up 5,186,000,000 million [1]."
+
+
+def test_build_answer_writes_database_results_compactly() -> None:
+    database = Source(1, "facts-database", -1, "Facts database", "net_income\n6,434,000,000", 9)
+    reply = {
+        "answerable": True,
+        "answer": "Net income rose by ${c1} to $6.434 billion [1].",
+        "calculations": [{"id": "c1", "expression": "6434000000 - 1248000000", "decimals": 0}],
+        "missing": "",
+    }
+
+    answer = build_answer("q", [database], _reply(json.dumps(reply)))
+
+    # 1,248,000,000 isn't in this source, so the result keeps its digits.
+    assert answer.text == "Net income rose by $5,186,000,000 to $6.434 billion [1]."
+    database = dataclasses.replace(database, text="net_income\n1,248,000,000\n6,434,000,000")
+    answer = build_answer("q", [database], _reply(json.dumps(reply)))
+    assert answer.text == "Net income rose by $5.186 billion to $6.434 billion [1]."
 
 
 def test_build_answer_computes_cites_and_records_usage() -> None:
