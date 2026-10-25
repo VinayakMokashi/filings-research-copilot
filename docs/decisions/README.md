@@ -20,5 +20,6 @@
 | [0016](0016-deploy-on-google-cloud.md) | Deploy on Google Cloud, with services that scale to zero | Accepted | 2026-10-23 |
 | [0017](0017-routing.md) | Route with an LLM on the strong model, and keep a semantic router as its fallback | Accepted | 2026-10-24 |
 | [0018](0018-graph-design.md) | Orchestrate the copilot as a LangGraph state graph | Accepted | 2026-10-24 |
+| [0019](0019-validator-loop.md) | Check every cited sentence before an answer is shown, and revise what fails at most twice | Accepted | 2026-10-25 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.

@@ -23,7 +23,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 17 | [hybrid-answers.md](hybrid-answers.md) | Figures from a database query and explanations from the filing, in one cited answer | Zhu et al., TAT-QA (2021) | 4 | Written |
 | 18 | [langgraph-orchestration.md](langgraph-orchestration.md) | State graphs, branches, loops, checkpoints, streamed events and traces | LangGraph docs | 5 | Written |
 | 19 | [semantic-routing.md](semantic-routing.md) | Routing by embedding similarity or by a model, measured leaving one seed group out | Semantic Router library docs | 5 | Written |
-| 20 | `validator-loop.md` | Reflection and retry with feedback | Madaan et al., Self-Refine (2023) | 5 | Planned |
+| 20 | [validator-loop.md](validator-loop.md) | Checking every cited sentence, revising what fails, and keeping only what holds | Madaan et al., Self-Refine (2023) | 5 | Written |
 | 21 | `self-consistency.md` | Sampling several answers and voting | Wang et al., Self-Consistency (2023) | 5 | Planned |
 | 22 | `agent-memory.md` | Short-term state and long-term memory | Chhikara et al., Mem0 (2025) | 5 | Planned |
 | 23 | `sse-streaming.md` | Streaming tokens and events to the UI | MDN, *Using server-sent events* | 6 | Planned |

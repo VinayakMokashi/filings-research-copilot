@@ -164,6 +164,18 @@ uv run poe judge-answers --run data-agent-v1
 
 It needs the facts database (`poe build-facts`) and `GROQ_API_KEY`, not Qdrant. The written answer comes from the strong model, the doc agent's answer model, unless `--analysis-model fast` says otherwise; that keeps a comparison of the two agents to where their numbers come from. Calls are cached in `data/cache/sql.jsonl`. It resumes like the doc agent's runs, and stops with a message when a daily quota runs out. About 4,500 tokens a question. `eval/results/answers/<run>/dev/` holds ids and numbers only: `answered`, `declined`, `failed`, `repaired`, tokens, model latency and cost at list prices; the SQL and rows stay in the local answers file, since they restate the questions' figures.
 
+## Validate answers
+
+The validator loop ([guide](../concepts/validator-loop.md)) runs over a stored run's answers as the graph runs it: each doc answer's cited sentences are checked on the `small` role, and a failing answer is revised on the `strong` role at most twice:
+
+```bash
+uv run poe validate-answers --source doc-agent-v4-full --run doc-agent-v4-validated
+uv run poe check-faithfulness --run doc-agent-v4-validated
+uv run poe judge-answers --run doc-agent-v4-validated
+```
+
+It needs `GROQ_API_KEY` but not Qdrant: the stored answers carry their sources. Checks are cached in `data/cache/validator.jsonl` and revisions in the doc agent's cache, and the run resumes like the others. The validated answers go to `data/processed/answers/<run>/dev/answers.jsonl` with each check's verdict, the revisions and their tokens, so the judges grade them like any run; they stay local, like every answer to a FinanceBench question.
+
 ## Answer the hybrid questions
 
 The [hybrid set](../data/hybrid-set.md) holds thirteen questions that need figures and an explanation. The hybrid agent answers them from the data agent's query result and the doc agent's pages together; the doc agent alone answers them for comparison:

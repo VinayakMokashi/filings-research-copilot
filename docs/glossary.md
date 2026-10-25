@@ -86,6 +86,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Self-consistency** | Sample several reasoning paths and keep the majority answer. |
 | **Self-Discover** | The model selects, adapts and structures reasoning modules into a plan, then follows the plan. |
 | **Self-preference bias** | A model judge's tendency to rate text like its own more highly; one reason the judge here is a different model family from the answer model. |
+| **Self-Refine** | A model improves its own output in rounds: generate, critique, revise (Madaan et al., 2023). The validator loop is a version with a specific critique: the sentences the sources don't support. |
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
 | **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries: the nearest examples vote, or the nearest route centroid wins. |
 | **Sparse vector** | A vector stored as its few non-zero dimensions, such as one weight for each word in a text. Qdrant stores BM25 this way. |
@@ -97,6 +98,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Thread** | One conversation's id in a checkpointer: its turns and state live under it. |
 | **Trace** | The record of one run: here every node's start and end with its time, the nodes' own events and the response, as JSON lines. |
 | **Transition report (10-KT)** | An annual report covering a short period, filed when a company changes its fiscal year end. |
+| **Validator loop** | Checking an answer before it is shown and sending what fails back to the writer, a fixed number of times; here every cited sentence against its sources, at most twice, then the verified sentences or a refusal. |
 | **Value linking** | Telling a Text-to-SQL model which database values a question refers to (a company's stored name, a metric's real key, the years covered), because the schema alone doesn't. |
 | **Workload Identity Federation** | Google Cloud's way of letting an outside identity, such as a GitHub Actions run, act as a service account without a stored key. |
 | **XBRL** | The tagged data format companies use to file financial statements. Each number carries a concept tag, a period and a unit. |
