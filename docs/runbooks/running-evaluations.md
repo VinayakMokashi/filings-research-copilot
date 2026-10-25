@@ -171,11 +171,12 @@ The [hybrid set](../data/hybrid-set.md) holds thirteen questions that need figur
 ```bash
 uv run poe run-hybrid --agent hybrid --run hybrid-smoke --limit 2   # a smoke run
 uv run poe run-hybrid --agent hybrid --run hybrid-v1
+uv run poe run-hybrid --agent hybrid-v2 --run hybrid-v2   # version 2: routed by need, split, retried
 uv run poe run-hybrid --agent doc --run doc-agent-v4
 uv run poe compare-runs eval/results/hybrid/doc-agent-v4/dev eval/results/hybrid/hybrid-v1/dev --metric all_figures
 ```
 
-Both need Qdrant, the facts database and `GROQ_API_KEY`. Each run answers every question, appending to `data/processed/hybrid/<run>/answers.jsonl`, then checks each answer's sentences against the sources it cites, into `faithfulness.jsonl` beside it; both steps resume where they stopped, and a quota or an outage stops the run with a message. `eval/results/hybrid/<run>/dev/` gets the per-question checks (`figures_given`, `all_figures`, `database_cited`, `pages_cited`, `faithful`, `supported`), costs, and `answers.jsonl` with each answer's text, the labels of the sources it cites and the hybrid agent's SQL and rows. These are the project's own questions, so the answers are committed; the pages' text stays local.
+Both need Qdrant, the facts database and `GROQ_API_KEY`. Each run answers every question, appending to `data/processed/hybrid/<run>/answers.jsonl`, then checks each answer's sentences against the sources it cites, into `faithfulness.jsonl` beside it; both steps resume where they stopped, and a quota or an outage stops the run with a message. `eval/results/hybrid/<run>/dev/` gets the per-question checks (`figures_given`, `all_figures`, `database_cited`, `pages_cited`, `faithful`, `supported`), costs, and `answers.jsonl` with each answer's text, the labels of the sources it cites and the hybrid agent's SQL and rows; version 2's rows also give the path each question took (`doc` or `split`) and whether it retried. These are the project's own questions, so the answers are committed; the pages' text stays local.
 
 ## Judge answers and check the judge
 
