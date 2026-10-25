@@ -1,9 +1,8 @@
 """Query rewriting: search for what the question needs, not for how it was asked (step 3.2).
 
-FinanceBench's questions often carry instructions ("Round your answer to two decimal
-places", "If operating margin is not a useful metric for a company like this, then state
-that and explain why") and name a metric without saying where it is reported. Each rewrite
-is one model call, made through the cache:
+FinanceBench's questions often carry template instructions (how many decimal places to round
+to, what to say if a metric doesn't suit the company) and name a metric without saying where
+it is reported. Each rewrite is one model call, made through the cache:
 
 - **multi-query**: three short search queries in the words a filing would use;
 - **HyDE** (Gao et al., 2022): a short passage in the style of a filing that would answer

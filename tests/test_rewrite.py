@@ -13,8 +13,8 @@ from copilot.llm.pacing import PacedLLM
 from copilot.retrieval import rewrite as rw
 
 QUESTION = (
-    "What is the FY2018 capital expenditure amount (in USD millions) for 3M? Give a response "
-    "to the question by relying on the details shown in the cash flow statement."
+    "What was 3M's capital expenditure in fiscal 2018, in USD millions? Answer from the "
+    "cash flow statement."
 )
 
 

@@ -15,6 +15,14 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-25 · Maintenance · FinanceBench's text out of the repository
+
+- **Goal:** keep FinanceBench's questions and answers out of the repository: they are licensed CC BY-NC 4.0 and stay in the git-ignored `data/` directory ([data card](data/financebench.md)).
+- **Done:** every tracked file was compared with the local questions, answers and justifications, six words at a time with punctuation ignored. About twenty lines from Phases 2 to 4 quoted question text, and one quoted an answer: the templates' instructions in the retrieval guides and report, questions used as examples in the guides, the data agent report and a docstring, and test inputs. They are paraphrased now, and the tests use questions written for the project.
+- **Results:** what still matches is the vocabulary filings and questions share, such as "purchases of property, plant and equipment" and XBRL concept names. `poe check`: 475 passed.
+- **Problems and fixes:** the first scan compared eight-word runs with punctuation kept and missed a quote that began just after an opening quotation mark; the final scan ignores punctuation. Earlier commits still hold the quotes; only rewriting the history would remove them.
+- **Next:** the remaining Phase 5 runs.
+
 ### 2026-10-25 · Phase 5 · Memory
 
 - **Goal:** follow-ups that make sense, and notes about users that carry into their next conversation (step 5.5).
@@ -478,7 +486,7 @@ A dated journal of every working session, newest first. Each entry uses this tem
   - Neighbouring chunks: 0.575, not significantly different.
   - Across all 84 filings: dense 0.345, BM25 0.155, hybrid 0.210; dense search loses 20 points of hit@20 when it must also find the filing.
 - **Problems and fixes:**
-  - **Templated questions.** Two thirds of FinanceBench's questions carry instructions ("Round your answer to two decimal places", "If operating margin is not a useful metric for a company like this, then state that and explain why"), which BM25 matches all over every filing. On the human-written questions BM25 beats dense search, 0.758 against 0.697. Rewriting questions before searching is Phase 3's job.
+  - **Templated questions.** Two thirds of FinanceBench's questions carry template instructions (how many decimal places to round to, what to say if a metric doesn't suit the company), whose words BM25 matches all over every filing. On the human-written questions BM25 beats dense search, 0.758 against 0.697. Rewriting questions before searching is Phase 3's job.
   - **RRF weights aren't multipliers.** Probing Qdrant 1.19 showed weighted fusion orders matching `1 / (k + rank / w)`: a larger weight flattens a list's contribution, so a dense weight of 2 made results worse. Recorded in the hybrid search guide.
   - **Rerankers trained on web search.** MS MARCO cross-encoders read short queries and paragraph-length passages; MiniLM also truncates question plus chunk at 512 tokens. jina-turbo, which reads everything, lost less.
 - **Decisions:** provisional baseline: dense search, no fusion, no reranker. The chunking comparison and ADR-0011 follow.

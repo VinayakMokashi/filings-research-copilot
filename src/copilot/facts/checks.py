@@ -1,7 +1,7 @@
 """Cross-checks of annual values against FinanceBench's gold answers (dev questions only).
 
 Each check is a FinanceBench dev question rewritten as a formula over canonical metrics:
-"What is the FY2018 capital expenditure (in USD millions) for 3M?" becomes
+a question asking for 3M's fiscal 2018 capital expenditure in USD millions becomes
 `capital_expenditure[2018] / 1e6`. A check agrees when the computed value, rounded to the
 precision the question asks for ("Answer in USD millions" means whole millions), equals
 the gold answer.

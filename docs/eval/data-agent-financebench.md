@@ -30,7 +30,7 @@ The two judges agree on every verdict for both agents. The data agent answered a
 
 - Every query used `annual_values` and `companies` alone, as the Phase 1 formulas do.
 - One query needed a repair: General Mills's cash conversion cycle, the longest formula in the set.
-- Where a question defines its measure ("ROA is defined as FY2017 net income / average total assets between FY2016 and FY2017"), the query follows the question, not the simpler definition in the hints.
+- Where a question defines its measure (return on assets as one year's net income over the average of two years' total assets, say), the query follows the question, not the simpler definition in the hints.
 - Rounding happens in SQL, at the precision the question asks for, so the written answer quotes the figure rather than computing it.
 
 ### Cost and speed
@@ -55,7 +55,7 @@ The data agent is right on every question the doc agent gets. Correct share +0.0
 
 Where the two differ:
 
-- **Two calculations across years, which the doc agent refused.** Activision Blizzard's three-year average of capex as a share of revenue needs six figures, and Walmart's days payable outstanding needs two years of payables and inventory and a year of cost of sales. After its retry the doc agent still lacked some of them and said so: a year of revenue for Activision, most of Walmart's. The data agent's queries read every figure from `annual_values` and did the arithmetic in SQL.
+- **Two calculations across years, which the doc agent refused.** Activision Blizzard's capex relative to revenue, averaged over three years, needs six figures, and Walmart's days payable outstanding needs two years of payables and inventory and a year of cost of sales. After its retry the doc agent still lacked some of them and said so: a year of revenue for Activision, most of Walmart's. The data agent's queries read every figure from `annual_values` and did the arithmetic in SQL.
 - **One question of precision.** For Coca-Cola's return on assets the doc agent answered 1.46%, which is the reference's 0.01 at the two decimals the question asks for, written as a percentage. The judge marked it wrong; the Phase 3 review counted it as arguably correct. The data agent's query rounded as asked.
 - **The question both miss.** American Water Works's dividends paid in fiscal 2020, in USD billions. The doc agent gave a wrong figure, $0.327 billion. The data agent returned the reported $389 million as $0.39 billion; the reference says $0.40, the same figure rounded to one decimal and written with two. The figure is right, but at the two decimals the reference shows it doesn't match, and both judges hold the answer to that.
 

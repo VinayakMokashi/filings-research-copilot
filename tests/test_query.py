@@ -45,18 +45,18 @@ MATCHER = CompanyMatcher(
 @pytest.mark.parametrize(
     ("question", "companies"),
     [
-        ("What is the FY2018 capital expenditure for 3M?", ("3M",)),
+        ("What was 3M's FY2018 capital expenditure?", ("3M",)),
         ("Did JnJ's net earnings rise in Q2 of FY2023?", ("Johnson & Johnson",)),
         ("How much could each JPM shareholder get?", ("JPMorgan",)),
-        ("Does American Water Works have positive working capital?", ("American Water Works",)),
+        ("Is American Water Works' working capital positive?", ("American Water Works",)),
         ("What drove Block's revenue in 2021?", ("Block",)),
         ("Was the block of shares sold at a discount?", ()),
         ("Did Costco's membership fees grow, and what was the cost of sales?", ("Costco",)),
-        ("Which region had the highest EBITDAR for MGM during FY2022?", ("MGM Resorts",)),
+        ("Which MGM region earned the most EBITDAR in FY2022?", ("MGM Resorts",)),
         ("What was the AES Corporation's FY2022 net income?", ("AES Corporation",)),
         ("How large were PG&E's wildfire liabilities?", ("PG&E Corporation",)),
         ("Did coca cola raise its dividend?", ("Coca-Cola",)),
-        ("Were there any board member nominees with many votes against?", ()),
+        ("Did any board nominee draw many votes against?", ()),
     ],
 )
 def test_companies_are_found_by_name_alias_and_ticker(
@@ -105,9 +105,7 @@ def test_periods_are_read_in_their_usual_forms(
 
 
 def test_dates_forms_and_outlook_are_read() -> None:
-    dated = understand(
-        "What was the key agenda of the AMCOR 8k filing dated 1st July 2022?", MATCHER
-    )
+    dated = understand("What did the AMCOR 8k filing dated 1st July 2022 announce?", MATCHER)
     as_of = understand("What cash did JnJ realise as of August 30, 2023?", MATCHER)
     outlook = understand("Is JnJ's EPS growth expected to accelerate in FY2023?", MATCHER)
 
