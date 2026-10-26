@@ -244,6 +244,17 @@ uv run poe analyse-errors --run doc-agent-v4-full --judge qwen3.8-27b-p2 --faith
 
 `check-faithfulness` makes one call per answered question (about 1,300 tokens), resumably, with its own cache file (`data/cache/faithfulness.jsonl`); `analyse-errors` makes none, and adds error categories, model latency and cost at list prices. A change to what happens after the model replies, such as the calculator, can be re-scored at no cost: a new `--run` name replays every model call from the cache.
 
+**On another provider.** Cerebras serves the same gpt-oss-120b and Qwen3.8 27B as Groq, without the free tier's daily cap; a run picks it in its environment, and the judge's name then carries Cerebras's model id (`qwen-3.8-27b-p2`). Check a judge moved to a new provider against its old verdicts before trusting it ([ADR-0024](../decisions/0024-second-provider.md)):
+
+```bash
+FRC_LLM_FAST_MODEL=cerebras/qwen-3.8-27b uv run poe judge-answers --run doc-agent-v4-full
+FRC_LLM_FAST_MODEL=cerebras/qwen-3.8-27b uv run poe check-faithfulness --run doc-agent-v4-full
+uv run poe compare-judges --run doc-agent-v4-full qwen3.8-27b-p2 qwen-3.8-27b-p2
+uv run poe compare-judges --run doc-agent-v4-full qwen3.8-27b-f1 qwen-3.8-27b-f1 --suite faithfulness
+```
+
+`compare-judges` writes the agreement, Cohen's kappa, each judge's rate of positive verdicts and their unreadable replies to `eval/results/judge-agreement/<run>--<first>--vs--<second>/dev/`. Many unreadable replies, or replies far longer than the old judge's, point to a provider default such as reasoning, which `MODEL_PARAMS` in the gateway can switch off.
+
 ## Compare two runs
 
 ```bash
