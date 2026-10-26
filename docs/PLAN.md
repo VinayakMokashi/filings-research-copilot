@@ -73,6 +73,7 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Python 3.12, uv, git, Docker | Installed | Phase 0 | |
 | GitHub CLI, authenticated | Installed | Phase 0 | |
 | Groq API key | Added | Phase 0 (step 0.8) | In `.env`; verified live on 2026-10-17 |
+| Cerebras API key | Added | Phase 5 | In `.env`; the same open models as Groq without the free tier's daily cap, for Phase 5's last evaluations ([ADR-0024](decisions/0024-second-provider.md)) |
 | SEC EDGAR contact for the User-Agent header | Added | Phase 1 | In `.env`; sent only to sec.gov |
 | Hugging Face account and token | Pending | Phase 7 | Publishing models (FinanceBench comes from GitHub) |
 | Langfuse Cloud (free tier) | Ready | Phase 6 | Tracing |
@@ -318,7 +319,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 
 | Risk | Mitigation |
 |---|---|
-| Free-tier rate limits on Groq | LiteLLM fallbacks, semantic cache, per-visitor quotas |
+| Free-tier rate limits on Groq | LiteLLM fallbacks, an answer cache for exact repeats, per-visitor quotas, and a second provider for the same open models ([ADR-0024](decisions/0024-second-provider.md)) |
 | LLM output varies between runs | Repeated eval runs and confidence intervals |
 | Models may have seen FinanceBench or well-known filings in training | Held-out split; synthetic questions on recent filings; memorisation noted alongside results |
 | XBRL tags differ across companies | A canonical `metrics` mapping with tests |
@@ -356,6 +357,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-26 | Step 6.2 quotes instructions out of retrieved sources instead of delimiting every source in the answer prompt | A new answer prompt would change every cached answer and need every evaluation since Phase 3 run again; the delimited prompt waits for Phase 7's prompt optimisation ([guide](concepts/prompt-injection.md)) |
 | 2026-10-26 | Step 6.2's cache serves exact repeats, not similar questions | On routing-set pairs, a question with its measure swapped was more similar to the original than the original's own paraphrases at every threshold that let paraphrases through, so a semantic cache would serve one measure's answer to another's question ([guide](concepts/semantic-cache.md)) |
 | 2026-10-26 | Step 6.4's MCP server sends questions through the API instead of running its own copilot, and is checked in an MCP host that can be scripted | Questions spend model quota, which only the API guards with quotas, a cache and one run at a time ([ADR-0021](decisions/0021-mcp-server.md)); a host run from a script gives a check that can be repeated, and the runbook carries Claude Desktop's configuration |
+| 2026-10-27 | Phase 5's last evaluations run the strong and fast roles on Cerebras, with each judge checked against its Groq verdicts first | Groq's free tier allows about 200,000 tokens a day for each model and its paid plan wasn't taking sign-ups; Cerebras serves the same open weights, and with its Qwen's reasoning switched off, its judges agree with Groq's on 99 of 100 verdicts ([ADR-0024](decisions/0024-second-provider.md)) |
 
 ## 11. Status tracker
 
