@@ -65,6 +65,8 @@ class Settings(BaseSettings):
     # Questions a day before a 429: per visitor, and from everyone together (step 6.2)
     api_daily_questions: int = Field(default=20, ge=1)
     api_daily_total: int = Field(default=200, ge=1)
+    # Days a stored answer to a repeated question is served again; 0 turns the cache off
+    api_cache_days: int = Field(default=7, ge=0)
 
     # SEC EDGAR asks every client to identify itself as "Name contact@example.com".
     sec_user_agent: str | None = Field(default=None, validation_alias="SEC_USER_AGENT")

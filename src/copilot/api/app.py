@@ -17,7 +17,9 @@ question that waits more than two minutes for its turn gets a busy error instead
 
 Guardrails (step 6.2): a question counts against daily quotas, per visitor and in total,
 and one over either gets a 429 with `Retry-After` before any model call
-(`copilot.api.quotas`). A caller who gives no `user_id` is anonymous: nothing is noted
+(`copilot.api.quotas`), unless it repeats a question an anonymous caller asked in a
+new conversation, which gets the stored answer with no run and no quota
+(`copilot.api.cache`). A caller who gives no `user_id` is anonymous: nothing is noted
 about them, so one visitor's notes never shape another's answers.
 """
 
@@ -29,7 +31,7 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 import structlog
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
@@ -38,7 +40,9 @@ from fastapi.responses import JSONResponse
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
 from copilot import __version__
+from copilot.agents.graph import Turn
 from copilot.agents.memory import ANONYMOUS
+from copilot.api.cache import Cached, age_seconds, reusable
 from copilot.api.quotas import seconds_until_reset, visitor_key
 from copilot.api.schemas import (
     AskRequest,
@@ -118,10 +122,11 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
         "/v1/ask",
         response_class=EventSourceResponse,
         tags=["copilot"],
-        dependencies=[Depends(take_quota)],
         responses={429: {"description": "A daily quota is used up; see Retry-After."}},
     )
-    def ask(body: AskRequest, request: Request) -> Iterator[ServerSentEvent]:
+    def ask(
+        body: AskRequest, request: Request, cached: Annotated[Cached | None, Depends(admit)]
+    ) -> Iterator[ServerSentEvent]:
         """Answer one question, streaming the graph's events as server-sent events."""
         services = _services(request)
         request_id: str = request.state.request_id
@@ -129,15 +134,23 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
         user_id = body.user_id or f"{ANONYMOUS}{thread_id}"
         ids = {"request_id": request_id, "thread_id": thread_id}
         yield ServerSentEvent(event="meta", data=ids)
+        if cached is not None:
+            yield from _replay(services, body.question, cached, thread_id)
+            yield ServerSentEvent(event="done", data=ids)
+            return
         if not services.lock.acquire(timeout=BUSY_WAIT_S):
             busy = "The copilot is busy with another question; try again shortly."
             yield ServerSentEvent(event="error", data={"error": busy})
             yield ServerSentEvent(event="done", data=ids)
             return
+        seen: dict[str, Any] = {}
         try:
-            yield from _events(services, body.question, thread_id, user_id, request_id)
+            yield from _events(services, body.question, thread_id, user_id, request_id, seen)
         finally:
             services.lock.release()
+        response = seen.get("response")
+        if services.cache is not None and cacheable(body) and response and reusable(response):
+            services.cache.put(body.question, response, datetime.now(UTC))
         yield ServerSentEvent(event="done", data=ids)
 
     @app.post("/v1/feedback", status_code=201, tags=["copilot"])
@@ -173,14 +186,30 @@ def _services(request: Request) -> Services:
     return services
 
 
-def take_quota(request: Request, body: AskRequest) -> None:
-    """Count the question against today's quotas, or refuse it with a 429.
+def admit(request: Request, body: AskRequest) -> Cached | None:
+    """A stored answer to a repeated question, which costs no quota; otherwise the question
+    is counted against today's quotas, or refused with a 429.
 
     It takes the validated body, so a malformed request is refused first and counts for
     nothing.
     """
     services = _services(request)
     now = datetime.now(UTC)
+    if services.cache is not None and cacheable(body):
+        stored = services.cache.get(body.question, now)
+        if stored is not None:
+            return stored
+    take_quota(services, request, now)
+    return None
+
+
+def cacheable(body: AskRequest) -> bool:
+    """A new conversation from an anonymous caller: its answer depends on the question alone."""
+    return body.thread_id is None and body.user_id is None
+
+
+def take_quota(services: Services, request: Request, now: datetime) -> None:
+    """Count the question against today's quotas, or refuse it with a 429."""
     verdict = services.quotas.take(
         visitor_key(request), now.date(), services.per_visitor, services.total
     )
@@ -193,15 +222,47 @@ def take_quota(request: Request, body: AskRequest) -> None:
         )
 
 
-def _events(
-    services: Services, question: str, thread_id: str, user_id: str, request_id: str
+def _replay(
+    services: Services, question: str, cached: Cached, thread_id: str
 ) -> Iterator[ServerSentEvent]:
-    """The run's events as server-sent events; a failure ends the stream with an error."""
+    """A stored answer as events, added to the conversation so a follow-up can build on it."""
+    now = datetime.now(UTC)
+    hit = {"type": "event", "event": "cache", "question": cached.question}
+    yield ServerSentEvent(event="event", data=hit | {"age_s": age_seconds(cached, now)}, id="1")
+    stored = cached.response
+    turn: Turn = {
+        "question": question,
+        "standalone": str(stored.get("standalone") or question),
+        "route": str(stored.get("route", "")),
+        "answer": str(stored.get("text", "")),
+    }
+    try:
+        services.copilot.record(thread_id, turn)
+    except Exception:
+        log.exception("api.record_failed", thread=thread_id)
+    response = stored | {"type": "response", "thread": thread_id, "turn": 1, "cached": True}
+    yield ServerSentEvent(event="response", data=response, id="2")
+
+
+def _events(
+    services: Services,
+    question: str,
+    thread_id: str,
+    user_id: str,
+    request_id: str,
+    seen: dict[str, Any],
+) -> Iterator[ServerSentEvent]:
+    """The run's events as server-sent events; a failure ends the stream with an error.
+
+    The response, when one comes, is also left in `seen` under `response`.
+    """
     sent_error = False
     try:
         events = services.copilot.stream(question, thread_id=thread_id, user_id=user_id)
         for number, item in enumerate(events, start=1):
             sent_error = sent_error or item.get("type") == "error"
+            if item.get("type") == "response":
+                seen["response"] = item
             yield ServerSentEvent(event=str(item.get("type", "event")), data=item, id=str(number))
     except Exception:
         log.exception("api.ask_failed", request_id=request_id, thread=thread_id)
