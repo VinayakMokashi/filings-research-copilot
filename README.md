@@ -6,7 +6,7 @@
 
 An agentic research copilot for public-company filings. Ask a question about a company and get an answer built from its 10-K and 10-Q text and its XBRL financial facts, with every claim cited to the page or query it came from.
 
-> **Status:** in active development. Phases 0 to 4 are done (foundations, data and evaluation sets, the retrieval baseline, the doc agent with cited answers, and the data agent with Text-to-SQL); Phase 5, orchestration, is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
+> **Status:** in active development. Phases 0 to 4 and 6 are done (foundations, data and evaluation sets, the retrieval baseline, the doc agent with cited answers, the data agent with Text-to-SQL, and the API, web UI, MCP server, container stack and traces); Phase 5's orchestration is built, with its last evaluations running; Phase 7, fine-tuning, is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
 >
 > **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/
 
@@ -36,7 +36,7 @@ flowchart LR
     V -. "retry with feedback, max 2" .-> R
 ```
 
-Every model call goes through one gateway (LiteLLM, with Groq first and other providers as fallback), and every step will be traced (Langfuse, Phase 6). Details: [docs/PLAN.md](docs/PLAN.md) and the [decision records](docs/decisions/README.md).
+Every model call goes through one gateway (LiteLLM, with Groq first and other providers as fallback), and every step is traced in Langfuse. Details: [docs/PLAN.md](docs/PLAN.md) and the [decision records](docs/decisions/README.md).
 
 ## What's built so far
 

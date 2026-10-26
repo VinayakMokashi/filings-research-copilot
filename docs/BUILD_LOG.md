@@ -15,6 +15,22 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 6 · Phase 6 complete
+
+- **Goal:** confirm Phase 6's exit criterion and publish it.
+- **Done:**
+  - **The exit criterion is met:** the full local demo runs from one Compose command (`poe stack-up`, five services healthy in 48 seconds); the MCP server works in an MCP client (the SDK's client over stdio and HTTP, and an MCP host that answered with both lookup tools); and the API's runs appear in Langfuse as traces with a span per node and each model call's tokens and cost.
+  - Updated the plan's tracker, the README and the project page (status, the worked example, the evaluation table with Phase 5's router, validator and hybrid results, the guardrails, the roadmap, the risks, the stack, and the API, router and validator notes).
+- **Results:** Phase 6 in sum:
+  - an API that streams each step as server-sent events, with daily quotas, prompt-injection quoting and an answer cache for exact repeats (a semantic cache was measured and rejected);
+  - a Streamlit UI with sources, charts, steps and feedback;
+  - an MCP server whose lookups need no model call;
+  - two non-root images and the whole stack in Compose;
+  - Langfuse traces and a latency report from the same events.
+- **Problems and fixes:** Groq has paused sign-ups for its paid plan, so Phase 5's last evaluations still run under the free tier's daily caps; Cerebras, which serves the same models, is the way to finish them sooner.
+- **Decisions:** ADR-0020 to ADR-0023 hold Phase 6's designs: the API and streaming, the MCP server, the images, and the traces.
+- **Next:** Phase 5's last evaluations (self-consistency and the copilot end to end), then Phase 7, fine-tuning and optimisation.
+
 ### 2026-10-27 · Phase 6 · Traces in Langfuse, and latency from the traces
 
 - **Goal:** a span per node with tokens and cost, and latency metrics (step 6.5).
