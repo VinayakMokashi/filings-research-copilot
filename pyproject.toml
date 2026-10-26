@@ -8,6 +8,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "Vinayak Mokashi" }]
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.162.0",
     "fastembed>=0.9.0",
     "httpx>=0.28.1",
     "langgraph>=1.2.16",
@@ -24,6 +25,7 @@ dependencies = [
     "structlog>=26.1.0",
     "text2sql-analyst",
     "tokenizers>=0.23.3",
+    "uvicorn>=0.54.0",
 ]
 
 [build-system]
@@ -66,6 +68,7 @@ paraphrase-routing-seeds = { cmd = "python scripts/paraphrase_routing_seeds.py",
 build-routing-set = { cmd = "python scripts/build_routing_set.py", help = "Build the routing eval set from seeds and reviewed paraphrases" }
 eval-routing = { cmd = "python scripts/eval_routing.py", help = "Score a router on the routing set (--baseline keyword or --predictions FILE)" }
 run-router = { cmd = "python scripts/run_router.py", help = "Run the semantic, LLM or cascade router on the routing set and score it, resumably (--router, --run)" }
+api = { cmd = "uvicorn copilot.api.app:create_app --factory --host 127.0.0.1 --port 8000", help = "Serve the copilot's API on 127.0.0.1:8000, with its docs at /docs (needs Qdrant, the facts database and GROQ_API_KEY)" }
 ask = { cmd = "python scripts/ask.py", help = "Ask the copilot one question through its graph, with each step streamed (needs Qdrant and GROQ_API_KEY)" }
 run-memory = { cmd = "python scripts/run_memory.py", help = "Run the memory set: follow-up rewriting and notes about users, turn by turn (--run)" }
 fetch-sec = { cmd = "python scripts/fetch_sec.py", help = "Match the companies to SEC filers and download their XBRL company facts" }
