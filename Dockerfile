@@ -5,7 +5,7 @@
 # Both run as a non-root user and listen on $PORT when it is set, as Cloud Run sets it.
 # The data (facts database, parsed pages, models, caches) is mounted at /app/data, not built in.
 
-# Python 3.12.15 on Debian trixie, and uv 0.12.19, pinned by digest; Dependabot moves them.
+# Python 3.12 on Debian trixie, and uv, pinned by digest; Dependabot moves the pins.
 FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
 
 FROM python:3.12-slim-trixie@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS build
