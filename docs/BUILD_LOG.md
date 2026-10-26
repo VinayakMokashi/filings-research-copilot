@@ -15,6 +15,26 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-26 · Phase 6 · The MCP server
+
+- **Goal:** the copilot usable from any MCP client, such as Claude Desktop (step 6.4).
+- **Done:**
+  - `copilot.mcp`: an MCP server on the official Python SDK (version 2). Its tools: `search_filings`, the doc agent's retrieval without its model-written rewrites (dense page search inside the filings a company, year and form pick out, or that the query names), so no model call; `query_financials`, a company's annual values of one metric from the facts database, with restatements; and `ask_copilot`, a question sent through the API, whose quotas, answer cache and one run at a time apply, with each step relayed as a progress notification. Its resources: every filing page at `filing://{doc_name}/{page}`, and the filings, companies and metrics. Its prompt: `compare_companies`.
+  - Filing text leaves the server with instruction-like sentences replaced, as it enters the copilot's own prompts.
+  - `copilot.api.client` moved out of the UI package, now that the MCP server shares it, and `FRC_API_URL` became a setting that both read.
+  - Pieces both servers use: `corpus_filings`, `company_matcher` and `build_searcher` in the doc agent's module, and `filing_pages` for the parsed pages, cached while their file is unchanged.
+  - `poe mcp` serves it on stdio; `--transport streamable-http` serves it at http://127.0.0.1:8001/mcp. The runbook has a Claude Desktop configuration.
+- **Commands:** `uv run poe mcp`; `uv run poe check`.
+- **Results:**
+  - 18 tests through the SDK's client in memory, one of them starting the real server and talking to it over stdio.
+  - Live: a search for capital spending in 3M's fiscal 2018 10-K found the capital spending table on PDF page 39; a Boeing question resolved to Boeing's fiscal 2022 10-K by itself; `query_financials` returned 3M's capital expenditure for fiscal 2016 to 2019 exactly; `ask_copilot` answered through the API in 10.1 s with eight progress steps, and from the API's cache in under a quarter of a second when asked again.
+  - In an MCP host, a question about 3M's fiscal 2018 capital expenditure and its split by region led the host's model to call both lookup tools at once; it answered in 23 seconds with the total and the four regions, each cited.
+- **Problems and fixes:**
+  - **The environment didn't reach the server:** the SDK's stdio client gives a server only a few safe environment variables, so an exported `FRC_API_URL` was lost and `ask_copilot` posted to the default port, where another local program answered with an error. The API address is now a setting, read from `.env` too, and a client's configuration can pass it in `env`.
+  - **An 18-second start:** importing LiteLLM through the doc agent's module took more than 7 seconds; it now loads on the first call, and the server answers a client in about 9.
+- **Decisions:** [ADR-0021](decisions/0021-mcp-server.md): lookups in the server, questions through the API, which changes what [ADR-0020](decisions/0020-api-and-streaming.md) expected.
+- **Next:** traces and latency metrics (step 6.5).
+
 ### 2026-10-26 · Phase 6 · The web UI
 
 - **Goal:** a page where a person can ask the copilot and see why it answered as it did (step 6.3).

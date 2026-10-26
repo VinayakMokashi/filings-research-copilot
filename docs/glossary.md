@@ -102,11 +102,14 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **SQL guardrails** | The checks that let a model's query run only if it is one read-only SELECT: a parser check, a read-only connection, an authorizer inside SQLite, and caps on rows, value size and time. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
 | **State graph** | A workflow as nodes (steps) and edges (what runs next) around one typed state that every node reads and updates. |
+| **Stdio transport** | MCP over a child process's standard input and output: the host starts the server and they exchange newline-delimited JSON, so the server must keep its logs to standard error. |
 | **Store (LangGraph)** | LangGraph's key-value storage for data that outlives one thread, organised by namespace; the notes about each user live under `("notes", user_id)`. |
-| **Streamlit** | A Python library for data apps: the script runs from top to bottom on every interaction, and widgets keep their values between runs. |
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
+| **Streamable HTTP** | MCP's HTTP transport: the server listens at one URL, and a response is plain JSON or a stream of server-sent events. |
+| **Streamlit** | A Python library for data apps: the script runs from top to bottom on every interaction, and widgets keep their values between runs. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
 | **Thread** | One conversation's id in a checkpointer: its turns and state live under it. |
+| **Tool annotations** | Hints an MCP server gives about a tool, such as whether it only reads data; a host may use them to decide what to confirm, but should trust them only from a server it trusts. |
 | **Trace** | The record of one run: here every node's start and end with its time, the nodes' own events and the response, as JSON lines. |
 | **Transition report (10-KT)** | An annual report covering a short period, filed when a company changes its fiscal year end. |
 | **Validator loop** | Checking an answer before it is shown and sending what fails back to the writer, a fixed number of times; here every cited sentence against its sources, at most twice, then the verified sentences or a refusal. |
