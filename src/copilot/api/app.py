@@ -14,6 +14,11 @@
 Every response carries an `X-Request-ID`: the caller's, when it sends a valid one, or a new
 one. One copilot run happens at a time in a process (see `copilot.api.services`); a
 question that waits more than two minutes for its turn gets a busy error instead.
+
+Guardrails (step 6.2): a question counts against daily quotas, per visitor and in total,
+and one over either gets a 429 with `Retry-After` before any model call
+(`copilot.api.quotas`). A caller who gives no `user_id` is anonymous: nothing is noted
+about them, so one visitor's notes never shape another's answers.
 """
 
 from __future__ import annotations
@@ -23,15 +28,18 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Annotated
 
 import structlog
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi import Path as PathParam
 from fastapi.responses import JSONResponse
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
 from copilot import __version__
+from copilot.agents.memory import ANONYMOUS
+from copilot.api.quotas import seconds_until_reset, visitor_key
 from copilot.api.schemas import (
     AskRequest,
     FeedbackReceipt,
@@ -106,12 +114,19 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
         body = Readiness(ready=ready, checks=checks).model_dump()
         return JSONResponse(body, status_code=200 if ready else 503)
 
-    @app.post("/v1/ask", response_class=EventSourceResponse, tags=["copilot"])
+    @app.post(
+        "/v1/ask",
+        response_class=EventSourceResponse,
+        tags=["copilot"],
+        dependencies=[Depends(take_quota)],
+        responses={429: {"description": "A daily quota is used up; see Retry-After."}},
+    )
     def ask(body: AskRequest, request: Request) -> Iterator[ServerSentEvent]:
         """Answer one question, streaming the graph's events as server-sent events."""
         services = _services(request)
         request_id: str = request.state.request_id
         thread_id = body.thread_id or uuid.uuid4().hex[:12]
+        user_id = body.user_id or f"{ANONYMOUS}{thread_id}"
         ids = {"request_id": request_id, "thread_id": thread_id}
         yield ServerSentEvent(event="meta", data=ids)
         if not services.lock.acquire(timeout=BUSY_WAIT_S):
@@ -120,7 +135,7 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
             yield ServerSentEvent(event="done", data=ids)
             return
         try:
-            yield from _events(services, body, thread_id, request_id)
+            yield from _events(services, body.question, thread_id, user_id, request_id)
         finally:
             services.lock.release()
         yield ServerSentEvent(event="done", data=ids)
@@ -158,13 +173,33 @@ def _services(request: Request) -> Services:
     return services
 
 
+def take_quota(request: Request, body: AskRequest) -> None:
+    """Count the question against today's quotas, or refuse it with a 429.
+
+    It takes the validated body, so a malformed request is refused first and counts for
+    nothing.
+    """
+    services = _services(request)
+    now = datetime.now(UTC)
+    verdict = services.quotas.take(
+        visitor_key(request), now.date(), services.per_visitor, services.total
+    )
+    if not verdict.allowed:
+        whose = "your" if verdict.over == "visitor" else "everyone's"
+        raise HTTPException(
+            status_code=429,
+            detail=f"Today's quota of questions ({whose}) is used up; it resets at midnight UTC.",
+            headers={"Retry-After": str(seconds_until_reset(now))},
+        )
+
+
 def _events(
-    services: Services, body: AskRequest, thread_id: str, request_id: str
+    services: Services, question: str, thread_id: str, user_id: str, request_id: str
 ) -> Iterator[ServerSentEvent]:
     """The run's events as server-sent events; a failure ends the stream with an error."""
     sent_error = False
     try:
-        events = services.copilot.stream(body.question, thread_id=thread_id, user_id=body.user_id)
+        events = services.copilot.stream(question, thread_id=thread_id, user_id=user_id)
         for number, item in enumerate(events, start=1):
             sent_error = sent_error or item.get("type") == "error"
             yield ServerSentEvent(event=str(item.get("type", "event")), data=item, id=str(number))

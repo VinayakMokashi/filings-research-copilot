@@ -24,6 +24,7 @@ import psycopg
 from copilot.agents.build import build_components, postgres_checkpointer, postgres_store
 from copilot.agents.runner import Copilot, TraceWriter
 from copilot.answer.context import describe
+from copilot.api.quotas import MemoryQuotas, PostgresQuotas, QuotaStore
 from copilot.config import Settings
 from copilot.ingest.corpus import pages_path
 from copilot.ingest.pdf import Page, read_pages
@@ -111,6 +112,9 @@ class Services:
     pages_dir: Path
     checks: Callable[[], dict[str, bool]]
     filings: Mapping[str, Filing] = field(default_factory=dict)
+    quotas: QuotaStore = field(default_factory=MemoryQuotas)
+    per_visitor: int = 20  # questions a day
+    total: int = 200
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def page(self, doc_name: str, page: int) -> tuple[Page, str] | None:
@@ -161,8 +165,10 @@ def build_services(settings: Settings) -> Iterator[Services]:
                 psycopg.connect(settings.database_url, autocommit=True)
             )
             feedback: FeedbackStore = PostgresFeedback(connection)
+            quotas: QuotaStore = PostgresQuotas(connection)
         else:
             checkpointer, store, feedback = None, None, MemoryFeedback()
+            quotas = MemoryQuotas()
         parts = build_components(settings, store=store)
         trace = TraceWriter(settings.data_dir / "traces" / "api.jsonl")
         doc = getattr(parts.doc, "by_name", {})
@@ -172,4 +178,7 @@ def build_services(settings: Settings) -> Iterator[Services]:
             pages_dir=settings.data_dir / "processed" / "pages",
             checks=partial(readiness, settings),
             filings=doc,
+            quotas=quotas,
+            per_visitor=settings.api_daily_questions,
+            total=settings.api_daily_total,
         )
