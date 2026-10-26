@@ -90,6 +90,15 @@ The semantic router's examples are the dev questions, and each one is routed wit
 
 At a milestone, the same commands take `--split test --allow-test`; the semantic router then uses all the dev questions as its examples, since no test seed is among them. `poe compare-runs ... --where origin=paraphrase` compares two routers on the paraphrases alone.
 
+## Measure a similarity cache
+
+```bash
+uv run poe eval-semantic-cache                              # routing dev pairs
+uv run poe eval-semantic-cache --split test --allow-test    # routing test pairs
+```
+
+It embeds the routing set's doc, data and hybrid questions with bge-small and counts, for each threshold, how many paraphrase pairs would hit (they should) and how many questions with a swapped measure would (they mustn't). Results go to `eval/results/cache/similarity/<split>/`. No model is called ([guide](../concepts/semantic-cache.md)).
+
 ## Score SQL
 
 Needs the facts database (`uv run poe build-facts`).
