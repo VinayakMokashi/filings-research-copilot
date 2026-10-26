@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     api_daily_total: int = Field(default=200, ge=1)
     # Days a stored answer to a repeated question is served again; 0 turns the cache off
     api_cache_days: int = Field(default=7, ge=0)
+    # Where the web UI and the MCP server find the API
+    api_url: str = "http://127.0.0.1:8000"
 
     # SEC EDGAR asks every client to identify itself as "Name contact@example.com".
     sec_user_agent: str | None = Field(default=None, validation_alias="SEC_USER_AGENT")

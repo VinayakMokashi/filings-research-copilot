@@ -1,9 +1,10 @@
-"""The UI's way to the API: questions streamed as server-sent events, feedback, cited pages
-and readiness (ADR-0020).
+"""The API from Python, for the web UI and the MCP server: questions streamed as server-sent
+events, feedback, cited pages and readiness (ADR-0020).
 
 `parse_sse` reads a stream's lines into events, skipping the keep-alive comments; a refused
-question (a 429 over a quota, a 422 for a malformed one) becomes an `error` event, so the
-UI handles every outcome the same way.
+question (a 429 over a quota, a 422 for a malformed one) becomes an `error` event, so a
+caller handles every outcome the same way. `STEPS` names each step of a run for the people
+watching it.
 """
 
 from __future__ import annotations
@@ -16,6 +17,22 @@ from typing import Any
 import httpx
 
 ASK_TIMEOUT_S = 300.0  # an answer, a revision and a slow quota retry fit well within it
+STEPS = {
+    "rewrite": "Reading the conversation",
+    "understand": "Finding the companies and years",
+    "route": "Choosing who answers",
+    "doc": "Reading the filings",
+    "data": "Querying the facts database",
+    "hybrid": "Combining figures and filings",
+    "smalltalk": "Replying",
+    "decline": "Declining",
+    "brief": "Briefs",
+    "synthesise": "Assembling the answer",
+    "validate": "Checking every cited sentence",
+    "revise": "Revising unsupported sentences",
+    "respond": "Writing the reply",
+    "remember": "Finishing",
+}
 
 
 @dataclass(frozen=True, slots=True)

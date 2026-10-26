@@ -14,7 +14,6 @@ points it elsewhere.
 from __future__ import annotations
 
 import json
-import os
 import uuid
 from pathlib import Path
 from typing import Any
@@ -22,29 +21,14 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from copilot.api.client import STEPS, CopilotClient
+from copilot.config import Settings
 from copilot.eval.stats import exact_interval
-from copilot.ui.client import CopilotClient
 
-API_URL = os.environ.get("FRC_API_URL", "http://127.0.0.1:8000")
+API_URL = Settings().api_url
 RESULTS = Path(__file__).resolve().parents[3] / "eval" / "results"
 DATABASE = "facts-database"
 
-STEPS = {
-    "rewrite": "Reading the conversation",
-    "understand": "Finding the companies and years",
-    "route": "Choosing who answers",
-    "doc": "Reading the filings",
-    "data": "Querying the facts database",
-    "hybrid": "Combining figures and filings",
-    "smalltalk": "Replying",
-    "decline": "Declining",
-    "brief": "Briefs",
-    "synthesise": "Assembling the answer",
-    "validate": "Checking every cited sentence",
-    "revise": "Revising unsupported sentences",
-    "respond": "Writing the reply",
-    "remember": "Finishing",
-}
 EXAMPLES = (
     "What was 3M's capital expenditure in 2018?",
     "How did Boeing's revenue change from 2019 to 2022, and what drove the recovery?",

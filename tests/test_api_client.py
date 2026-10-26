@@ -1,4 +1,4 @@
-"""The UI's client: server-sent events read from a stream, refusals, feedback and pages."""
+"""The API client: server-sent events read from a stream, refusals, feedback and pages."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import json
 
 import httpx
 
-from copilot.ui.client import CopilotClient, Event, parse_sse
+from copilot.api.client import CopilotClient, Event, parse_sse
 
 STREAM = (
     'event: meta\ndata: {"request_id": "r1", "thread_id": "t1"}\n\n'
