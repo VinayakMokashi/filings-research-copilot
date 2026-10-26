@@ -18,7 +18,14 @@ from pydantic import SecretStr
 
 from copilot.config import Settings
 from copilot.llm import LLMError, LLMGateway, user
-from copilot.llm.gateway import api_key_for, build_router, provider_of, role_models, token_cost
+from copilot.llm.gateway import (
+    api_key_for,
+    build_router,
+    model_params,
+    provider_of,
+    role_models,
+    token_cost,
+)
 
 # --- Happy paths through a real LiteLLM router ---------------------------------------------
 
@@ -294,6 +301,16 @@ def test_router_has_one_deployment_per_role_and_the_fallback_chain() -> None:
         {"fast": ["fallback-1", "fallback-2"]},
         {"small": ["fallback-1", "fallback-2"]},
     ]
+
+
+def test_qwen_on_cerebras_is_called_without_reasoning() -> None:
+    settings = Settings(_env_file=None, llm_fast_model="cerebras/qwen-3.8-27b")
+
+    params = {d["model_name"]: d["litellm_params"] for d in build_router(settings).model_list}
+
+    assert params["fast"]["reasoning_effort"] == "none"
+    assert "reasoning_effort" not in params["strong"]
+    assert model_params("groq/qwen/qwen3.8-27b") == {}
 
 
 def test_router_without_fallbacks_has_no_chain() -> None:
