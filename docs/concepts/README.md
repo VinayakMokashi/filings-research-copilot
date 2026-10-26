@@ -28,7 +28,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 22 | [agent-memory.md](agent-memory.md) | Follow-up rewriting, and notes about users kept across conversations | Chhikara et al., Mem0 (2025) | 5 | Written |
 | 23 | [sse-streaming.md](sse-streaming.md) | Streaming an answer's events over one HTTP response | MDN, *Using server-sent events* | 6 | Written |
 | 24 | `mcp-server.md` | Hosts, clients and servers; tools, resources and prompts | Model Context Protocol specification | 6 | Planned |
-| 25 | `semantic-cache.md` | Reusing answers to near-duplicate questions | GPTCache docs | 6 | Planned |
+| 25 | [semantic-cache.md](semantic-cache.md) | Reusing answers: why near-duplicates were measured and rejected, and exact repeats kept | GPTCache docs | 6 | Written |
 | 26 | [prompt-injection.md](prompt-injection.md) | Treating retrieved text as data: layers, a red-team set and a corpus scan | Greshake et al. (2023); OWASP Top 10 for LLM Applications | 6 | Written |
 | 27 | `observability.md` | Traces, spans, token and cost metrics | Langfuse docs | 6 | Planned |
 | 28 | `contrastive-finetuning.md` | MNRL, in-batch negatives, hard negatives | Henderson et al. (2017); Neelakantan et al. (2022) | 7 | Planned |

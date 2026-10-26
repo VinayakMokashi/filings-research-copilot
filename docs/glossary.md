@@ -10,6 +10,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Abstention** | Saying that the sources don't contain what the question needs, and what is missing, instead of guessing. Here the answer's `answerable` flag is false. |
 | **Accession number** | SEC's unique id for one filing, such as `0000066740-24-000016`. |
 | **ADR** | Architecture Decision Record: a short note recording one decision, the options considered and why. |
+| **Answer cache** | Stored answers served again when the same question, case, spacing and quote marks aside, comes from a new anonymous conversation; it matches questions exactly, unlike a semantic cache. |
 | **Bi-encoder** | A model that embeds the query and each passage separately, so passage vectors can be computed ahead of time and searched quickly. The embedding models here are bi-encoders. |
 | **BM25** | A keyword-ranking formula that scores documents by term frequency, term rarity and document length. Strong for exact terms such as tickers and line items. |
 | **Bootstrap confidence interval** | Resample the eval questions with replacement many times, recompute the metric each time, and take percentiles to see how uncertain the number is. |
