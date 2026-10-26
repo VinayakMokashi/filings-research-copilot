@@ -23,3 +23,4 @@ Each card records:
 | [Answer labels](answer-labels.md) | 41 correctness labels for the doc agent's dev answers, from a Claude model, for checking the answer judge | 2026-10-23 |
 | [Hybrid set](hybrid-set.md) | 13 questions that need figures from the facts database and an explanation from the filing, for the hybrid-answer prototype | 2026-10-23 |
 | [Memory set](memory-set.md) | 10 conversations from 6 users, for follow-up rewriting and the notes kept about users | 2026-10-23 |
+| [Injection set](injection-set.md) | 24 passages, half carrying an instruction to an assistant and half innocent look-alikes, for the injection patterns | 2026-10-26 |

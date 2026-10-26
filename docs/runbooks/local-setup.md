@@ -62,7 +62,7 @@ curl http://127.0.0.1:8000/readyz               # 200 when every check passes, 5
 curl -N -X POST http://127.0.0.1:8000/v1/ask -H "Content-Type: application/json" -d '{"question": "What was 3M'"'"'s capital expenditure in 2018?"}'
 ```
 
-The answer streams as server-sent events: `meta`, then a `start` and an `end` for each node, the nodes' events and the `response`, then `done`. Send the `thread_id` from `meta` with the next question to ask a follow-up. Conversations, notes and feedback live in memory; `FRC_API_STATE=postgres` keeps them in the Compose Postgres. One question is answered at a time; events are also appended to `data/traces/api.jsonl`.
+The answer streams as server-sent events: `meta`, then a `start` and an `end` for each node, the nodes' events and the `response`, then `done`. Send the `thread_id` from `meta` with the next question to ask a follow-up. Conversations, notes and feedback live in memory; `FRC_API_STATE=postgres` keeps them in the Compose Postgres. One question is answered at a time; events are also appended to `data/traces/api.jsonl`. Each question counts against daily quotas, 20 per visitor and 200 in total by default (`FRC_API_DAILY_QUESTIONS`, `FRC_API_DAILY_TOTAL`); a client sends `X-Visitor-ID` to be counted as one visitor, or is counted by its address, and a question over either quota gets a 429 with `Retry-After`. Without a `user_id` a caller is anonymous and nothing is noted about them.
 
 ## Stop the services
 

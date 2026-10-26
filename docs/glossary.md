@@ -50,6 +50,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **HyDE** | Hypothetical Document Embeddings: write a hypothetical answer, embed it, and search with that instead of the raw question. |
 | **IDF** | Inverse document frequency: how rare a term is across the collection. BM25 multiplies each term's weight by it, so a rare word like a ticker counts for more than "the". |
 | **Index card** | A JSON file kept beside each Qdrant collection, recording its models, query prefix, vector and HNSW settings, payload indexes, counts and timing. |
+| **Indirect prompt injection** | Instructions hidden in content an application feeds its model, such as a retrieved page, rather than typed by the user. |
 | **JSON mode** | A provider option that makes the model reply with one valid JSON object, so code can read the answer's fields. |
 | **LangGraph** | A library for building LLM workflows as state graphs with branches, loops and checkpoints. |
 | **Late chunking** | Run long stretches of a document through a long-context embedding model, then average each chunk's token vectors, so the chunk's vector keeps the surrounding context. |
@@ -77,9 +78,11 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Permutation test** | A significance test that randomly swaps which system produced which score (here, flips the sign of each paired difference) to see how often chance alone gives a gap as large as the real one. |
 | **Planner (hybrid answers)** | A model call that splits a question into the part a database answers (the figures) and the part the filings answer (the explanation), so each agent gets only its own part. |
 | **Program-aided arithmetic** | The model writes a calculation as an expression and a safe evaluator computes it, instead of the model doing the arithmetic in its head (after PAL, Gao et al. 2022). |
+| **Prompt injection** | Text that a model follows as an instruction although it arrived as data or as a user's request to break the rules; first in the OWASP Top 10 for LLM applications. |
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Query decomposition** | Splitting a question into the separate facts it needs (both parts of a ratio, both years of a change) and searching for each. |
 | **Query understanding** | Reading the company, period and form out of a question and searching only the filings that match. |
+| **Question quota** | How many questions the API answers in a day, per visitor and from everyone together, before it refuses with a 429. |
 | **Readiness probe** | An endpoint that says whether a service can do its work now (its database reachable, its files present), as opposed to merely running; orchestrators send traffic only to ready instances. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **Reference labels** | Labels a judge is checked against, made by someone or something other than the judge: ideally a person, here a stronger model. |

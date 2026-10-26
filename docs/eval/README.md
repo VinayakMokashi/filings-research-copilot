@@ -72,6 +72,7 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [keyword](../../eval/results/routing/keyword/dev/summary.md) | Routing | Dev | accuracy 0.623 (0.543 to 0.703) | Floor: hand-written keyword rules |
 | [memory-v2](../../eval/results/memory/memory-v2/dev/summary.md) | Memory | 20 turns | resolved 1.000; notes checks 15 of 15 | Follow-up rewriting and notes prompt 2: only what users say about themselves ([guide](../concepts/agent-memory.md)) |
 | [memory-v1](../../eval/results/memory/memory-v1/dev/summary.md) | Memory | 20 turns | resolved 1.000; notes checks 7 of 15 | Notes prompt 1, which turned questions into notes |
+| [corpus-scan](../../eval/results/injection/corpus-scan.json) | Injection | All 366 parsed filings | 0 of 53,901 pages flagged | The prompt-injection patterns over the whole corpus ([guide](../concepts/prompt-injection.md)) |
 | [financebench-dev-checks](../../eval/results/facts/financebench-dev-checks.md) | Facts database | Dev | 33 of 33 agree exactly | FinanceBench metrics questions as formulas over annual values |
 | [gold](../../eval/results/sql/gold/dev/summary.md) | SQL | Dev | accuracy 1.000 | Gold SQL: a check of the scorer |
 | [decline-all](../../eval/results/sql/decline-all/dev/summary.md) | SQL | Dev | accuracy 0.250 (0.107 to 0.429) | Floor: decline everything |
