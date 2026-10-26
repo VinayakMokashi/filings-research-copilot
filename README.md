@@ -108,6 +108,7 @@ uv run poe answer-with-data                           # FinanceBench's dev metri
 uv run poe run-hybrid --agent hybrid --run hybrid-v1  # figures from SQL, reasons from the filings, one answer
 uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b   # route the routing set, scored
 uv run poe validate-answers --source doc-agent-v4-full --run doc-agent-v4-validated   # the validator loop over stored answers
+uv run poe self-consistency --source doc-agent-v4-full --k 3 --run doc-agent-v4-sc3   # a vote over sampled figure answers
 uv run poe run-memory --run memory-v2                 # follow-ups and notes on the memory set, scored
 uv run poe api                                        # the API on 127.0.0.1:8000, docs at /docs
 uv run poe ui                                         # the web UI on 127.0.0.1:8501, over the API

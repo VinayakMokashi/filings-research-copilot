@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 5 · Self-consistency, measured and not adopted
+
+- **Goal:** finish step 5.4: does voting over sampled answers make the doc agent's figure answers correct more often, and is it worth what it costs?
+- **Done:**
+  - `copilot.answer.consistency`: an answer call sampled at temperature 0.7 with a seed, an answer's main figure, and the vote (figures within 1% group together, refusals too, a tie keeps the first answer).
+  - `poe self-consistency`, which adds samples to each of a stored run's figure answers and keeps the voted answers as a new run for the judge.
+  - A vote of three on the doc agent's 33 dev figure questions, judged by the Phase 3 judge; the [report](eval/self-consistency.md), the guide's results and a runbook section.
+- **Commands:** `uv run poe self-consistency --source doc-agent-v4-full --k 3 --run doc-agent-v4-sc3`, then `uv run poe judge-answers --run doc-agent-v4-sc3` and `poe compare-runs` on the figure questions.
+- **Results:** correct 0.879 before and after (29 of 33); no verdict changed (p = 1.00). The votes agreed on 24 questions, among them all four the doc agent gets wrong or refuses; in five of the nine splits the answers led with different quantities, a percentage in one and an amount in another. Two samples cost $0.0019 a question on top of the answer's $0.0010.
+- **Problems and fixes:** the samples waited days for gpt-oss-120b's free daily quota, which the other Phase 5 runs shared.
+- **Decisions:** not adopted, so nothing changes in the copilot and no ADR is needed: the doc agent's figure errors are systematic, which a vote repeats, and the router sends figure questions to the data agent.
+- **Next:** the copilot's end-to-end evaluation, which closes Phase 5.
+
+### 2026-10-27 · Maintenance · An isolated test environment, and filelock's security fix
+
+- **Goal:** a green `poe check` on a machine with Langfuse configured, and no open security alerts.
+- **Done:**
+  - The shared test fixture hid every setting read under a single name, but not the two names Langfuse's base URL is read under (`LANGFUSE_BASE_URL`, `LANGFUSE_HOST`). LiteLLM loads a local `.env` into the environment when it is imported, so a test read the real base URL and failed locally, while CI, which has no `.env`, passed. The fixture now hides every name an alias offers.
+  - filelock's `ReadWriteLock` could be made to overwrite or unlink its own files through a planted symlink (GHSA-v4x8-3wr5-3wq8, fixed in 4.2.1). LiteLLM caps filelock below 4, so an override lifts it to 4.2.4, as Pillow's override lifts FastEmbed's cap. Nothing here uses `ReadWriteLock`, and LiteLLM takes file locks only in its proxy's command line.
+- **Results:** `poe check`: 546 passed; the embedding model loads with filelock 4.2.4; Dependabot's three alerts closed.
+- **Problems and fixes:** the local uv (0.12) wrote an older lock format and dropped the default groups, so the lock was written with uv 0.13.5, the Dockerfile's.
+
 ### 2026-10-27 · Phase 6 · Phase 6 complete
 
 - **Goal:** confirm Phase 6's exit criterion and publish it.
@@ -173,6 +195,7 @@ A dated journal of every working session, newest first. Each entry uses this tem
 - **Done:** every tracked file was compared with the local questions, answers and justifications, six words at a time with punctuation ignored. About twenty lines from Phases 2 to 4 quoted question text, and one quoted an answer: the templates' instructions in the retrieval guides and report, questions used as examples in the guides, the data agent report and a docstring, and test inputs. They are paraphrased now, and the tests use questions written for the project.
 - **Results:** what still matches is the vocabulary filings and questions share, such as "purchases of property, plant and equipment" and XBRL concept names. `poe check`: 475 passed.
 - **Problems and fixes:** the first scan compared eight-word runs with punctuation kept and missed a quote that began just after an opening quotation mark; the final scan ignores punctuation. Earlier commits still hold the quotes; only rewriting the history would remove them.
+- **Decisions:** the history stays as it is. GitHub keeps every merged pull request's commits under the pull request's own references, which a force-push can't remove, so a rewrite wouldn't take the quotes out of reach, and it would change every commit since Phase 2. The licence allows attributed non-commercial quotation, so only the project's own stricter rule was at stake, and the current files keep it.
 - **Next:** the remaining Phase 5 runs.
 
 ### 2026-10-25 · Phase 5 · Memory
