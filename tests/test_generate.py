@@ -84,6 +84,15 @@ def test_fill_doesnt_repeat_a_figure_the_model_wrote_out() -> None:
     assert fill("From $100 million to $200 million, up ${c1} [1].", doubled, raw) == (
         "From $100 million to $200 million, up $100 million [1]."
     )
+    # A small result counts against an amount ("$204 million"), not a bare number ("5%").
+    small = [run("c1", "1577 - 1373", 0)]
+    assert (
+        fill("An increase of $204 million {c1} [3].", small) == "An increase of $204 million [3]."
+    )
+    rise = [run("c1", "105 - 100", 0)]
+    assert fill("A 5% rise to $105 million, up {c1} [1].", rise) == (
+        "A 5% rise to $105 million, up 5 [1]."
+    )
     # Only the placeholder's own sentence counts.
     assert fill("It rose by $122 million [1]. Then by {c1} [2].", changes[:1]) == (
         "It rose by $122 million [1]. Then by 122,000,000 [2]."
