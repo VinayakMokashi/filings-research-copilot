@@ -1,0 +1,63 @@
+{
+  "suite": "correctness",
+  "run": "doc-agent-v4-sc3--qwen3.8-27b-p2",
+  "split": "dev",
+  "created": "2026-10-26T21:19:35.943613Z",
+  "questions": 33,
+  "test_split_opened": false,
+  "system": {
+    "answers_run": "doc-agent-v4-sc3",
+    "judge_model": "groq/qwen/qwen3.8-27b",
+    "judge_prompt_version": "2",
+    "judge_errors": 0,
+    "judge_tokens": 20043,
+    "verdicts": {
+      "correct": 29,
+      "refused": 2,
+      "incorrect": 2
+    }
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "correct": {
+      "mean": 0.8787878787878788,
+      "low": 0.7575757575757576,
+      "high": 0.9696969696969697
+    },
+    "incorrect": {
+      "mean": 0.06060606060606061,
+      "low": 0.0,
+      "high": 0.15151515151515152
+    },
+    "refused": {
+      "mean": 0.06060606060606061,
+      "low": 0.0,
+      "high": 0.15151515151515152
+    }
+  },
+  "by": {
+    "question_type": {
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "correct": {
+            "mean": 0.8787878787878788,
+            "low": 0.7575757575757576,
+            "high": 0.9696969696969697
+          },
+          "incorrect": {
+            "mean": 0.06060606060606061,
+            "low": 0.0,
+            "high": 0.15151515151515152
+          },
+          "refused": {
+            "mean": 0.06060606060606061,
+            "low": 0.0,
+            "high": 0.15151515151515152
+          }
+        }
+      }
+    }
+  }
+}
