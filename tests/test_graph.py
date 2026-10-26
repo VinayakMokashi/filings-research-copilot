@@ -13,7 +13,7 @@ from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 
 from copilot.agents.build import postgres_checkpointer
-from copilot.agents.graph import NODES, Components, to_draft
+from copilot.agents.graph import NODES, Components, Turn, to_draft
 from copilot.agents.memory import recall
 from copilot.agents.router import Route, RouteDecision
 from copilot.agents.runner import Copilot, TraceWriter
@@ -507,3 +507,21 @@ def test_without_a_store_no_notes_are_kept() -> None:
 
     remembered = [e for e in events if e["type"] == "event" and e.get("node") == "remember"]
     assert remembered[0]["event"] == "skipped"
+
+
+def test_a_recorded_turn_is_built_on_by_a_follow_up() -> None:
+    rewriter = FakeLLM([json.dumps({"standalone": "What was Netflix's revenue in 2021?"})])
+    pilot = Copilot(parts(["data"], rewriter=rewriter))
+    asked = "What was Netflix's revenue in 2022?"
+    turn: Turn = {
+        "question": asked,
+        "standalone": asked,
+        "route": "data",
+        "answer": "$31.6 billion [1].",
+    }
+
+    pilot.record("t", turn)  # as an answer served from a cache is
+    pilot.ask("And in 2021?", thread_id="t")
+
+    assert f"Q1: {asked}" in rewriter.calls[0].messages[1]["content"]
+    assert [t["question"] for t in pilot.history("t")] == [asked, "And in 2021?"]
