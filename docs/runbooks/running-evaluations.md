@@ -185,6 +185,17 @@ uv run poe judge-answers --run doc-agent-v4-validated
 
 It needs `GROQ_API_KEY` but not Qdrant: the stored answers carry their sources. Checks are cached in `data/cache/validator.jsonl` and revisions in the doc agent's cache, and the run resumes like the others. The validated answers go to `data/processed/answers/<run>/dev/answers.jsonl` with each check's verdict, the revisions and their tokens, so the judges grade them like any run; they stay local, like every answer to a FinanceBench question.
 
+## Vote on figure answers
+
+Self-consistency ([guide](../concepts/self-consistency.md)) adds sampled answers to a stored run's figure questions and keeps the answer whose figure most of them give, as a new run for the judge:
+
+```bash
+uv run poe self-consistency --source doc-agent-v4-full --k 3 --run doc-agent-v4-sc3
+uv run poe judge-answers --run doc-agent-v4-sc3
+```
+
+It needs `GROQ_API_KEY` but not Qdrant: the stored answers carry their sources. Samples are cached in the doc agent's cache, each with its own seed, and the run resumes like the others. The kept answers go to `data/processed/answers/<run>/dev/answers.jsonl` with each vote's figure, the share that agreed and the samples' tokens; they stay local, like every answer to a FinanceBench question.
+
 ## Answer the hybrid questions
 
 The [hybrid set](../data/hybrid-set.md) holds thirteen questions that need figures and an explanation. The hybrid agent answers them from the data agent's query result and the doc agent's pages together; the doc agent alone answers them for comparison:
