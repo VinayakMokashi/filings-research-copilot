@@ -15,6 +15,20 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 5 · A second provider, and the judges checked across providers
+
+- **Goal:** finish Phase 5's last evaluations in hours rather than days, on a provider without the free tier's daily cap, with numbers that still compare with the earlier ones.
+- **Done:**
+  - Cerebras serves the same gpt-oss-120b and Qwen3.8 27B as Groq. The doc agent's 100 dev answers were graded again by both judges on Cerebras, and the new `poe compare-judges` compared the verdicts with Groq's.
+  - The first comparison failed. Cerebras's Qwen reasons at high effort by default and Groq's doesn't reason at all, so the replies grew long and some ran out of tokens before their verdict. `MODEL_PARAMS` in the gateway now sends settings with every call to a model (for Qwen on Cerebras, reasoning off), and the cache keys include them.
+  - ADR-0024; a step and a pitfall in the gateway guide; the runbook's note on another provider; the plan's accounts, risks and change log.
+  - Corrected today's maintenance entry: the `.env` copy came from text2sql-analyst's settings module, not from LiteLLM.
+- **Commands:** `FRC_LLM_FAST_MODEL=cerebras/qwen-3.8-27b uv run poe judge-answers --run doc-agent-v4-full` (and `check-faithfulness`), then `uv run poe compare-judges --run doc-agent-v4-full qwen3.8-27b-p2 qwen-3.8-27b-p2`.
+- **Results:** with reasoning off, the two providers' judges agree on 99 of 100 correctness verdicts (kappa 0.98) and 91 of 94 faithfulness verdicts (kappa 0.93), with no unreadable replies. With Cerebras's default reasoning they agreed on 94 of 100 and 78 of 94, with 9 and 31 unreadable replies. `poe check`: 548 passed.
+- **Problems and fixes:** the first Cerebras checks were discarded. Because the setting is part of the cache key, their replies can't be replayed by mistake.
+- **Decisions:** [ADR-0024](decisions/0024-second-provider.md): Cerebras for the strong and fast roles in Phase 5's remaining runs, each model called as it was measured, and comparisons kept within one provider; the defaults stay on Groq.
+- **Next:** the copilot's end-to-end run on Cerebras, which closes Phase 5.
+
 ### 2026-10-27 · Phase 5 · Self-consistency, measured and not adopted
 
 - **Goal:** finish step 5.4: does voting over sampled answers make the doc agent's figure answers correct more often, and is it worth what it costs?
@@ -32,7 +46,7 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 - **Goal:** a green `poe check` on a machine with Langfuse configured, and no open security alerts.
 - **Done:**
-  - The shared test fixture hid every setting read under a single name, but not the two names Langfuse's base URL is read under (`LANGFUSE_BASE_URL`, `LANGFUSE_HOST`). LiteLLM loads a local `.env` into the environment when it is imported, so a test read the real base URL and failed locally, while CI, which has no `.env`, passed. The fixture now hides every name an alias offers.
+  - The shared test fixture hid every setting read under a single name, but not the two names Langfuse's base URL is read under (`LANGFUSE_BASE_URL`, `LANGFUSE_HOST`). text2sql-analyst's settings module copies a local `.env` into the environment when it is imported (LiteLLM's own loading is switched off), so a test read the real base URL and failed locally, while CI, which has no `.env`, passed. The fixture now hides every name an alias offers.
   - filelock's `ReadWriteLock` could be made to overwrite or unlink its own files through a planted symlink (GHSA-v4x8-3wr5-3wq8, fixed in 4.2.1). LiteLLM caps filelock below 4, so an override lifts it to 4.2.4, as Pillow's override lifts FastEmbed's cap. Nothing here uses `ReadWriteLock`, and LiteLLM takes file locks only in its proxy's command line.
 - **Results:** `poe check`: 546 passed; the embedding model loads with filelock 4.2.4; Dependabot's three alerts closed.
 - **Problems and fixes:** the local uv (0.12) wrote an older lock format and dropped the default groups, so the lock was written with uv 0.13.5, the Dockerfile's.
