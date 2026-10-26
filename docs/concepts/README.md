@@ -30,7 +30,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 24 | [mcp-server.md](mcp-server.md) | Hosts, clients and servers; tools, resources and prompts; transports | Model Context Protocol specification | 6 | Written |
 | 25 | [semantic-cache.md](semantic-cache.md) | Reusing answers: why near-duplicates were measured and rejected, and exact repeats kept | GPTCache docs | 6 | Written |
 | 26 | [prompt-injection.md](prompt-injection.md) | Treating retrieved text as data: layers, a red-team set and a corpus scan | Greshake et al. (2023); OWASP Top 10 for LLM Applications | 6 | Written |
-| 27 | `observability.md` | Traces, spans, token and cost metrics | Langfuse docs | 6 | Planned |
+| 27 | [observability.md](observability.md) | Traces, spans, generations, token and cost metrics, latency percentiles | Langfuse docs; OpenTelemetry | 6 | Written |
 | 28 | `contrastive-finetuning.md` | MNRL, in-batch negatives, hard negatives | Henderson et al. (2017); Neelakantan et al. (2022) | 7 | Planned |
 | 29 | `lora-classifier.md` | LoRA adapters for a fast router | Hu et al., LoRA (2021) | 7 | Planned |
 | 30 | `dspy.md` | Optimising prompts against a metric | Khattab et al., DSPy (2023) | 7 | Planned |
