@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Iterator
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from copilot.api import app as api
+from copilot.api.cache import MemoryCache
 from copilot.api.services import Asker, MemoryFeedback, Services
 from copilot.ingest.pdf import Page, write_pages
 from copilot.retrieval.query import Filing
@@ -21,9 +23,14 @@ QUESTION = "What was 3M's capital expenditure in fiscal 2018?"
 class FakeCopilot:
     """Yields what the runner yields for a doc question; can fail mid-run like the graph."""
 
-    def __init__(self, fail: Exception | None = None) -> None:
+    def __init__(self, fail: Exception | None = None, answered: bool = True) -> None:
         self.fail = fail
+        self.answered = answered
         self.calls: list[tuple[str, str, str]] = []
+        self.recorded: list[tuple[str, dict[str, Any]]] = []
+
+    def record(self, thread_id: str, turn: Any) -> None:
+        self.recorded.append((thread_id, dict(turn)))
 
     def stream(
         self, question: str, *, thread_id: str, user_id: str = "default"
@@ -36,11 +43,19 @@ class FakeCopilot:
         if self.fail is not None:
             yield base | {"type": "error", "error": "RuntimeError: boom"}
             raise self.fail
-        yield base | {"type": "response", "text": "Capex was $1,577 million [1].", "answered": True}
+        reply = {
+            "text": "Capex was $1,577 million [1].",
+            "route": "data",
+            "answered": self.answered,
+        }
+        yield base | {"type": "response", **reply}
 
 
 class BrokenCopilot:
     """Fails before the graph starts, so no error event comes from the runner."""
+
+    def record(self, thread_id: str, turn: Any) -> None:
+        raise AssertionError("nothing to record")
 
     def stream(
         self, question: str, *, thread_id: str, user_id: str = "default"
@@ -269,3 +284,72 @@ def test_a_malformed_question_counts_for_nothing(tmp_path: Path) -> None:
         assert (
             client.post("/v1/ask", json={"question": QUESTION}, headers=headers).status_code == 200
         )
+
+
+def with_cache(tmp_path: Path, copilot: FakeCopilot | None = None) -> Services:
+    services = make_services(tmp_path, copilot=copilot)
+    services.cache = MemoryCache(timedelta(days=7))
+    return services
+
+
+def test_a_repeated_question_is_answered_from_the_cache(tmp_path: Path) -> None:
+    services = with_cache(tmp_path)
+    copilot = services.copilot
+    assert isinstance(copilot, FakeCopilot)
+    with TestClient(api.create_app(services)) as client:
+        client.post("/v1/ask", json={"question": QUESTION})
+        again = sse(client.post("/v1/ask", json={"question": f"  {QUESTION.upper()}  "}).text)
+
+    assert len(copilot.calls) == 1
+    assert [kind for kind, _ in again] == ["meta", "event", "response", "done"]
+    assert again[1][1]["event"] == "cache"
+    assert again[2][1]["cached"] is True
+    assert again[2][1]["text"] == "Capex was $1,577 million [1]."
+    thread = again[0][1]["thread_id"]
+    assert copilot.recorded == [
+        (
+            thread,
+            {
+                "question": QUESTION.upper(),
+                "standalone": QUESTION.upper(),
+                "route": "data",
+                "answer": "Capex was $1,577 million [1].",
+            },
+        )
+    ]
+
+
+def test_follow_ups_and_named_users_are_never_cached(tmp_path: Path) -> None:
+    services = with_cache(tmp_path)
+    copilot = services.copilot
+    assert isinstance(copilot, FakeCopilot)
+    with TestClient(api.create_app(services)) as client:
+        client.post("/v1/ask", json={"question": QUESTION, "thread_id": "t-1"})
+        client.post("/v1/ask", json={"question": QUESTION, "user_id": "u1"})
+        client.post("/v1/ask", json={"question": QUESTION})  # the first anonymous one: stored
+        client.post("/v1/ask", json={"question": QUESTION, "user_id": "u1"})
+
+    assert len(copilot.calls) == 4
+
+
+def test_an_unanswered_question_is_not_stored(tmp_path: Path) -> None:
+    services = with_cache(tmp_path, copilot=FakeCopilot(answered=False))
+    copilot = services.copilot
+    assert isinstance(copilot, FakeCopilot)
+    with TestClient(api.create_app(services)) as client:
+        for _ in range(2):
+            client.post("/v1/ask", json={"question": QUESTION})
+
+    assert len(copilot.calls) == 2
+
+
+def test_a_cached_answer_costs_no_quota(tmp_path: Path) -> None:
+    services = with_cache(tmp_path)
+    services.per_visitor = 1
+    headers = {"X-Visitor-ID": "visitor-0001"}
+    with TestClient(api.create_app(services)) as client:
+        first = client.post("/v1/ask", json={"question": QUESTION}, headers=headers)
+        repeat = client.post("/v1/ask", json={"question": QUESTION}, headers=headers)
+        new = client.post("/v1/ask", json={"question": "What was 3M's revenue?"}, headers=headers)
+
+    assert (first.status_code, repeat.status_code, new.status_code) == (200, 200, 429)

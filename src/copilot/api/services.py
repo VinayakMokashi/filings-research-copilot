@@ -13,7 +13,7 @@ import threading
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache, partial
 from pathlib import Path
 from typing import Any, Protocol
@@ -22,8 +22,10 @@ import httpx
 import psycopg
 
 from copilot.agents.build import build_components, postgres_checkpointer, postgres_store
+from copilot.agents.graph import Turn
 from copilot.agents.runner import Copilot, TraceWriter
 from copilot.answer.context import describe
+from copilot.api.cache import AnswerCache, MemoryCache, PostgresCache
 from copilot.api.quotas import MemoryQuotas, PostgresQuotas, QuotaStore
 from copilot.config import Settings
 from copilot.ingest.corpus import pages_path
@@ -38,6 +40,8 @@ class Asker(Protocol):
     def stream(
         self, question: str, *, thread_id: str, user_id: str = "default"
     ) -> Iterator[dict[str, Any]]: ...
+
+    def record(self, thread_id: str, turn: Turn) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,6 +119,7 @@ class Services:
     quotas: QuotaStore = field(default_factory=MemoryQuotas)
     per_visitor: int = 20  # questions a day
     total: int = 200
+    cache: AnswerCache | None = None
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def page(self, doc_name: str, page: int) -> tuple[Page, str] | None:
@@ -169,6 +174,11 @@ def build_services(settings: Settings) -> Iterator[Services]:
         else:
             checkpointer, store, feedback = None, None, MemoryFeedback()
             quotas = MemoryQuotas()
+        cache: AnswerCache | None = None
+        if settings.api_cache_days > 0:
+            ttl = timedelta(days=settings.api_cache_days)
+            postgres = settings.api_state == "postgres"
+            cache = PostgresCache(connection, ttl) if postgres else MemoryCache(ttl)
         parts = build_components(settings, store=store)
         trace = TraceWriter(settings.data_dir / "traces" / "api.jsonl")
         doc = getattr(parts.doc, "by_name", {})
@@ -181,4 +191,5 @@ def build_services(settings: Settings) -> Iterator[Services]:
             quotas=quotas,
             per_visitor=settings.api_daily_questions,
             total=settings.api_daily_total,
+            cache=cache,
         )
