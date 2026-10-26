@@ -44,7 +44,7 @@ Three constraints shape the answer:
 
 ## Consequences
 
-- **Clients read a POST's stream.** The Streamlit UI reads it with an HTTP client; the MCP server calls the copilot in the same process instead.
+- **Clients read a POST's stream.** The Streamlit UI and the MCP server read it with an HTTP client. This record first had the MCP server call the copilot in its own process; [ADR-0021](0021-mcp-server.md) sends its questions through the API instead.
 - **The event schema is an interface.** The API sends the trace's events as they are, so a change to a node's events changes what clients receive; the routes are under `/v1` for that reason.
 - **One process answers one question at a time.** That suits a demo on the free tier; Phase 8 scales by running more instances. Metering each run on its own would lift the lock.
 
