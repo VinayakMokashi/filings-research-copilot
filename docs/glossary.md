@@ -80,8 +80,10 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Qdrant** | A vector database with dense and sparse vectors, filtering and hybrid queries. |
 | **Query decomposition** | Splitting a question into the separate facts it needs (both parts of a ratio, both years of a change) and searching for each. |
 | **Query understanding** | Reading the company, period and form out of a question and searching only the filings that match. |
+| **Readiness probe** | An endpoint that says whether a service can do its work now (its database reachable, its files present), as opposed to merely running; orchestrators send traffic only to ready instances. |
 | **Recall@k** | The share of relevant items that appear in the top k results. |
 | **Reference labels** | Labels a judge is checked against, made by someone or something other than the judge: ideally a person, here a stronger model. |
+| **Request ID** | A unique id given to each HTTP request and returned in a header, so its logs, its events and any feedback on it can be tied together. |
 | **Restatement** | A company revising a figure it reported earlier. The facts database keeps the first-reported value and the latest one. |
 | **Router** | The first decision for every question: which part of the copilot answers it (doc, data, hybrid, brief, small talk or decline). |
 | **RRF** | Reciprocal Rank Fusion: merge ranked lists by summing 1/(k + rank) for each item. |
