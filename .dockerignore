@@ -1,0 +1,10 @@
+# The images need only these; data/ alone is gigabytes, and .env must never be sent.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!src/
+!eval/results/
+!eval/routing/
+**/__pycache__
