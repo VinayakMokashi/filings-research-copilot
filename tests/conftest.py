@@ -9,17 +9,29 @@ from typing import Any
 
 import pytest
 import structlog
-from pydantic import SecretStr
+from pydantic import AliasChoices, SecretStr
 
 from copilot.config import Settings
 
 _PROJECT_PREFIX = "FRC_"
-# Settings read under their own names (GROQ_API_KEY, SEC_USER_AGENT, ...), taken from the
-# model so that a newly added aliased setting is isolated too.
+
+
+def _alias_names(alias: object) -> set[str]:
+    """The environment names a setting is read under: its alias, or each of its choices."""
+    if isinstance(alias, str):
+        return {alias}
+    if isinstance(alias, AliasChoices):
+        return {choice for choice in alias.choices if isinstance(choice, str)}
+    return set()
+
+
+# Settings read under their own names (GROQ_API_KEY, LANGFUSE_HOST, ...), taken from the
+# model so that a newly added aliased setting is isolated too. LiteLLM loads a local `.env`
+# into the environment when it is imported, so these can be set without the shell's help.
 _THIRD_PARTY = frozenset(
-    field.validation_alias
+    name
     for field in Settings.model_fields.values()
-    if isinstance(field.validation_alias, str)
+    for name in _alias_names(field.validation_alias)
 )
 _LOCAL_HOSTS = frozenset({"", "localhost", "127.0.0.1", "::1"})
 
