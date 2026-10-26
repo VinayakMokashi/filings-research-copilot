@@ -353,6 +353,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-25 | Step 5.3's checker runs on the `small` role, not the evaluation's judge | A loop that rewrites answers until the grader approves would raise measured faithfulness by construction ([ADR-0019](decisions/0019-validator-loop.md)) |
 | 2026-10-25 | Step 5.5's notes keep only what users say about themselves | The first prompt turned questions into notes ("Follows Coca-Cola." after a question about its net income); a note the user never stated misleads every later rewrite ([guide](concepts/agent-memory.md)) |
 | 2026-10-26 | `/v1/brief` moves from step 6.1 to Phase 7 | Briefs come from Phase 7's brief crew; until then a request for a brief goes through `/v1/ask`, whose router sends it to the brief note ([ADR-0020](decisions/0020-api-and-streaming.md)) |
+| 2026-10-26 | Step 6.2 quotes instructions out of retrieved sources instead of delimiting every source in the answer prompt | A new answer prompt would change every cached answer and need every evaluation since Phase 3 run again; the delimited prompt waits for Phase 7's prompt optimisation ([guide](concepts/prompt-injection.md)) |
 
 ## 11. Status tracker
 
