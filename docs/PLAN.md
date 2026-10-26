@@ -238,7 +238,7 @@ Size is relative: S < M < L.
 **Goal:** something people and other AI tools can use.
 
 - [x] 6.1 FastAPI: `/v1/ask` (SSE), `/v1/feedback`, `/v1/sources/{doc_name}/{page}`, health and readiness endpoints; request IDs; OpenAPI docs. The answer streams as server-sent events (`meta`, the graph's events, `done`), with input limits and one run at a time per process; `/v1/brief` moves to Phase 7 with the brief crew ([ADR-0020](decisions/0020-api-and-streaming.md), [guide](concepts/sse-streaming.md)).
-- [ ] 6.2 Guardrails: persistent per-visitor quotas, input limits, a semantic cache, filing text passed as quoted data, a read-only database role.
+- [x] 6.2 Guardrails: persistent per-visitor quotas, input limits, a semantic cache, filing text passed as quoted data, a read-only database role. Daily question quotas per visitor and in total (a 429 before any model call); questions checked before any run; anonymous callers keep no notes; instruction-like sentences quoted out of retrieved sources (none of 53,901 corpus pages flagged); and an answer cache for exact repeats, since on routing-set pairs a semantic cache scored measure swaps above paraphrases at every usable threshold. The facts database is read-only already; the Postgres role arrives with step 8.8 ([prompt injection](concepts/prompt-injection.md), [semantic caching](concepts/semantic-cache.md)).
 - [ ] 6.3 Streamlit UI: streaming chat, a citation drawer with page previews, charts, SQL details, "interpreted as" for follow-ups, feedback buttons, a trace view and an eval dashboard.
 - [ ] 6.4 MCP server: tools (`search_filings`, `query_financials`, `ask_copilot`), filing pages as resources, a company-comparison prompt; tested in Claude Desktop.
 - [ ] 6.5 Langfuse traces (a span per node, with tokens and cost) and latency metrics.
@@ -354,6 +354,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-25 | Step 5.5's notes keep only what users say about themselves | The first prompt turned questions into notes ("Follows Coca-Cola." after a question about its net income); a note the user never stated misleads every later rewrite ([guide](concepts/agent-memory.md)) |
 | 2026-10-26 | `/v1/brief` moves from step 6.1 to Phase 7 | Briefs come from Phase 7's brief crew; until then a request for a brief goes through `/v1/ask`, whose router sends it to the brief note ([ADR-0020](decisions/0020-api-and-streaming.md)) |
 | 2026-10-26 | Step 6.2 quotes instructions out of retrieved sources instead of delimiting every source in the answer prompt | A new answer prompt would change every cached answer and need every evaluation since Phase 3 run again; the delimited prompt waits for Phase 7's prompt optimisation ([guide](concepts/prompt-injection.md)) |
+| 2026-10-26 | Step 6.2's cache serves exact repeats, not similar questions | On routing-set pairs, a question with its measure swapped was more similar to the original than the original's own paraphrases at every threshold that let paraphrases through, so a semantic cache would serve one measure's answer to another's question ([guide](concepts/semantic-cache.md)) |
 
 ## 11. Status tracker
 
