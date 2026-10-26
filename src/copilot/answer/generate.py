@@ -173,14 +173,17 @@ def _written_out(value: float, before: str, expression: str) -> bool:
     A written number counts with or without its scale word, since the calculator works in
     the units of the source ("$7,737,590 thousand" and 7,737,590). Years don't count, nor do
     the expression's operands, so "from $100 million to $200 million, an increase of {c1}"
-    keeps its computed $100 million; nor do results under 1,000, which collide by chance.
+    keeps its computed $100 million. A result under 1,000 counts only against an amount, a
+    number with a dollar sign or a scale word ("an increase of $204 million {c1}"), since a
+    small bare number, such as a percentage, matches by chance.
     """
-    if abs(value) < 1000:
-        return False
     operands = numbers_in(expression)
     for match in _WRITTEN.finditer(before):
         digits, scale = float(match.group(1).replace(",", "")), match.group(2)
         if scale is None and digits.is_integer() and 1900 <= digits <= 2100:
+            continue
+        amount = scale is not None or before[: match.start()].rstrip().endswith("$")
+        if abs(value) < 1000 and not amount:
             continue
         readings = [digits, digits * _SCALES[scale.lower()]] if scale else [digits]
         for written in readings:
