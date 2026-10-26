@@ -9,6 +9,7 @@ import pytest
 from copilot.eval.stats import (
     bootstrap_ci,
     cohens_kappa,
+    exact_interval,
     holm,
     kappa_interval,
     mcnemar_exact,
@@ -136,3 +137,16 @@ def test_kappa_interval_brackets_the_estimate_and_is_repeatable() -> None:
     assert interval.low <= interval.mean <= interval.high
     assert interval.n == 20
     assert interval == kappa_interval(judge, person, resamples=2000, seed=3)
+
+
+def test_exact_interval_matches_clopper_pearson() -> None:
+    low, high = exact_interval(60, 60)
+    assert (round(low, 4), high) == (0.9404, 1.0)
+    low, high = exact_interval(0, 10)
+    assert (low, round(high, 4)) == (0.0, 0.3085)
+    low, high = exact_interval(32, 33)
+    assert (round(low, 4), round(high, 4)) == (0.8424, 0.9992)
+    low, high = exact_interval(65, 100)
+    assert (round(low, 4), round(high, 4)) == (0.5482, 0.7427)
+    with pytest.raises(ValueError, match="right <= total"):
+        exact_interval(5, 4)

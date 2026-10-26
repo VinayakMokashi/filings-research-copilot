@@ -6,6 +6,8 @@
   permutation (sign-flip) test.
 - `mcnemar_exact`: the exact McNemar test for two systems' right-or-wrong outcomes.
 - `holm`: Holm-Bonferroni adjusted p-values for several comparisons made at once.
+- `exact_interval`: the Clopper-Pearson interval for a share of right answers, for when a
+  bootstrap interval collapses against 0 or 1.
 - `cohens_kappa` and `kappa_interval`: agreement between two raters (a judge and a person)
   beyond what chance would give, with a bootstrap interval.
 
@@ -15,7 +17,7 @@ Every resampling function takes a seed, so the same scores always give the same 
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -141,6 +143,40 @@ def holm(p_values: Sequence[float]) -> list[float]:
         running = max(running, min(1.0, (len(p_values) - position) * p_values[index]))
         adjusted[index] = running
     return adjusted
+
+
+def exact_interval(right: int, total: int, confidence: float = CONFIDENCE) -> tuple[float, float]:
+    """The Clopper-Pearson interval for `right` successes in `total` trials.
+
+    Each bound is the proportion at which the observed count sits exactly in one tail of the
+    binomial distribution, found by bisection. When every answer is right the lower bound is
+    ((1 - confidence) / 2) ** (1 / total), as a bootstrap interval can't show.
+    """
+    if not 0 <= right <= total or total == 0:
+        raise ValueError(f"Need 0 <= right <= total and total > 0, got {right} of {total}.")
+    tail = (1 - confidence) / 2
+
+    def at_least(p: float) -> float:  # P(X >= right)
+        return sum(
+            math.comb(total, k) * p**k * (1 - p) ** (total - k) for k in range(right, total + 1)
+        )
+
+    def at_most(p: float) -> float:  # P(X <= right)
+        return sum(math.comb(total, k) * p**k * (1 - p) ** (total - k) for k in range(right + 1))
+
+    def solve(tail_of: Callable[[float], float], rising: bool) -> float:
+        low, high = 0.0, 1.0
+        for _ in range(100):
+            middle = (low + high) / 2
+            if (tail_of(middle) < tail) == rising:
+                low = middle
+            else:
+                high = middle
+        return (low + high) / 2
+
+    lower = 0.0 if right == 0 else solve(at_least, rising=True)
+    upper = 1.0 if right == total else solve(at_most, rising=False)
+    return lower, upper
 
 
 def cohens_kappa(a: Sequence[str], b: Sequence[str]) -> float:
