@@ -1,16 +1,18 @@
-"""Running the copilot's graph with streamed events and JSON-line traces (step 5.1).
+"""Running the copilot's graph with streamed events and traces (step 5.1).
 
-Until Langfuse arrives (Phase 6), a run's trace is the graph's own event stream, kept as
-JSON lines. `Copilot.stream` turns LangGraph's stream into events:
+A run's trace is the graph's own event stream. `Copilot.stream` turns LangGraph's stream
+into events:
 
 - `start` and `end` for every node, with the milliseconds between them and any error;
 - `event`: each custom event a node emitted, such as the cues, the route, the answer and
   the model tokens it used;
-- `error`, if the run stopped on an exception, which is raised again after it;
+- `error`, if the run stopped on an exception, which is raised again after it, or because
+  the caller stopped reading;
 - `response`, the reply, last.
 
 Every event carries the time, the run's id, the conversation's id (the thread) and the
-turn. A `TraceWriter` appends them to a file, one JSON object a line.
+turn. Each goes to the run's sink: a `TraceWriter` appends it to a file, one JSON object a
+line; `copilot.agents.tracing` sends it to Langfuse; a `Fanout` does both.
 """
 
 from __future__ import annotations
@@ -18,10 +20,10 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from collections.abc import Iterator
+from collections.abc import Generator
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -31,6 +33,23 @@ from langgraph.types import StreamMode
 from copilot.agents.graph import Components, CopilotState, Turn, build_graph
 
 STREAM_MODES: list[StreamMode] = ["tasks", "custom"]
+
+
+class Sink(Protocol):
+    """Where a run's events go, one at a time."""
+
+    def write(self, event: dict[str, Any]) -> None: ...
+
+
+class Fanout:
+    """Every event to each of several sinks."""
+
+    def __init__(self, *sinks: Sink | None) -> None:
+        self.sinks = [sink for sink in sinks if sink is not None]
+
+    def write(self, event: dict[str, Any]) -> None:
+        for sink in self.sinks:
+            sink.write(event)
 
 
 class TraceWriter:
@@ -56,7 +75,7 @@ class Copilot:
         self,
         parts: Components,
         checkpointer: BaseCheckpointSaver[Any] | None = None,
-        trace: TraceWriter | None = None,
+        trace: Sink | None = None,
     ) -> None:
         self.checkpointer = checkpointer if checkpointer is not None else InMemorySaver()
         self.graph = build_graph(parts, self.checkpointer)
@@ -74,7 +93,7 @@ class Copilot:
 
     def stream(
         self, question: str, *, thread_id: str, user_id: str = "default"
-    ) -> Iterator[dict[str, Any]]:
+    ) -> Generator[dict[str, Any]]:
         """The run's events as they happen; the last one is the response."""
         config = _config(thread_id, user_id)
         base = {
@@ -106,6 +125,9 @@ class Copilot:
                         began = started.pop(task["id"], time.perf_counter())
                         elapsed = round((time.perf_counter() - began) * 1000, 1)
                         yield event("end", node=task["name"], ms=elapsed, error=task.get("error"))
+        except GeneratorExit:  # the caller stopped reading, as a client that hangs up does
+            event("error", error="Stopped: the caller stopped reading.")
+            raise
         except Exception as exc:
             yield event("error", error=f"{type(exc).__name__}: {exc}"[:500])
             raise
