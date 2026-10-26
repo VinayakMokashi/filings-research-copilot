@@ -39,7 +39,15 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.store.base import BaseStore
 from langgraph.types import Checkpointer
 
-from copilot.agents.memory import MAX_TURNS, apply, extract, recall, reconcile, rewrite_followup
+from copilot.agents.memory import (
+    MAX_TURNS,
+    anonymous,
+    apply,
+    extract,
+    recall,
+    reconcile,
+    rewrite_followup,
+)
 from copilot.agents.router import ROUTES, Route, RouteDecision
 from copilot.agents.validator import MAX_REVISIONS, check_answer, to_answer, trim, verdict_record
 from copilot.agents.validator import revise as revise_answer
@@ -350,7 +358,9 @@ def build_graph(
     def rewrite(state: CopilotState) -> dict[str, Any]:
         question = " ".join(state["question"].split())
         turns = [(turn["standalone"], turn["answer"]) for turn in state.get("history", [])]
-        notes = [note.text for note in recall(parts.store, user_id())] if parts.store else []
+        user = user_id()
+        store = None if anonymous(user) else parts.store
+        notes = [note.text for note in recall(store, user)] if store is not None else []
         if parts.rewriter is None:
             emit("rewrite", "standalone", standalone=question, rewritten=False)
             return {**PER_TURN, "standalone": question}
@@ -572,6 +582,9 @@ def build_graph(
             emit("remember", "skipped", reason="no store")
             return {}
         user = user_id()
+        if anonymous(user):
+            emit("remember", "skipped", reason="anonymous")
+            return {}
         response = state.get("response", {})
         try:
             facts = extract(parts.notes, state["question"], response.get("text", ""))

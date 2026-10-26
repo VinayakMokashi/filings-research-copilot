@@ -484,6 +484,24 @@ def test_notes_carry_over_to_a_new_conversation() -> None:
     assert recall(store, "default") == []
 
 
+def test_anonymous_users_keep_and_read_no_notes() -> None:
+    store = InMemoryStore()
+    store.put(("notes", "anon-t"), "n1", {"text": "Follows Netflix."})
+    notes, rewriter = FakeLLM([]), FakeLLM([])  # any call to either would fail the test
+    components = parts(["doc"], rewriter=rewriter, notes=notes, store=store)
+
+    events = list(
+        Copilot(components).stream(
+            "I follow Netflix. What risks does it name?", thread_id="t", user_id="anon-t"
+        )
+    )
+
+    remembered = [e for e in events if e["type"] == "event" and e.get("node") == "remember"]
+    assert (remembered[0]["event"], remembered[0]["reason"]) == ("skipped", "anonymous")
+    assert notes.calls == []
+    assert rewriter.calls == []
+
+
 def test_without_a_store_no_notes_are_kept() -> None:
     events = list(copilot(["doc"]).stream("What risks does Netflix name?", thread_id="t"))
 
