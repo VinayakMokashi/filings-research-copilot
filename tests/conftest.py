@@ -26,8 +26,9 @@ def _alias_names(alias: object) -> set[str]:
 
 
 # Settings read under their own names (GROQ_API_KEY, LANGFUSE_HOST, ...), taken from the
-# model so that a newly added aliased setting is isolated too. LiteLLM loads a local `.env`
-# into the environment when it is imported, so these can be set without the shell's help.
+# model so that a newly added aliased setting is isolated too. text2sql-analyst's settings
+# module copies a local `.env` into the environment when it is imported, so these can be set
+# without the shell's help.
 _THIRD_PARTY = frozenset(
     name
     for field in Settings.model_fields.values()
