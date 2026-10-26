@@ -30,6 +30,8 @@ flowchart LR
 
    Disk caches key their entries by the model a role resolves to, never by the role, so changing a role's model never replays another model's answers.
 2. **Router deployments.** `build_router()` registers each role as a LiteLLM deployment and attaches the API key that matches the model's provider prefix (`groq/`, `cerebras/`, `openrouter/`).
+   - **Settings that go with a model.** Providers serving the same open weights choose their own defaults, so `MODEL_PARAMS` holds settings sent with every call to a model, to make it run the way it was measured. Qwen3.8 27B on Cerebras reasons at high effort unless told not to, while Groq's answers without reasoning, so `cerebras/qwen-3.8-27b` is called with `reasoning_effort: "none"` ([ADR-0024](../decisions/0024-second-provider.md)).
+   - The disk caches add these settings to their keys, so a reply made under other settings is never replayed; a model without settings keeps the keys it always had.
 3. **Retries, then fallbacks.** The router retries a failing deployment, then tries each model in `FRC_LLM_FALLBACK_MODELS` in order.
 4. **A normalised response.** `LLMResponse` carries:
    - the text and token counts;
@@ -44,7 +46,7 @@ flowchart LR
 | File | What it does |
 |---|---|
 | `src/copilot/llm/base.py` | `Message`, `LLMResponse`, `LLMError`, the `LLMClient` protocol, message helpers |
-| `src/copilot/llm/gateway.py` | `build_router()`, `LLMGateway.complete()` and `acomplete()`, error mapping and redaction, cost lookup |
+| `src/copilot/llm/gateway.py` | `build_router()`, `LLMGateway.complete()` and `acomplete()`, error mapping and redaction, cost lookup, `MODEL_PARAMS` |
 | `src/copilot/llm/reasoning.py` | `split_reasoning()` |
 | `src/copilot/llm/fake.py` | `FakeLLM`, a scripted stand-in for tests |
 | `src/copilot/config.py` | Model roles, fallback chain, retries, timeout, provider keys |
@@ -63,6 +65,7 @@ flowchart LR
 - **Zero costs.** The router registers models missing from LiteLLM's price map with empty prices, and LiteLLM then reports their cost as $0. The gateway checks the price entry and returns `None` instead.
 - **Cooldowns.** After a non-retryable error such as a bad key, the router's default cooldown answered the next calls with "no deployments available, try again in 5 seconds". Cooldowns are disabled because each role has a single deployment.
 - **Type checking.** `Router` and the exception classes are not re-exported from `litellm`'s top level for type checkers. Import them from `litellm.router` and `litellm.exceptions`.
+- **Same weights, different defaults.** Judged again on Cerebras, the doc agent's answers scored 0.61 correct instead of 0.65 and 0.52 faithful instead of 0.63. Cerebras's Qwen reasoned before every verdict, and 9 judge replies and 31 faithfulness replies ran out of tokens before their JSON, which counts against the answer. With reasoning off, the two providers' judges agreed on 99 of 100 verdicts. `poe compare-judges` runs that check for any judge moved to a new provider.
 
 ## Review questions
 
@@ -70,8 +73,10 @@ flowchart LR
 2. What is the difference between a retry and a fallback, and in which order does the router try them?
 3. Why does a reply that is cut off inside `<think>` count as reasoning rather than as the answer?
 4. Why would comparing the provider's reported model id with the configured id be a poor way to detect fallbacks?
+5. Two providers serve the same open weights. Why can their replies to the same prompt still differ, and why must a setting that changes the replies be part of the cache key?
 
 ## References
 
 - LiteLLM router: https://docs.litellm.ai/docs/routing
 - Groq reasoning: https://console.groq.com/docs/reasoning
+- Cerebras reasoning: https://inference-docs.cerebras.ai/capabilities/reasoning

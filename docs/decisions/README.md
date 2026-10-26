@@ -25,5 +25,6 @@
 | [0021](0021-mcp-server.md) | Serve the copilot over MCP, with lookups in the server and questions through the API | Accepted | 2026-10-26 |
 | [0022](0022-containers.md) | Build two images from one Dockerfile, and mount the data rather than build it in | Accepted | 2026-10-26 |
 | [0023](0023-observability.md) | Trace each run in Langfuse from the graph's own events | Accepted | 2026-10-27 |
+| [0024](0024-second-provider.md) | Finish Phase 5's evaluations on a second provider, with each model called as it was measured | Accepted | 2026-10-27 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
