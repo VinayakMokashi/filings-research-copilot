@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.162.0",
     "fastembed>=0.9.0",
     "httpx>=0.28.1",
+    "langfuse>=5.0.4",
     "langgraph>=1.2.16",
     "langgraph-checkpoint-postgres>=3.2.0",
     "litellm>=1.105.1",
@@ -75,6 +76,7 @@ build-routing-set = { cmd = "python scripts/build_routing_set.py", help = "Build
 eval-routing = { cmd = "python scripts/eval_routing.py", help = "Score a router on the routing set (--baseline keyword or --predictions FILE)" }
 run-router = { cmd = "python scripts/run_router.py", help = "Run the semantic, LLM or cascade router on the routing set and score it, resumably (--router, --run)" }
 api = { cmd = "uvicorn copilot.api.app:create_app --factory --host 127.0.0.1 --port 8000", help = "Serve the copilot's API on 127.0.0.1:8000, with its docs at /docs (needs Qdrant, the facts database and GROQ_API_KEY)" }
+latency-report = { cmd = "python scripts/latency_report.py", help = "Median, 95th percentile and slowest run by route and node, with tokens and cost, from trace files (default data/traces/api.jsonl; no model calls)" }
 mcp = { cmd = "python -m copilot.mcp", help = "Serve the copilot over MCP on stdio, as a desktop client launches it; --transport streamable-http serves it at http://127.0.0.1:8001/mcp (needs Qdrant and the facts database; ask_copilot needs the API)" }
 ask = { cmd = "python scripts/ask.py", help ="Ask the copilot one question through its graph, with each step streamed (needs Qdrant and GROQ_API_KEY)" }
 scan-injections = { cmd = "python scripts/scan_injections.py", help = "Count what the prompt-injection patterns flag in the parsed corpus (no model calls)" }
