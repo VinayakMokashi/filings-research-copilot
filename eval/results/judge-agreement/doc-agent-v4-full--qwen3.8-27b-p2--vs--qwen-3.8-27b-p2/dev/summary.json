@@ -1,0 +1,116 @@
+{
+  "suite": "judge-agreement",
+  "run": "doc-agent-v4-full--qwen3.8-27b-p2--vs--qwen-3.8-27b-p2",
+  "split": "dev",
+  "created": "2026-10-26T23:46:18.420085Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "answers_run": "doc-agent-v4-full",
+    "suite": "correctness",
+    "first": "qwen3.8-27b-p2",
+    "second": "qwen-3.8-27b-p2",
+    "errors": {
+      "qwen3.8-27b-p2": 0,
+      "qwen-3.8-27b-p2": 0
+    },
+    "positive_difference_mcnemar_p": 1.0,
+    "disagreements": [
+      "financebench_id_00684"
+    ],
+    "confusion": {
+      "qwen3.8-27b-p2 correct, qwen-3.8-27b-p2 correct": 64,
+      "qwen3.8-27b-p2 correct, qwen-3.8-27b-p2 incorrect": 1,
+      "qwen3.8-27b-p2 incorrect, qwen-3.8-27b-p2 incorrect": 29,
+      "qwen3.8-27b-p2 refused, qwen-3.8-27b-p2 refused": 6
+    }
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "agree": {
+      "mean": 0.99,
+      "low": 0.97,
+      "high": 1.0
+    },
+    "first_positive": {
+      "mean": 0.65,
+      "low": 0.56,
+      "high": 0.74
+    },
+    "second_positive": {
+      "mean": 0.64,
+      "low": 0.55,
+      "high": 0.73
+    },
+    "cohens_kappa": {
+      "mean": 0.9797324685853263,
+      "low": 0.9330207635632953,
+      "high": 1.0
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 34,
+        "metrics": {
+          "agree": {
+            "mean": 0.9705882352941176,
+            "low": 0.9117647058823529,
+            "high": 1.0
+          },
+          "first_positive": {
+            "mean": 0.5882352941176471,
+            "low": 0.4117647058823529,
+            "high": 0.7352941176470589
+          },
+          "second_positive": {
+            "mean": 0.5588235294117647,
+            "low": 0.38235294117647056,
+            "high": 0.7352941176470589
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 33,
+        "metrics": {
+          "agree": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "first_positive": {
+            "mean": 0.8787878787878788,
+            "low": 0.7575757575757576,
+            "high": 0.9696969696969697
+          },
+          "second_positive": {
+            "mean": 0.8787878787878788,
+            "low": 0.7575757575757576,
+            "high": 0.9696969696969697
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 33,
+        "metrics": {
+          "agree": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "first_positive": {
+            "mean": 0.48484848484848486,
+            "low": 0.30303030303030304,
+            "high": 0.6666666666666666
+          },
+          "second_positive": {
+            "mean": 0.48484848484848486,
+            "low": 0.30303030303030304,
+            "high": 0.6666666666666666
+          }
+        }
+      }
+    }
+  }
+}
