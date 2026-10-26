@@ -71,6 +71,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Memory: follow-ups rewritten into standalone questions from the conversation and the user's notes; Mem0-style notes about each user (what they follow, how they want answers), kept in Postgres across conversations; every turn of a 20-turn memory set resolved | `src/copilot/agents/memory.py` ([guide](docs/concepts/agent-memory.md), [data card](docs/data/memory-set.md)) |
 | API: FastAPI with the answer streamed as server-sent events (each node's start and end, the route, the reply), feedback, cited pages, health and readiness probes, request ids and OpenAPI docs | `src/copilot/api/` ([ADR-0020](docs/decisions/0020-api-and-streaming.md), [guide](docs/concepts/sse-streaming.md)) |
 | Guardrails: daily question quotas per visitor and in total (429 before any model call), anonymous callers who keep no notes, instructions hidden in retrieved pages quoted out before the model reads them (none of 53,901 corpus pages flagged), and an answer cache for exact repeats; a semantic cache was measured and rejected, since it scored swapped measures above paraphrases | `src/copilot/api/quotas.py`, `cache.py`, `src/copilot/answer/injection.py` ([prompt injection](docs/concepts/prompt-injection.md), [semantic caching](docs/concepts/semantic-cache.md)) |
+| Web UI: a Streamlit chat over the API that names each step as it runs, then shows the answer with its sources (a cited filing page opens in place, the facts database shows its SQL), a query's chart and table, the steps with their times, and thumbs up or down; a results page with the evaluations' headline numbers | `src/copilot/ui/` |
 
 ## Local development
 
@@ -106,6 +107,7 @@ uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b   # rout
 uv run poe validate-answers --source doc-agent-v4-full --run doc-agent-v4-validated   # the validator loop over stored answers
 uv run poe run-memory --run memory-v2                 # follow-ups and notes on the memory set, scored
 uv run poe api                                        # the API on 127.0.0.1:8000, docs at /docs
+uv run poe ui                                         # the web UI on 127.0.0.1:8501, over the API
 uv run poe ask "What was 3M's capital expenditure in 2018?"   # one question through the graph, each step shown
 ```
 

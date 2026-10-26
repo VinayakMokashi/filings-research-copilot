@@ -64,6 +64,15 @@ curl -N -X POST http://127.0.0.1:8000/v1/ask -H "Content-Type: application/json"
 
 The answer streams as server-sent events: `meta`, then a `start` and an `end` for each node, the nodes' events and the `response`, then `done`. Send the `thread_id` from `meta` with the next question to ask a follow-up. Conversations, notes and feedback live in memory; `FRC_API_STATE=postgres` keeps them in the Compose Postgres. One question is answered at a time; events are also appended to `data/traces/api.jsonl`. Each question counts against daily quotas, 20 per visitor and 200 in total by default (`FRC_API_DAILY_QUESTIONS`, `FRC_API_DAILY_TOTAL`); a client sends `X-Visitor-ID` to be counted as one visitor, or is counted by its address, and a question over either quota gets a 429 with `Retry-After`. Without a `user_id` a caller is anonymous and nothing is noted about them. A question repeated word for word (case, spacing and quote marks aside) in a new anonymous conversation is answered from the cache, with no run and no quota, for seven days (`FRC_API_CACHE_DAYS`; 0 turns it off).
 
+## 8. Use the web UI
+
+```bash
+uv run poe api      # first, in one terminal
+uv run poe ui       # then, in another: http://127.0.0.1:8501
+```
+
+**Ask** streams each question through the API and names the step under way; the answer then shows its sources (switch one on to read the cited page), a chart and table when it came from the facts database, the steps with their times, and thumbs up or down. **Results** lists the evaluations' headline numbers. `FRC_API_URL` points the UI at another API. Streamlit is in the `ui` dependency group, which `uv sync` installs by default.
+
 ## Stop the services
 
 ```bash
