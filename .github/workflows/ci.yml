@@ -42,6 +42,29 @@ jobs:
       - name: Test
         run: uv run pytest
 
+  images:
+    name: Container images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build
+        run: |
+          docker build --target api -t filings-copilot-api:ci .
+          docker build --target ui -t filings-copilot-ui:ci .
+
+      # The images hold no data, so check that they run as a non-root user and that the
+      # code imports; the Compose file must parse with the app profile on.
+      - name: Check
+        run: |
+          test "$(docker run --rm filings-copilot-api:ci id -u)" != "0"
+          test "$(docker run --rm filings-copilot-ui:ci id -u)" != "0"
+          docker run --rm filings-copilot-api:ci python -c "import copilot.api.app, copilot.mcp.server"
+          docker run --rm filings-copilot-ui:ci python -c "import streamlit, copilot.api.client"
+          docker compose --profile app config --quiet
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
