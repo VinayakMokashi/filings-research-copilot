@@ -1,0 +1,29 @@
+{
+  "created": "2026-10-26T03:03:35+00:00",
+  "filings": 366,
+  "pages": 53901,
+  "patterns": [
+    "ignore instructions",
+    "system prompt",
+    "you are now",
+    "new instructions",
+    "do not follow",
+    "respond only",
+    "chat markers",
+    "role label",
+    "as an ai"
+  ],
+  "flagged_pages": 0,
+  "by_pattern": {
+    "ignore instructions": 0,
+    "system prompt": 0,
+    "you are now": 0,
+    "new instructions": 0,
+    "do not follow": 0,
+    "respond only": 0,
+    "chat markers": 0,
+    "role label": 0,
+    "as an ai": 0
+  },
+  "flagged": []
+}
