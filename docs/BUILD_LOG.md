@@ -15,6 +15,23 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-26 · Phase 6 · An answer cache, and why not a semantic one
+
+- **Goal:** serve repeated questions without a run, so the free tier's quota goes to new questions (the rest of step 6.2).
+- **Done:**
+  - Measured a semantic cache first, on the routing set's doc, data and hybrid questions (`poe eval-semantic-cache`): paraphrase pairs should hit; each question with its measure swapped ("operating income" for "revenue") must miss.
+  - `copilot.api.cache`: answers to exact repeats (case, spacing, quote marks and a trailing question mark evened out), for new conversations from anonymous callers only, answers only, for seven days (`FRC_API_CACHE_DAYS`), in memory or Postgres. A hit streams the stored response marked `cached`, costs no quota, and is recorded into its conversation (`Copilot.record`), so a follow-up builds on it.
+  - The [semantic caching guide](concepts/semantic-cache.md).
+- **Commands:** `uv run poe eval-semantic-cache`, `uv run poe eval-semantic-cache --split test --allow-test`, `uv run poe check`.
+- **Results:**
+  - **A semantic cache would serve wrong answers.** At every threshold that lets paraphrases through, a swapped measure hits more often than a paraphrase: at 0.95, 42 of 104 swaps against 16 of 81 paraphrase pairs on dev, and 29 of 52 against 7 of 39 on test. "Boeing's revenue bounced back after 2020 ..." and its operating-income twin are at 0.976; a seed and its paraphrases have a median of 0.926.
+  - Gating on the measures named stops the swaps only by construction; any other one-word difference would still hit. So the copilot caches exact repeats only.
+- **Problems and fixes:**
+  - **A cached answer missing from its conversation:** a hit skips the graph, so the turn is now recorded into the thread when it is served.
+  - **Quota for a free answer:** the cache lookup now comes before the quota check, in the one dependency that admits a question.
+- **Decisions:** step 6.2's cache matches questions exactly; recorded in the plan's change log and the [guide](concepts/semantic-cache.md).
+- **Next:** the UI (step 6.3).
+
 ### 2026-10-26 · Phase 6 · Guardrails
 
 - **Goal:** protect the copilot and its quota before it is public: limits on spending, and instructions hidden in what it reads (step 6.2).
