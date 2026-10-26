@@ -101,6 +101,7 @@ answer-questions = { cmd = "python scripts/answer_questions.py", help = "Answer 
 judge-answers = { cmd = "python scripts/judge_answers.py", help = "Judge a run's answers against the reference answers, resumably (--run NAME)" }
 label-sample = { cmd = "python scripts/sample_labels.py", help = "Pick the answers to label as a reference for the judge, stratified by question type (--run NAME)" }
 judge-agreement = { cmd = "python scripts/judge_agreement.py", help = "Agreement and Cohen's kappa between a judge and the reference labels" }
+compare-judges = { cmd = "python scripts/compare_judges.py", help = "Agreement and Cohen's kappa between two judges on the same answers (--run, two judge names, --suite)" }
 check-faithfulness = { cmd = "python scripts/check_faithfulness.py", help = "Check that each answer sentence is supported by the sources it cites (--run NAME)" }
 ui = { cmd = "streamlit run src/copilot/ui/app.py --server.address 127.0.0.1 --server.port 8501 --browser.gatherUsageStats false --client.toolbarMode minimal", help = "Serve the web UI on 127.0.0.1:8501; it talks to the API at FRC_API_URL (default http://127.0.0.1:8000)" }
 self-consistency = { cmd = "python scripts/self_consistency.py", help = "Sample more answers to a run's figure questions, vote on the figure, and keep a new run (--source, --k, --run)" }
