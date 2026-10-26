@@ -73,6 +73,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Guardrails: daily question quotas per visitor and in total (429 before any model call), anonymous callers who keep no notes, instructions hidden in retrieved pages quoted out before the model reads them (none of 53,901 corpus pages flagged), and an answer cache for exact repeats; a semantic cache was measured and rejected, since it scored swapped measures above paraphrases | `src/copilot/api/quotas.py`, `cache.py`, `src/copilot/answer/injection.py` ([prompt injection](docs/concepts/prompt-injection.md), [semantic caching](docs/concepts/semantic-cache.md)) |
 | Web UI: a Streamlit chat over the API that names each step as it runs, then shows the answer with its sources (a cited filing page opens in place, the facts database shows its SQL), a query's chart and table, the steps with their times, and thumbs up or down; a results page with the evaluations' headline numbers | `src/copilot/ui/` |
 | MCP server: the filings' search and the facts database as tools that need no model call, the copilot itself through the API, every filing page as a resource, and a prompt for comparing companies, for MCP clients such as Claude Desktop | `src/copilot/mcp/` |
+| Containers: an API image that also runs the MCP server and a UI image, from one multi-stage Dockerfile, non-root and pinned by digest; the whole stack from one Compose command, with health checks and the data mounted | `Dockerfile`, `docker-compose.yml` |
 
 ## Local development
 
@@ -110,6 +111,7 @@ uv run poe run-memory --run memory-v2                 # follow-ups and notes on 
 uv run poe api                                        # the API on 127.0.0.1:8000, docs at /docs
 uv run poe ui                                         # the web UI on 127.0.0.1:8501, over the API
 uv run poe mcp                                        # the MCP server on stdio, for a desktop client
+uv run poe stack-up                                   # the whole stack in Docker: API, UI and MCP server
 uv run poe ask "What was 3M's capital expenditure in 2018?"   # one question through the graph, each step shown
 ```
 

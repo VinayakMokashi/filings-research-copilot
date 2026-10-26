@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-26 · Phase 6 · The whole stack in Docker
+
+- **Goal:** the full local demo from one Compose command (step 6.6).
+- **Done:**
+  - `Dockerfile`: two images from one locked environment. `api` runs the API, and the MCP server with another command; `ui` runs Streamlit. A build stage installs the locked dependencies with uv in a layer that changes only with `uv.lock`, then the project; the images run as a non-root user, listen on `$PORT` when Cloud Run sets it, and start from base images pinned by digest.
+  - `docker-compose.yml`: the API, the UI and the MCP server over HTTP join Qdrant and Postgres behind an `app` profile, with health checks, ports on 127.0.0.1 that `API_PORT`, `UI_PORT` and `MCP_PORT` can move, `data/` mounted, `.env` read by the API and MCP containers only, and the API's state in Postgres. `poe stack-up` and `poe stack-down` run it; `poe services-up` still starts only Qdrant and Postgres.
+  - The MCP server's HTTP transport now checks the `Host` header itself, since the SDK does so only when the server binds to localhost.
+  - CI builds both images on every pull request and checks that they run as a non-root user; Dependabot moves the base images' digests.
+  - ADR-0022; runbook section 10.
+- **Commands:** `uv run poe stack-up`, then http://127.0.0.1:8501; `uv run poe stack-down`.
+- **Results:**
+  - Images of 1.14 GB (`api`, its Python environment 701 MB) and 1.5 GB (`ui`), built cold in 3.5 and 4.4 minutes.
+  - All five services healthy 48 seconds after `up`. `/readyz` passed all five checks; a question streamed 28 events in 2.9 seconds; over HTTP, the MCP server returned figures, passages, a page and a cached answer from Postgres in 0.04 seconds, and refused a foreign `Host` with 421; the UI answered an example question in a browser.
+- **Problems and fixes:**
+  - **A missing file at startup:** the API reads the semantic router's examples from `eval/routing`, which the first image left out, so the container restarted until the image carried them.
+  - **Taken ports:** other local servers held ports 8000 and 8001, so the ports became settings.
+- **Decisions:** [ADR-0022](decisions/0022-containers.md): two images from one Dockerfile, with the data mounted rather than built in.
+- **Next:** traces and latency metrics (step 6.5), which close Phase 6.
+
 ### 2026-10-26 · Phase 6 · The MCP server
 
 - **Goal:** the copilot usable from any MCP client, such as Claude Desktop (step 6.4).
