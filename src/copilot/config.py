@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://127.0.0.1:6333"
     database_url: str = "postgresql://copilot:copilot@127.0.0.1:5433/copilot"
 
+    # The API's conversations, notes and feedback: in memory, or in Postgres to outlive it
+    api_state: Literal["memory", "postgres"] = "memory"
+
     # SEC EDGAR asks every client to identify itself as "Name contact@example.com".
     sec_user_agent: str | None = Field(default=None, validation_alias="SEC_USER_AGENT")
 
