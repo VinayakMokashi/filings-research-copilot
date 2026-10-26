@@ -41,6 +41,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **FinanceBench** | A benchmark of questions over real company filings, with answers and evidence pages. |
 | **Follow-up rewriting** | Turning a question that depends on the conversation ("And in 2021?") into one that stands alone, before anything else runs. |
 | **Git blob id** | The SHA-1 hash git computes over a file's contents. Used here to check every downloaded file against a manifest. |
+| **Generation (tracing)** | A span for one model call, carrying the model's name, the tokens in and out, and their cost. |
 | **Grounded answer** | An answer whose every claim cites a retrieved source that states it, so a reader can check it. |
 | **Grouped split** | A split that keeps every item of a group (here, a company) on the same side, so nothing about the group leaks across. |
 | **Held-out test set** | Questions set aside while building and opened only at milestones, so the reported result isn't tuned to them. |
@@ -54,6 +55,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Index card** | A JSON file kept beside each Qdrant collection, recording its models, query prefix, vector and HNSW settings, payload indexes, counts and timing. |
 | **Indirect prompt injection** | Instructions hidden in content an application feeds its model, such as a retrieved page, rather than typed by the user. |
 | **JSON mode** | A provider option that makes the model reply with one valid JSON object, so code can read the answer's fields. |
+| **Langfuse** | An open-source store and viewer for traces of LLM applications, built on OpenTelemetry, with tokens, costs and sessions. |
 | **LangGraph** | A library for building LLM workflows as state graphs with branches, loops and checkpoints. |
 | **Late chunking** | Run long stretches of a document through a long-context embedding model, then average each chunk's token vectors, so the chunk's vector keeps the surrounding context. |
 | **Leave-one-group-out evaluation** | Score each item with its whole group (here a seed and its paraphrases) removed from the examples, so a near-copy can't give the answer away. |
@@ -74,6 +76,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions prove who it is to a cloud with short-lived tokens, so no keys are stored; Google Cloud does it through Workload Identity Federation. |
 | **ONNX Runtime** | An engine that runs neural networks exported in the ONNX format quickly on a CPU. FastEmbed runs its models with it. |
+| **OpenTelemetry** | The open standard for recording and sending traces, metrics and logs. |
 | **Oracle-document setting** | A retrieval evaluation in which each question searches only the filing its evidence is in, isolating finding the page from finding the filing. |
 | **Paired test** | Comparing two systems on the same questions, so that question-to-question noise cancels out. |
 | **Payload index** | An index on a field stored with each Qdrant point, such as `company`, that makes searches filtered on that field fast. |
@@ -100,6 +103,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Self-Refine** | A model improves its own output in rounds: generate, critique, revise (Madaan et al., 2023). The validator loop is a version with a specific critique: the sentences the sources don't support. |
 | **Semantic cache** | Reuse a stored answer when a new question is close enough to an old one in embedding space. |
 | **Semantic routing** | Pick a route by comparing the query's embedding with labelled example queries: the nearest examples vote, or the nearest route centroid wins. |
+| **Span** | One piece of work in a trace, with a start, an end and a parent; here, one node of the graph. |
 | **Sparse vector** | A vector stored as its few non-zero dimensions, such as one weight for each word in a text. Qdrant stores BM25 this way. |
 | **SQL guardrails** | The checks that let a model's query run only if it is one read-only SELECT: a parser check, a read-only connection, an authorizer inside SQLite, and caps on rows, value size and time. |
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |

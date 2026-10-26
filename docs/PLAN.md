@@ -75,7 +75,7 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Groq API key | Added | Phase 0 (step 0.8) | In `.env`; verified live on 2026-10-17 |
 | SEC EDGAR contact for the User-Agent header | Added | Phase 1 | In `.env`; sent only to sec.gov |
 | Hugging Face account and token | Pending | Phase 7 | Publishing models (FinanceBench comes from GitHub) |
-| Langfuse Cloud (free tier) | Pending | Phase 6 | Tracing |
+| Langfuse Cloud (free tier) | Ready | Phase 6 | Tracing |
 | Kaggle or Colab GPU (free tier) | Pending | Phase 7 | Fine-tuning |
 | Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then |
 | Terraform, Google Cloud CLI | Not installed | Phase 8 | |
@@ -241,7 +241,7 @@ Size is relative: S < M < L.
 - [x] 6.2 Guardrails: persistent per-visitor quotas, input limits, a semantic cache, filing text passed as quoted data, a read-only database role. Daily question quotas per visitor and in total (a 429 before any model call); questions checked before any run; anonymous callers keep no notes; instruction-like sentences quoted out of retrieved sources (none of 53,901 corpus pages flagged); and an answer cache for exact repeats, since on routing-set pairs a semantic cache scored measure swaps above paraphrases at every usable threshold. The facts database is read-only already; the Postgres role arrives with step 8.8 ([prompt injection](concepts/prompt-injection.md), [semantic caching](concepts/semantic-cache.md)).
 - [x] 6.3 Streamlit UI: streaming chat, a citation drawer with page previews, charts, SQL details, "interpreted as" for follow-ups, feedback buttons, a trace view and an eval dashboard. Built over the API: the current step while it works, the answer with how a follow-up was read, a query's chart and table, each source (a filing page's text opens in place; the database shows its SQL), the steps with their times, thumbs up or down, and a results page with the headline numbers and their intervals.
 - [x] 6.4 MCP server: tools (`search_filings`, `query_financials`, `ask_copilot`), filing pages as resources, a company-comparison prompt; tested in an MCP client such as Claude Desktop. Built with search and figures answered in the server, with no model calls, and questions sent through the API ([ADR-0021](decisions/0021-mcp-server.md)); tested through the SDK's client over stdio and in an MCP host, with a Claude Desktop configuration in the runbook.
-- [ ] 6.5 Langfuse traces (a span per node, with tokens and cost) and latency metrics.
+- [x] 6.5 Langfuse traces (a span per node, with tokens and cost) and latency metrics. The API's runs become Langfuse traces built from the graph's own events, with a span per node and a generation per model call carrying its tokens and cost ([ADR-0023](decisions/0023-observability.md)); `poe latency-report` gives the median and 95th percentile by route and node from trace files.
 - [x] 6.6 Dockerfiles for the api, ui and mcp services, and the full stack in Docker Compose. One multi-stage Dockerfile builds the `api` image, which also runs the MCP server, and the `ui` image; the data is mounted, not built in ([ADR-0022](decisions/0022-containers.md)); `poe stack-up` starts the five services and waits until they are healthy.
 
 **Done when:** the full local demo runs from one Compose command, the MCP server works in an MCP client, and traces appear in Langfuse.
