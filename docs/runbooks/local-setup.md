@@ -96,6 +96,15 @@ A desktop client starts the server itself. For Claude Desktop, add it to `claude
 
 Restart the client and the server's three tools appear: `search_filings` and `query_financials` work straight away, and `ask_copilot` once `uv run poe api` is serving. `--directory` makes `.env` and `data/` resolve in the repository; the `env` entry is needed only when the API is elsewhere. If the client can't find `uv`, give its full path (`where uv` on Windows, `which uv` elsewhere). Questions through `ask_copilot` count as one visitor against the API's daily quota.
 
+## 10. Run the whole stack in Docker (needs the data built and `GROQ_API_KEY`)
+
+```bash
+uv run poe stack-up       # builds the images, starts everything and waits until it is healthy
+uv run poe stack-down     # stops and removes the containers; data volumes are kept
+```
+
+The API is then on http://127.0.0.1:8000 (docs at /docs), the web UI on http://127.0.0.1:8501 and the MCP server at http://127.0.0.1:8001/mcp. Set `API_PORT`, `UI_PORT` or `MCP_PORT`, in `.env` or the shell, when a port is taken. The containers use `data/` from the repository and the index in the Qdrant volume, so build the facts database ([fetching SEC data](fetching-sec-data.md)) and the parsed pages and index ([ingesting filings](ingesting-filings.md)) first. The API and MCP containers read `.env`; the API keeps its state in the Compose Postgres. `poe services-up` still starts only Qdrant and Postgres. On Linux, if your user id isn't 1000, build with `docker compose --profile app build --build-arg UID=$(id -u)` so the containers can write to `data/cache` and `data/traces`. Logs: `docker compose --profile app logs -f api`.
+
 ## Stop the services
 
 ```bash
@@ -114,4 +123,5 @@ docker compose down -v        # also deletes the data volumes
 | `poe models` shows a role as `NOT AVAILABLE` | Set `FRC_LLM_STRONG_MODEL` or `FRC_LLM_FAST_MODEL` to one of the listed models, keeping the `groq/` prefix. |
 | CI fails at `uv sync --locked` but `poe check` passes locally | `uv.lock` is out of date. Run `uv lock`, commit it, and use `uv run --locked poe check` to catch this before pushing. |
 | `ask_copilot` says the copilot can't be reached, or answers with an HTTP error | Start `uv run poe api`, or set `FRC_API_URL` in `.env` or the client's `env` block when the API listens elsewhere: another program may hold port 8000. |
+| `poe stack-up` reports an unhealthy `api` | Read `docker compose --profile app logs api`. `/readyz` must pass: the facts database, the pages, the model key, Qdrant and Postgres. |
 | The MCP server doesn't appear in the client | Read the client's log (on Windows, Claude Desktop keeps `mcp.log` and `mcp-server-filings-research-copilot.log` in `%APPDATA%\Claude\logs`), then run the configured command by hand: it should wait silently for input. Anything it prints to stdout breaks the protocol. |
