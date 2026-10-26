@@ -39,6 +39,7 @@ from copilot.retrieval.rewrite import REWRITES, Rewrite, Search, expand
 from copilot.retrieval.search import Hit, Searcher, reciprocal_rank_fusion
 
 FETCH = 60
+COLLECTION = "fb_page_bge-small"  # page chunks, bge-small vectors (ADR-0011)
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,32 +144,46 @@ class AgentAnswer:
         return self.first is not None
 
 
-def build_agent(
-    settings: Settings, collection: str = "fb_page_bge-small", llm: LLMClient | None = None
-) -> DocAgent:
-    """The doc agent over the evaluation corpus: the 84 filings behind FinanceBench's questions.
-
-    Model calls go through `llm`, or by default through the disk cache
-    (data/cache/llm.jsonl), paced to stay under the free tier's tokens-a-minute limit.
-    """
+def corpus_filings(settings: Settings) -> list[Filing]:
+    """The evaluation corpus, which the index holds: the 84 filings behind FinanceBench's
+    questions."""
     root = settings.data_dir / "raw" / "financebench"
     corpus = {question.doc_name for question in fb.load_questions(root)}
     documents = fb.load_documents(root)
-    filings = filings_from(documents[name] for name in sorted(corpus))
+    return filings_from(documents[name] for name in sorted(corpus))
+
+
+def company_matcher() -> CompanyMatcher:
+    """Finds the universe's companies by name, alias or ticker."""
     companies = read_companies()
-    matcher = CompanyMatcher(
+    return CompanyMatcher(
         [company.name for company in companies],
         {company.name: company.ticker for company in companies},
     )
+
+
+def build_searcher(settings: Settings, collection: str = COLLECTION) -> Searcher:
+    """Search over `collection` with the models it was built with; loading them takes seconds."""
     cache_dir = settings.data_dir / "models"
-    searcher = Searcher(
+    return Searcher(
         QdrantClient(url=settings.qdrant_url, timeout=120),
         collection,
         FastEmbedDense(cache_dir=cache_dir),
         FastEmbedBM25(cache_dir=cache_dir),
     )
+
+
+def build_agent(
+    settings: Settings, collection: str = COLLECTION, llm: LLMClient | None = None
+) -> DocAgent:
+    """The doc agent over the evaluation corpus.
+
+    Model calls go through `llm`, or by default through the disk cache
+    (data/cache/llm.jsonl), paced to stay under the free tier's tokens-a-minute limit.
+    """
     if llm is None:
         models = role_models(settings)
         cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
         llm = PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
-    return DocAgent(searcher, matcher, filings, llm)
+    filings = corpus_filings(settings)
+    return DocAgent(build_searcher(settings, collection), company_matcher(), filings, llm)

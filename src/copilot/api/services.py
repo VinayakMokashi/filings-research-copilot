@@ -14,7 +14,7 @@ from collections.abc import Callable, Iterator, Mapping
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from functools import lru_cache, partial
+from functools import partial
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -28,8 +28,8 @@ from copilot.answer.context import describe
 from copilot.api.cache import AnswerCache, MemoryCache, PostgresCache
 from copilot.api.quotas import MemoryQuotas, PostgresQuotas, QuotaStore
 from copilot.config import Settings
-from copilot.ingest.corpus import pages_path
-from copilot.ingest.pdf import Page, read_pages
+from copilot.ingest.corpus import filing_pages
+from copilot.ingest.pdf import Page
 from copilot.retrieval.query import Filing
 from copilot.sql.agent import facts_db_path
 
@@ -124,19 +124,10 @@ class Services:
 
     def page(self, doc_name: str, page: int) -> tuple[Page, str] | None:
         """A parsed page and its label, or None when there is no such page."""
-        path = pages_path(self.pages_dir, doc_name)
-        if not path.is_file():
-            return None
-        pages = _pages(path, path.stat().st_mtime_ns)
-        if page >= len(pages):
+        pages = filing_pages(self.pages_dir, doc_name)
+        if pages is None or page >= len(pages):
             return None
         return pages[page], describe(doc_name, page, self.filings)
-
-
-@lru_cache(maxsize=16)
-def _pages(path: Path, _mtime: int) -> list[Page]:
-    """A filing's pages, read once while the file is unchanged."""
-    return read_pages(path)
 
 
 def readiness(settings: Settings) -> dict[str, bool]:

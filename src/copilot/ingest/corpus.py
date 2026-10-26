@@ -12,12 +12,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
 from copilot.eval.financebench import Document, git_blob_sha1
-from copilot.ingest.pdf import PARSER_VERSION, parse_document, read_pages, write_pages
+from copilot.ingest.pdf import PARSER_VERSION, Page, parse_document, read_pages, write_pages
 
 MANIFEST_NAME = "_manifest.json"
 EMPTY_PAGE_CHARS = 30
@@ -137,6 +138,20 @@ def _save(manifest: ParseManifest, out_dir: Path) -> None:
 def page_text(out_dir: Path, doc_name: str) -> list[str]:
     """The clean text of every page of one parsed document."""
     return [page.text for page in read_pages(pages_path(out_dir, doc_name))]
+
+
+def filing_pages(out_dir: Path, doc_name: str) -> list[Page] | None:
+    """A parsed document's pages, read once while its file is unchanged; None if it wasn't
+    parsed."""
+    path = pages_path(out_dir, doc_name)
+    if not path.is_file():
+        return None
+    return _pages(path, path.stat().st_mtime_ns)
+
+
+@lru_cache(maxsize=16)
+def _pages(path: Path, _mtime: int) -> list[Page]:
+    return read_pages(path)
 
 
 def manifest_summary(manifest: ParseManifest) -> dict[str, int]:
