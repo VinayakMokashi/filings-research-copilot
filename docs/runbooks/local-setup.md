@@ -54,6 +54,16 @@ uv run poe ask "Hi! Which companies do you cover?" --thread demo --postgres   # 
 
 Each node's start and end is printed as the graph streams it, and every event is appended to `data/traces/<thread>.jsonl`. A later `poe ask "..." --thread demo --postgres` continues the same conversation.
 
+## 7. Serve the API (needs `GROQ_API_KEY`, Qdrant and the facts database)
+
+```bash
+uv run poe api                                  # http://127.0.0.1:8000, interactive docs at /docs
+curl http://127.0.0.1:8000/readyz               # 200 when every check passes, 503 otherwise
+curl -N -X POST http://127.0.0.1:8000/v1/ask -H "Content-Type: application/json" -d '{"question": "What was 3M'"'"'s capital expenditure in 2018?"}'
+```
+
+The answer streams as server-sent events: `meta`, then a `start` and an `end` for each node, the nodes' events and the `response`, then `done`. Send the `thread_id` from `meta` with the next question to ask a follow-up. Conversations, notes and feedback live in memory; `FRC_API_STATE=postgres` keeps them in the Compose Postgres. One question is answered at a time; events are also appended to `data/traces/api.jsonl`.
+
 ## Stop the services
 
 ```bash
