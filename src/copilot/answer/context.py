@@ -10,6 +10,10 @@ spent. Two choices keep the context useful:
 - **No repeats, no overflow.** A chunk already in the list is skipped, and one that doesn't
   fit is skipped in favour of shorter ones further down, until the budget is used.
 
+A source's text is the model's evidence, never its instructions: any sentence in it that
+reads as an instruction to an assistant is replaced by a notice (`copilot.answer.injection`,
+step 6.2); text without one is passed on unchanged.
+
 Sources are numbered from 1, the way the model cites them. Pages keep FinanceBench's 0-based
 index internally; labels show the PDF page number a reader would see (index + 1).
 """
@@ -19,8 +23,13 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
+import structlog
+
+from copilot.answer.injection import neutralise
 from copilot.retrieval.query import Filing
 from copilot.retrieval.search import Hit
+
+log = structlog.get_logger(__name__)
 
 BUDGET_TOKENS = 3000
 FORM_NAMES = {
@@ -95,11 +104,21 @@ def pack(
             doc_name=hit.doc_name,
             page=hit.pages[0],
             label=describe(hit.doc_name, hit.pages[0], filings),
-            text=hit.text,
+            text=quoted(hit),
             tokens=hit.tokens,
         )
         for number, hit in enumerate(chosen, start=1)
     ]
+
+
+def quoted(hit: Hit) -> str:
+    """The hit's text with any instruction-like sentence replaced by a notice."""
+    text, removed = neutralise(hit.text)
+    if removed:
+        log.warning(
+            "context.injection_removed", doc=hit.doc_name, page=hit.pages[0], removed=removed
+        )
+    return text
 
 
 def context_pages(sources: Sequence[Source]) -> set[tuple[str, int]]:
