@@ -28,7 +28,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import StreamMode
 
-from copilot.agents.graph import Components, CopilotState, build_graph
+from copilot.agents.graph import Components, CopilotState, Turn, build_graph
 
 STREAM_MODES: list[StreamMode] = ["tasks", "custom"]
 
@@ -66,6 +66,11 @@ class Copilot:
         """The conversation's finished turns, oldest first."""
         values = self.graph.get_state(_config(thread_id)).values
         return list(values.get("history", []))
+
+    def record(self, thread_id: str, turn: Turn) -> None:
+        """Add a finished exchange to a conversation without running the graph, as an answer
+        served from a cache is, so that a follow-up on the thread can build on it."""
+        self.graph.update_state(_config(thread_id), {"history": [turn]}, as_node="remember")
 
     def stream(
         self, question: str, *, thread_id: str, user_id: str = "default"
