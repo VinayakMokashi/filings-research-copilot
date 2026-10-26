@@ -8,6 +8,7 @@
 | [Hybrid answers: a prototype](hybrid-prototype.md) | 4 | Whether one answer can take its figures from the data agent and its reasons from the filings, and how that compares with the doc agent alone |
 | [Hybrid answers, version 2](hybrid-v2.md) | 5 | Whether routing by need, a question split, partial answers and a retry answer the hybrid questions the prototype refused, and at what cost |
 | [The validator loop: dev evaluation](validator-dev.md) | 5 | Whether checking every cited sentence and revising what fails makes the doc agent's answers faithful without costing correctness, and at what cost |
+| [Self-consistency on figure answers](self-consistency.md) | 5 | Whether sampling more answers to a figure question and voting on the figure makes the doc agent's figure answers correct more often, and whether that pays for its cost |
 | [Routing: semantic and LLM routers](routing.md) | 5 | Which router should choose each question's route, by embedding similarity, by asking a model, or both, and at what latency and cost |
 
 One report per experiment, with these sections:
@@ -49,6 +50,7 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 | [doc-agent-v4-full--qwen3.8-27b-p2](../../eval/results/correctness/doc-agent-v4-full--qwen3.8-27b-p2/dev/summary.md) | Correctness | Dev | correct 0.65 (0.56 to 0.74); refused 0.06 | The Phase 3 doc agent graded by the default judge ([report](doc-agent-dev.md)); v3 and the second judge sit beside it |
 | [doc-agent-v4-validated--qwen3.8-27b-p2](../../eval/results/correctness/doc-agent-v4-validated--qwen3.8-27b-p2/dev/summary.md) | Correctness | Dev | correct 0.61 (0.51 to 0.71); refused 0.08 | The doc agent's answers after the validator loop ([report](validator-dev.md)) |
 | [doc-agent-v4-validated--qwen3.8-27b-f1](../../eval/results/faithfulness/doc-agent-v4-validated--qwen3.8-27b-f1/dev/summary.md) | Faithfulness | Dev, 92 answered | faithful 0.85 (0.77 to 0.92); supported 0.91 | The same answers, each sentence checked against the pages it cites |
+| [doc-agent-v4-sc3--qwen3.8-27b-p2](../../eval/results/correctness/doc-agent-v4-sc3--qwen3.8-27b-p2/dev/summary.md) | Correctness | Dev, 33 figure questions | correct 0.88 (0.76 to 0.97), as before voting | The doc agent's figure answers after a vote of three, the stored answer and two samples ([report](self-consistency.md)) |
 | [doc-agent-v4-full--qwen3.8-27b-f1](../../eval/results/faithfulness/doc-agent-v4-full--qwen3.8-27b-f1/dev/summary.md) | Faithfulness | Dev, 94 answered | faithful 0.63 (0.53 to 0.72); citation precision 0.93 | Each sentence checked against the pages it cites |
 | [doc-agent-v4-full--qwen3.8-27b-p2](../../eval/results/errors/doc-agent-v4-full--qwen3.8-27b-p2/dev/summary.md) | Errors | Dev | 18 wrong with the evidence in context; 11 without | Error categories, model latency and cost |
 | [doc-agent-v3-full--qwen3.8-27b-p2](../../eval/results/judge-agreement/doc-agent-v3-full--qwen3.8-27b-p2/dev/summary.md) | Judge agreement | Dev, 41 labelled | agree 1.00; kappa 1.00 | The default answer judge against reference labels from a stronger model ([ADR-0014](../decisions/0014-answer-judge.md)) |
