@@ -70,7 +70,8 @@ Every result carries an output schema and structured content, so a host can use 
 | `copilot.mcp.server.create_server` | The server: tools, resources and prompt over a library and an API client |
 | `copilot.mcp.server.to_answer` | The API's response as `ask_copilot`'s result, with each cited page as a resource |
 | `copilot.api.client.CopilotClient` | The API's Python client, shared with the web UI |
-| `poe mcp`, `python -m copilot.mcp` | The server on stdio; `--transport streamable-http` serves it at `http://127.0.0.1:8001/mcp` |
+| `copilot.mcp.server.transport_security` | The HTTP transport's DNS-rebinding check: this machine's names, and any `--allowed-host` |
+| `poe mcp`, `python -m copilot.mcp` | The server on stdio; `--transport streamable-http` serves it at `http://127.0.0.1:8001/mcp`, as the Compose stack does |
 
 ## How we measured it
 
@@ -83,6 +84,7 @@ Every result carries an output schema and structured content, so a host can use 
 - **Standard output is the protocol.** Over stdio, a single `print` to stdout corrupts the stream. The project's logs already went to stderr; the stdio test runs the real process so that a stray print would fail it.
 - **A child process sees few environment variables.** The SDK's stdio client starts a server with a small set of safe variables plus any it is given, and a host may do the same. An `FRC_API_URL` exported in the shell never reached the server, so its questions went to whatever answered on the default port. The API address is now a setting, read from `.env` like the others, and a host's configuration can pass it in an `env` block.
 - **A slow start.** The server first took 18 seconds to answer a client, more than 7 of them spent importing LiteLLM through the doc agent's module. Importing it on first use brought that to about 9 seconds.
+- **Open to any host name in a container.** In DNS rebinding, a web page gets a browser to send requests to a server on the reader's own machine under the page's own name. The SDK guards the HTTP transport against it by checking the `Host` header, but only when the server binds to localhost, and in a container it binds to every interface. The server now switches the check on itself, so a request naming another host gets a 421 ([ADR-0022](../decisions/0022-containers.md)).
 - **Two page numberings.** Pages count from 0 in the code and from 1 in every label. Resource URIs follow the labels, so a citation's page and its resource agree.
 - **A renamed class.** Version 2 of the Python SDK calls its high-level server `MCPServer`, where most examples still show `FastMCP`.
 
