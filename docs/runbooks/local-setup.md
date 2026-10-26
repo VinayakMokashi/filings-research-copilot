@@ -73,6 +73,29 @@ uv run poe ui       # then, in another: http://127.0.0.1:8501
 
 **Ask** streams each question through the API and names the step under way; the answer then shows its sources (switch one on to read the cited page), a chart and table when it came from the facts database, the steps with their times, and thumbs up or down. **Results** lists the evaluations' headline numbers. `FRC_API_URL` points the UI at another API. Streamlit is in the `ui` dependency group, which `uv sync` installs by default.
 
+## 9. Use the MCP server (needs Qdrant and the facts database; `ask_copilot` also needs the API)
+
+```bash
+uv run poe mcp                                 # on stdio: it waits for a client; Ctrl+C stops it
+uv run poe mcp --transport streamable-http     # or over HTTP, at http://127.0.0.1:8001/mcp
+```
+
+A desktop client starts the server itself. For Claude Desktop, add it to `claude_desktop_config.json` (Settings, then Developer, then Edit Config; the file is `%APPDATA%\Claude\claude_desktop_config.json` on Windows and `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS), with the repository's absolute path, written with forward slashes on Windows too:
+
+```json
+{
+  "mcpServers": {
+    "filings-research-copilot": {
+      "command": "uv",
+      "args": ["run", "--directory", "/absolute/path/to/filings-research-copilot", "python", "-m", "copilot.mcp"],
+      "env": {"FRC_API_URL": "http://127.0.0.1:8000"}
+    }
+  }
+}
+```
+
+Restart the client and the server's three tools appear: `search_filings` and `query_financials` work straight away, and `ask_copilot` once `uv run poe api` is serving. `--directory` makes `.env` and `data/` resolve in the repository; the `env` entry is needed only when the API is elsewhere. If the client can't find `uv`, give its full path (`where uv` on Windows, `which uv` elsewhere). Questions through `ask_copilot` count as one visitor against the API's daily quota.
+
 ## Stop the services
 
 ```bash
@@ -90,3 +113,5 @@ docker compose down -v        # also deletes the data volumes
 | `poe smoke` says the key is missing | Add `GROQ_API_KEY` to `.env`, without quotes. |
 | `poe models` shows a role as `NOT AVAILABLE` | Set `FRC_LLM_STRONG_MODEL` or `FRC_LLM_FAST_MODEL` to one of the listed models, keeping the `groq/` prefix. |
 | CI fails at `uv sync --locked` but `poe check` passes locally | `uv.lock` is out of date. Run `uv lock`, commit it, and use `uv run --locked poe check` to catch this before pushing. |
+| `ask_copilot` says the copilot can't be reached, or answers with an HTTP error | Start `uv run poe api`, or set `FRC_API_URL` in `.env` or the client's `env` block when the API listens elsewhere: another program may hold port 8000. |
+| The MCP server doesn't appear in the client | Read the client's log (on Windows, Claude Desktop keeps `mcp.log` and `mcp-server-filings-research-copilot.log` in `%APPDATA%\Claude\logs`), then run the configured command by hand: it should wait silently for input. Anything it prints to stdout breaks the protocol. |

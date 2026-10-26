@@ -27,7 +27,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 21 | `self-consistency.md` | Sampling several answers and voting | Wang et al., Self-Consistency (2023) | 5 | Planned |
 | 22 | [agent-memory.md](agent-memory.md) | Follow-up rewriting, and notes about users kept across conversations | Chhikara et al., Mem0 (2025) | 5 | Written |
 | 23 | [sse-streaming.md](sse-streaming.md) | Streaming an answer's events over one HTTP response | MDN, *Using server-sent events* | 6 | Written |
-| 24 | `mcp-server.md` | Hosts, clients and servers; tools, resources and prompts | Model Context Protocol specification | 6 | Planned |
+| 24 | [mcp-server.md](mcp-server.md) | Hosts, clients and servers; tools, resources and prompts; transports | Model Context Protocol specification | 6 | Written |
 | 25 | [semantic-cache.md](semantic-cache.md) | Reusing answers: why near-duplicates were measured and rejected, and exact repeats kept | GPTCache docs | 6 | Written |
 | 26 | [prompt-injection.md](prompt-injection.md) | Treating retrieved text as data: layers, a red-team set and a corpus scan | Greshake et al. (2023); OWASP Top 10 for LLM Applications | 6 | Written |
 | 27 | `observability.md` | Traces, spans, token and cost metrics | Langfuse docs | 6 | Planned |
