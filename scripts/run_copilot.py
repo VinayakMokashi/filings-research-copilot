@@ -2,7 +2,8 @@
 
 Each dev question goes through the whole graph in batch mode (`build_components(batch=True)`:
 paced calls, and a spent quota stops the run so it can resume): rewrite, understand, route,
-the specialist, synthesise, validate (and revise), respond, on a thread of its own. Every
+the specialist, synthesise, validate (and revise), respond and remember, on a thread of its
+own. A first question makes no rewrite call, and batch runs keep no notes. Every
 event is appended to data/traces/<run>.jsonl, and each answer to
 data/processed/answers/<run>/dev/answers.jsonl in the doc agent's format, so `poe
 judge-answers --run <run>` and `poe check-faithfulness --run <run>` score it like any
@@ -245,7 +246,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         questions=len(rows),
         test_split_opened=False,
         system={
-            "graph": "rewrite, understand, route, specialist, synthesise, validate, respond",
+            "graph": (
+                "rewrite, understand, route, specialist, synthesise, validate, respond, remember"
+            ),
             "routes": dict(Counter(row["route"] for row in rows)),
             "router_fallbacks": sum(1 for q in questions if done[q.id].get("router_error")),
             "median_seconds": round(statistics.median(row["seconds"] for row in rows), 2),
