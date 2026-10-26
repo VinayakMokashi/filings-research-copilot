@@ -367,7 +367,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 3 Doc agent | Done | 2026-10-19 | 2026-10-23 |
 | 4 Data agent | Done | 2026-10-23 | 2026-10-23 |
 | 5 Orchestration | In progress | 2026-10-24 | |
-| 6 API, UI, MCP, observability | In progress | 2026-10-26 | |
+| 6 API, UI, MCP, observability | Done | 2026-10-26 | 2026-10-27 |
 | 7 Fine-tuning and optimisation | Planned | | |
 | 8 Google Cloud deployment | Planned | | |
 | 9 Online evaluation | Planned | | |
