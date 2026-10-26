@@ -69,6 +69,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Orchestration: a LangGraph state graph from the question to the reply (rewrite, understand, route, the specialist, synthesise, validate, respond), with every node's start and end streamed and kept as a JSON-line trace, and conversations kept by a checkpointer, in Postgres when asked; `poe ask` runs one question through it | `src/copilot/agents/` ([ADR-0018](docs/decisions/0018-graph-design.md), [guide](docs/concepts/langgraph-orchestration.md)) |
 | Validator loop: every cited sentence of a doc or hybrid answer checked by a third model before it is shown, and a failing answer revised at most twice, then trimmed to what holds or declined; faithful answers rise from 0.63 to 0.85 on FinanceBench dev, at $0.0008 an answer | `src/copilot/agents/validator.py` ([ADR-0019](docs/decisions/0019-validator-loop.md), [guide](docs/concepts/validator-loop.md), [report](docs/eval/validator-dev.md)) |
 | Memory: follow-ups rewritten into standalone questions from the conversation and the user's notes; Mem0-style notes about each user (what they follow, how they want answers), kept in Postgres across conversations; every turn of a 20-turn memory set resolved | `src/copilot/agents/memory.py` ([guide](docs/concepts/agent-memory.md), [data card](docs/data/memory-set.md)) |
+| API: FastAPI with the answer streamed as server-sent events (each node's start and end, the route, the reply), feedback, cited pages, health and readiness probes, request ids and OpenAPI docs | `src/copilot/api/` ([ADR-0020](docs/decisions/0020-api-and-streaming.md), [guide](docs/concepts/sse-streaming.md)) |
 
 ## Local development
 
@@ -103,6 +104,7 @@ uv run poe run-hybrid --agent hybrid --run hybrid-v1  # figures from SQL, reason
 uv run poe run-router --router llm --role strong --run llm-gpt-oss-120b   # route the routing set, scored
 uv run poe validate-answers --source doc-agent-v4-full --run doc-agent-v4-validated   # the validator loop over stored answers
 uv run poe run-memory --run memory-v2                 # follow-ups and notes on the memory set, scored
+uv run poe api                                        # the API on 127.0.0.1:8000, docs at /docs
 uv run poe ask "What was 3M's capital expenditure in 2018?"   # one question through the graph, each step shown
 ```
 
