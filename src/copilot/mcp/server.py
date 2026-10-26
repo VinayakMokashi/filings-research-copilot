@@ -27,6 +27,7 @@ from typing import Annotated, Any
 import anyio.to_thread
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ResourceError, ToolError
+from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
@@ -48,6 +49,7 @@ from copilot.mcp.library import (
 )
 
 VISITOR = "mcp-server"  # every MCP client counts as one visitor against the API's quotas
+LOCAL_HOSTS = ("127.0.0.1", "localhost", "[::1]")
 INSTRUCTIONS = """\
 Research US public companies from their SEC filings. The companies: {companies}.
 
@@ -255,6 +257,22 @@ def create_server(library: Callable[[], Library], client: CopilotClient) -> MCPS
     return server
 
 
+def transport_security(hosts: Sequence[str] = ()) -> TransportSecuritySettings:
+    """Protection against DNS rebinding for the HTTP transport: a request must name this
+    machine, or one of `hosts`, in its Host header, and in its Origin when a browser sends
+    one. The SDK turns this on by itself only when the server binds to localhost, and in a
+    container it binds to every interface."""
+    names = [*LOCAL_HOSTS, *hosts]
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[*names, *(f"{name}:*" for name in names)],
+        allowed_origins=[
+            *(f"http://{name}" for name in names),
+            *(f"http://{name}:*" for name in names),
+        ],
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="python -m copilot.mcp", description="Serve the copilot over MCP."
@@ -262,6 +280,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--transport", choices=("stdio", "streamable-http"), default="stdio")
     parser.add_argument("--host", default="127.0.0.1", help="for streamable-http")
     parser.add_argument("--port", type=int, default=8001, help="for streamable-http")
+    parser.add_argument(
+        "--allowed-host",
+        action="append",
+        default=[],
+        help="a host name clients may use besides this machine's, for streamable-http",
+    )
     args = parser.parse_args(argv)
     settings = Settings()
     configure_logging(settings.log_level, settings.log_format)
@@ -270,4 +294,5 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.transport == "stdio":
         server.run("stdio")
     else:
-        server.run("streamable-http", host=args.host, port=args.port)
+        security = transport_security(args.allowed_host)
+        server.run("streamable-http", host=args.host, port=args.port, transport_security=security)

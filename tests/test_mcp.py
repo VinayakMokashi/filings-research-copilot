@@ -16,6 +16,7 @@ import httpx
 import pytest
 from mcp import Client, StdioServerParameters
 from qdrant_client.http.exceptions import ResponseHandlingException
+from starlette.testclient import TestClient
 
 from copilot.answer.injection import NOTICE
 from copilot.api.client import CopilotClient
@@ -23,7 +24,7 @@ from copilot.facts.database import SCHEMA
 from copilot.facts.metrics import METRICS
 from copilot.ingest.pdf import Page, write_pages
 from copilot.mcp.library import Library, LibraryError, find_metric
-from copilot.mcp.server import create_server, to_answer
+from copilot.mcp.server import create_server, to_answer, transport_security
 from copilot.retrieval.query import CompanyMatcher, Filing
 from copilot.retrieval.search import Hit, Mode
 
@@ -415,6 +416,25 @@ def test_resources_and_prompt(tmp_path: Path) -> None:
     assert message.startswith("Compare 3M and Boeing on revenue.")
     assert "query_financials" in message
     assert "should be a number" in bad
+
+
+def test_http_transport_refuses_other_hosts(tmp_path: Path) -> None:
+    """DNS rebinding: a page elsewhere can't reach the server by pointing its name here."""
+    server = create_server(library_of(tmp_path), api(stream))
+    app = server.streamable_http_app(transport_security=transport_security(["mcp"]), host="0.0.0.0")
+    ping = {"jsonrpc": "2.0", "id": 1, "method": "ping"}
+    accept = "application/json, text/event-stream"
+    with TestClient(app) as client:
+
+        def status(host: str, origin: str | None = None) -> int:
+            headers = {"Host": host, "Accept": accept} | ({"Origin": origin} if origin else {})
+            return client.post("/mcp", json=ping, headers=headers).status_code
+
+        assert status("evil.example:8001") == 421
+        assert status("localhost:8001", origin="http://evil.example") == 403
+        assert status("localhost:8001") != 421
+        assert status("127.0.0.1:8001", origin="http://127.0.0.1:8001") not in (403, 421)
+        assert status("mcp:8001") != 421
 
 
 def test_stdio_server_starts_and_lists_its_tools() -> None:
