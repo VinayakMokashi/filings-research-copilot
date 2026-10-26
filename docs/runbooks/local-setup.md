@@ -64,6 +64,8 @@ curl -N -X POST http://127.0.0.1:8000/v1/ask -H "Content-Type: application/json"
 
 The answer streams as server-sent events: `meta`, then a `start` and an `end` for each node, the nodes' events and the `response`, then `done`. Send the `thread_id` from `meta` with the next question to ask a follow-up. Conversations, notes and feedback live in memory; `FRC_API_STATE=postgres` keeps them in the Compose Postgres. One question is answered at a time; events are also appended to `data/traces/api.jsonl`. Each question counts against daily quotas, 20 per visitor and 200 in total by default (`FRC_API_DAILY_QUESTIONS`, `FRC_API_DAILY_TOTAL`); a client sends `X-Visitor-ID` to be counted as one visitor, or is counted by its address, and a question over either quota gets a 429 with `Retry-After`. Without a `user_id` a caller is anonymous and nothing is noted about them. A question repeated word for word (case, spacing and quote marks aside) in a new anonymous conversation is answered from the cache, with no run and no quota, for seven days (`FRC_API_CACHE_DAYS`; 0 turns it off).
 
+**Traces.** With `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_BASE_URL` in `.env` (a Langfuse project's Settings > API Keys), every run also appears in Langfuse as a trace: a span per node, a generation per model call with its tokens and cost. Questions and answers are then stored in that Langfuse region. `uv run poe latency-report` summarises the times in `data/traces/api.jsonl`, or any trace files given, by route and node.
+
 ## 8. Use the web UI
 
 ```bash

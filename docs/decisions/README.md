@@ -24,5 +24,6 @@
 | [0020](0020-api-and-streaming.md) | Serve the copilot over HTTP with FastAPI, streaming the graph's events as server-sent events | Accepted | 2026-10-26 |
 | [0021](0021-mcp-server.md) | Serve the copilot over MCP, with lookups in the server and questions through the API | Accepted | 2026-10-26 |
 | [0022](0022-containers.md) | Build two images from one Dockerfile, and mount the data rather than build it in | Accepted | 2026-10-26 |
+| [0023](0023-observability.md) | Trace each run in Langfuse from the graph's own events | Accepted | 2026-10-27 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
