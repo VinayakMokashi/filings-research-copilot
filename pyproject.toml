@@ -171,7 +171,9 @@ text2sql-analyst = { git = "https://github.com/VinayakMokashi/text2sql-analyst",
 [tool.uv]
 # FastEmbed caps Pillow below 13, but Pillow's security fixes landed in 13.0.0. Only
 # FastEmbed's image models use Pillow, and this project runs its text models alone.
-override-dependencies = ["pillow>=13.0.0"]
+# LiteLLM caps filelock below 4, but the fix for its ReadWriteLock (GHSA-v4x8-3wr5-3wq8)
+# landed in 4.2.1. LiteLLM takes file locks only in its proxy's command line, unused here.
+override-dependencies = ["pillow>=13.0.0", "filelock>=4.2.1"]
 # The UI's Streamlit is a group of its own, installed by default; an API image can leave it out
 # with `uv sync --no-group ui`.
 default-groups = ["dev", "ui"]
