@@ -74,6 +74,7 @@ def data_answer(status: str = "ok", *, rate_limited: bool = False) -> DataAnswer
             "sql": SQL if status == "ok" else None,
             "columns": ["fiscal_year", "value"],
             "rows": [[2022, 31_615_550_000]] if status == "ok" else [],
+            "chart": {"kind": "metric", "y": "value"} if status == "ok" else None,
             "rate_limited": rate_limited,
         }
     )
@@ -212,6 +213,7 @@ def test_doc_answers_cite_pages_without_their_text() -> None:
         {"number": 1, "label": PAGE.label, "doc_name": PAGE.doc_name, "page": PAGE.page}
     ]
     assert response["sql"] is None
+    assert (response["table"], response["chart"]) == (None, None)
 
 
 def test_data_answers_cite_the_query() -> None:
@@ -221,6 +223,12 @@ def test_data_answers_cite_the_query() -> None:
     assert response["sql"] == SQL
     assert response["citations"][0]["doc_name"] == DATABASE
     assert response["citations"][0]["label"] == DATABASE_LABEL
+    assert response["table"] == {
+        "columns": ["fiscal_year", "value"],
+        "rows": [[2022, 31_615_550_000]],
+        "truncated": False,
+    }
+    assert response["chart"] == {"kind": "metric", "y": "value", "x": None}
 
 
 def test_hybrid_answers_cite_the_query_and_the_pages() -> None:
