@@ -103,6 +103,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **SSE** | Server-Sent Events: a simple one-way HTTP stream from server to browser, used here for streaming answers. |
 | **State graph** | A workflow as nodes (steps) and edges (what runs next) around one typed state that every node reads and updates. |
 | **Store (LangGraph)** | LangGraph's key-value storage for data that outlives one thread, organised by namespace; the notes about each user live under `("notes", user_id)`. |
+| **Streamlit** | A Python library for data apps: the script runs from top to bottom on every interaction, and widgets keep their values between runs. |
 | **Stratified split** | A split that keeps each category's share (here, question type) the same on both sides. |
 | **Text-to-SQL** | Turning a natural-language question into a SQL query. |
 | **Thread** | One conversation's id in a checkpointer: its turns and state live under it. |

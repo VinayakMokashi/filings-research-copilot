@@ -15,6 +15,26 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-26 · Phase 6 · The web UI
+
+- **Goal:** a page where a person can ask the copilot and see why it answered as it did (step 6.3).
+- **Done:**
+  - `copilot.ui`: a Streamlit app over the API. **Ask** streams each question through `POST /v1/ask`, naming the step under way ("Choosing who answers...", "Checking every cited sentence..."), then shows the answer, how a follow-up was read, the query result as a figure, bar or line chart with its table, every source (a filing page opens in place, the facts database shows its SQL), the steps with their times and the route, and thumbs up or down kept through `POST /v1/feedback`. **Results** shows the headline numbers of the evaluations with their intervals.
+  - `copilot.ui.client`: the API from the UI's side, with server-sent events parsed from the stream and every refusal (a quota's 429, a malformed question, an outage) turned into one error event.
+  - Responses now carry a query's table (up to 50 rows) and the data agent's chart, for the UI to draw.
+  - `copilot.eval.stats.exact_interval`: the Clopper-Pearson interval, which the results page uses where a bootstrap interval touches 0 or 1, as the reports do.
+  - Streamlit sits in a `ui` dependency group, installed by default and left out of an API image with `uv sync --no-group ui`; `poe ui` serves the app on 127.0.0.1:8501.
+- **Commands:** `uv run poe api` and `uv run poe ui`, then http://127.0.0.1:8501; `uv run poe check`.
+- **Results:**
+  - Tests of the client against a mock transport, and of the app run headless by Streamlit's testing harness: it renders and says when the API is down, and a question shows its answer, figure and query.
+  - Live in a browser: "Which companies do you cover?" and a question from the hybrid set streamed their steps and rendered, with the 3M answer's three cited 10-K pages opening in place; the results page showed ten headline numbers.
+- **Problems and fixes:**
+  - **Dollar signs as mathematics:** Markdown in Streamlit reads text between two `$` signs as a formula, so "$1,373 million in 2017 to $1,577 million" lost its signs and turned into a formula; the UI escapes them.
+  - **A doubled small amount:** "an increase of $204 million 204" got past `fill`, which ignored results under 1,000 to avoid chance matches; a small result now counts against an amount, a number with a dollar sign or a scale word, and still not against a bare number such as a percentage.
+  - **The data agent's 32 of 33** showed a bootstrap interval of 0.909 to 1.000 on the first results page; with the exact interval it shows 0.842 to 0.999, the report's figure.
+- **Decisions:** none new; Streamlit is the plan's choice for the UI.
+- **Next:** the MCP server (step 6.4).
+
 ### 2026-10-26 · Phase 6 · An answer cache, and why not a semantic one
 
 - **Goal:** serve repeated questions without a run, so the free tier's quota goes to new questions (the rest of step 6.2).
