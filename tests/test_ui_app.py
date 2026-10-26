@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from copilot.ui.client import CopilotClient, Event
+from copilot.api.client import CopilotClient, Event
 
 APP = Path(__file__).resolve().parents[1] / "src" / "copilot" / "ui" / "app.py"
 RESPONSE = {
