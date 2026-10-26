@@ -6,7 +6,12 @@ import asyncio
 from typing import Any, cast
 
 import pytest
-from litellm.exceptions import APIConnectionError, AuthenticationError, RateLimitError
+from litellm.exceptions import (
+    APIConnectionError,
+    AuthenticationError,
+    BadRequestError,
+    RateLimitError,
+)
 from litellm.router import Router
 from litellm.types.utils import ModelResponse
 from pydantic import SecretStr
@@ -210,6 +215,16 @@ def test_rate_limits_are_flagged(settings: Settings) -> None:
 
     assert info.value.rate_limited is True
     assert "RateLimitError" in str(info.value)
+
+
+def test_a_reached_spend_limit_counts_as_a_spent_quota(settings: Settings) -> None:
+    body = '{"error": {"message": "spend limit reached", "code": "blocked_api_access"}}'
+    exc = BadRequestError(message=body, llm_provider="groq", model="m")
+
+    with pytest.raises(LLMError) as info:
+        _gateway_failing_with(settings, exc).complete([user("hi")])
+
+    assert info.value.rate_limited is True
 
 
 def test_other_failures_become_llm_errors(settings: Settings) -> None:

@@ -39,6 +39,9 @@ _KEY_PATTERN = re.compile(r"\b(?:gsk_|csk-|sk-or-v1-|sk-lf-)[A-Za-z0-9_-]{16,}")
 
 _TOKEN_PRICE_FIELDS = ("input_cost_per_token", "output_cost_per_token")
 
+# Groq's error code once an organisation's monthly spend limit is reached (an HTTP 400).
+SPEND_LIMIT = "blocked_api_access"
+
 
 def provider_of(model: str) -> str:
     """`groq/openai/gpt-oss-120b` -> `groq`; an unprefixed id has no provider."""
@@ -159,7 +162,8 @@ class LLMGateway:
         return kwargs
 
     def _error(self, exc: Exception, role: ModelRole) -> LLMError:
-        rate_limited = isinstance(exc, RateLimitError)
+        # A reached spend limit means the same as a spent quota: stop, and try later.
+        rate_limited = isinstance(exc, RateLimitError) or SPEND_LIMIT in str(exc)
         log.warning("llm.error", role=role, error=type(exc).__name__, rate_limited=rate_limited)
         message = self._redact(f"The {role} model call failed: {type(exc).__name__}: {exc}")
         return LLMError(message, rate_limited=rate_limited)
