@@ -15,6 +15,27 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 6 · Traces in Langfuse, and latency from the traces
+
+- **Goal:** a span per node with tokens and cost, and latency metrics (step 6.5).
+- **Done:**
+  - `copilot.agents.tracing`: a `LangfuseTracer` that turns the runner's events into one Langfuse trace a run: the run as the root observation with the question, the reply, the route and the validator's verdict; a span per node; a generation per model a node called, with tokens and cost at the gateway's prices; the nodes' other events. Every observation is created under an explicit parent, since the API reads the stream from worker threads.
+  - The runner sends events to any sink; a `Fanout` feeds the API's JSON-lines file and Langfuse. A run whose caller stops reading is now traced as stopped, so no trace stays open.
+  - Tracing is off unless `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are set; only the API traces.
+  - `copilot.eval.latency` and `poe latency-report`: the median, 95th percentile and slowest run by route and node, with tokens and cost a run, from trace files.
+  - The gateway now treats a reached spend limit (Groq's HTTP 400 `blocked_api_access`) like a spent quota, so runs stop with "try again later".
+  - ADR-0023; guide `observability.md`; runbook notes.
+- **Commands:** set the Langfuse keys in `.env`, `uv run poe api`, ask; `uv run poe latency-report`.
+- **Results:**
+  - Tests drive the real Langfuse SDK into an in-memory OpenTelemetry exporter: one trace a run, spans under the root, generations with tokens and cost, events under their node, failures marked and every span closed.
+  - Live: a figures question, small talk and a hybrid question arrived in a Langfuse Cloud project as three traces of 17 to 20 observations; the hybrid question's four model calls on three models cost $0.0027.
+- **Problems and fixes:**
+  - **Version 5 of the SDK** names things differently from most examples (`start_observation(as_type=...)`, `propagate_attributes`), and keeps one client per public key, so each test uses its own key.
+  - **Empty fields on the way back:** Langfuse's observations API returns input, usage and cost only when asked for them by `fields`.
+  - **Groq's paid plan is closed to new sign-ups,** so the remaining Phase 5 runs can't be sped up there; Cerebras serves the same gpt-oss-120b and Qwen 3.8 27B.
+- **Decisions:** [ADR-0023](decisions/0023-observability.md): trace each run from the graph's own events.
+- **Next:** close Phase 6: the project page, the README and the plan's tracker.
+
 ### 2026-10-26 · Phase 6 · The whole stack in Docker
 
 - **Goal:** the full local demo from one Compose command (step 6.6).
