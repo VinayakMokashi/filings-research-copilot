@@ -70,6 +70,7 @@ eval-routing = { cmd = "python scripts/eval_routing.py", help = "Score a router 
 run-router = { cmd = "python scripts/run_router.py", help = "Run the semantic, LLM or cascade router on the routing set and score it, resumably (--router, --run)" }
 api = { cmd = "uvicorn copilot.api.app:create_app --factory --host 127.0.0.1 --port 8000", help = "Serve the copilot's API on 127.0.0.1:8000, with its docs at /docs (needs Qdrant, the facts database and GROQ_API_KEY)" }
 ask = { cmd = "python scripts/ask.py", help = "Ask the copilot one question through its graph, with each step streamed (needs Qdrant and GROQ_API_KEY)" }
+scan-injections = { cmd = "python scripts/scan_injections.py", help = "Count what the prompt-injection patterns flag in the parsed corpus (no model calls)" }
 run-memory = { cmd = "python scripts/run_memory.py", help = "Run the memory set: follow-up rewriting and notes about users, turn by turn (--run)" }
 fetch-sec = { cmd = "python scripts/fetch_sec.py", help = "Match the companies to SEC filers and download their XBRL company facts" }
 build-facts = { cmd = "python scripts/build_facts_db.py", help = "Build the SQLite facts database from the cached company facts" }
