@@ -313,6 +313,18 @@ def test_the_trace_file_holds_every_event_with_the_run_and_turn(tmp_path: Path) 
     assert first[-1]["type"] == "response"
 
 
+def test_a_run_whose_caller_stops_reading_is_traced_as_stopped(tmp_path: Path) -> None:
+    trace = TraceWriter(tmp_path / "t.jsonl")
+    stream = copilot(["doc"], trace=trace).stream("What risks does Netflix name?", thread_id="t")
+
+    assert next(stream)["type"] == "start"
+    stream.close()  # as the API does when a client hangs up
+
+    lines = [json.loads(line) for line in trace.path.read_text(encoding="utf-8").splitlines()]
+    assert lines[-1]["type"] == "error"
+    assert "stopped reading" in lines[-1]["error"]
+
+
 def test_usage_events_report_each_node_s_tokens() -> None:
     meter = PacedLLM(FakeLLM(["Hello there!"]), pause_s=0.0)
 

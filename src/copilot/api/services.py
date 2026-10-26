@@ -23,7 +23,8 @@ import psycopg
 
 from copilot.agents.build import build_components, postgres_checkpointer, postgres_store
 from copilot.agents.graph import Turn
-from copilot.agents.runner import Copilot, TraceWriter
+from copilot.agents.runner import Copilot, Fanout, TraceWriter
+from copilot.agents.tracing import build_tracer
 from copilot.answer.context import describe
 from copilot.api.cache import AnswerCache, MemoryCache, PostgresCache
 from copilot.api.quotas import MemoryQuotas, PostgresQuotas, QuotaStore
@@ -171,7 +172,10 @@ def build_services(settings: Settings) -> Iterator[Services]:
             postgres = settings.api_state == "postgres"
             cache = PostgresCache(connection, ttl) if postgres else MemoryCache(ttl)
         parts = build_components(settings, store=store)
-        trace = TraceWriter(settings.data_dir / "traces" / "api.jsonl")
+        tracer = build_tracer(settings)
+        if tracer is not None:
+            stack.callback(tracer.close)
+        trace = Fanout(TraceWriter(settings.data_dir / "traces" / "api.jsonl"), tracer)
         doc = getattr(parts.doc, "by_name", {})
         yield Services(
             copilot=Copilot(parts, checkpointer, trace),
