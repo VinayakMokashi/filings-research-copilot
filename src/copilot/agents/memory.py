@@ -32,6 +32,7 @@ from copilot.llm import LLMClient, Message, ModelRole, system, user
 from copilot.llm.parsing import json_object
 
 MAX_TURNS = 3  # enough to resolve "those" and "and in 2019?", short enough to keep old topics out
+ANONYMOUS = "anon-"  # user ids starting so keep no notes: callers who didn't say who they are
 REWRITE_ROLE: ModelRole = "strong"
 NOTES_ROLE: ModelRole = "small"
 PROMPT_VERSION = "2"
@@ -208,6 +209,15 @@ def namespace(user_id: str) -> tuple[str, ...]:
 def note_id(user_id: str, text: str) -> str:
     """A new note's key, from its user and text, so a rerun sends the same prompts."""
     return hashlib.sha256(f"{user_id}\n{text}".encode()).hexdigest()[:8]
+
+
+def anonymous(user_id: str) -> bool:
+    """Whether the user is anonymous, so that nothing is noted or recalled about them.
+
+    Anonymous callers would otherwise share one id, and one visitor's notes would shape
+    another visitor's rewrites.
+    """
+    return user_id.startswith(ANONYMOUS)
 
 
 def recall(store: BaseStore, user_id: str, limit: int = 50) -> list[Note]:
