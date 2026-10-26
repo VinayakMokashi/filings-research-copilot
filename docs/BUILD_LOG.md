@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-26 · Phase 6 · The API
+
+- **Goal:** the copilot over HTTP, its progress streamed as it happens (step 6.1).
+- **Done:**
+  - `copilot.api`: a FastAPI application built by `create_app(services)`. `POST /v1/ask` streams server-sent events: `meta` (the request's and the conversation's ids), the graph's own events (a start and an end for each node, the nodes' events, the response) and `done`; `POST /v1/feedback` keeps a thumbs up or down; `GET /v1/sources/{doc_name}/{page}` returns a cited page with its label; `GET /healthz` and `GET /readyz` for probes; an `X-Request-ID` on every response; the OpenAPI document at `/docs`.
+  - Limits before any run (a question of at most 2,000 characters, well-formed ids, no unknown fields), and one copilot run at a time in a process, with a busy error after two minutes' wait.
+  - `FRC_API_STATE` keeps conversations, notes and feedback in memory or in the Compose Postgres; `poe api` serves the application on 127.0.0.1:8000.
+  - [ADR-0020](decisions/0020-api-and-streaming.md) and the [SSE streaming guide](concepts/sse-streaming.md).
+- **Commands:** `uv run poe api`, then `curl -N -X POST http://127.0.0.1:8000/v1/ask -H "Content-Type: application/json" -d '{"question": "..."}'`; `uv run poe check`.
+- **Results:**
+  - 12 tests with a fake copilot: event order, follow-ups, refused requests, failures ending in one `error` and `done`, the busy error, feedback, cited pages and the OpenAPI document.
+  - Live: `/readyz` passed its four checks; a cited page came back labelled "3M, Form 10-K for fiscal 2018, PDF page 60"; "Hi! Which companies do you cover?" streamed all eight nodes on its path, with the router's call to gpt-oss-120b at 4.7 s and the cached small-talk reply at 6 ms.
+- **Problems and fixes:**
+  - **One run at a time:** the agents' clients count tokens per client and each node's usage is the change in those counts, so two runs at once would count each other's tokens; a lock admits one run per process.
+  - **A second error event:** the runner sends its own `error` when the graph fails, so the endpoint adds one only for failures before the graph starts.
+  - **A dependency dropped:** FastAPI has streamed server-sent events natively since 0.135, keep-alive comments included, so sse-starlette wasn't needed.
+- **Decisions:** [ADR-0020](decisions/0020-api-and-streaming.md); `/v1/brief` arrives with Phase 7's brief crew.
+- **Next:** guardrails (step 6.2): per-visitor quotas, a semantic cache and filing text passed as quoted data.
+
 ### 2026-10-25 · Maintenance · FinanceBench's text out of the repository
 
 - **Goal:** keep FinanceBench's questions and answers out of the repository: they are licensed CC BY-NC 4.0 and stay in the git-ignored `data/` directory ([data card](data/financebench.md)).

@@ -237,7 +237,7 @@ Size is relative: S < M < L.
 
 **Goal:** something people and other AI tools can use.
 
-- [ ] 6.1 FastAPI: `/v1/ask` (SSE), `/v1/brief`, `/v1/feedback`, `/v1/sources/{id}`, health and readiness endpoints; request IDs; OpenAPI docs.
+- [x] 6.1 FastAPI: `/v1/ask` (SSE), `/v1/feedback`, `/v1/sources/{doc_name}/{page}`, health and readiness endpoints; request IDs; OpenAPI docs. The answer streams as server-sent events (`meta`, the graph's events, `done`), with input limits and one run at a time per process; `/v1/brief` moves to Phase 7 with the brief crew ([ADR-0020](decisions/0020-api-and-streaming.md), [guide](concepts/sse-streaming.md)).
 - [ ] 6.2 Guardrails: persistent per-visitor quotas, input limits, a semantic cache, filing text passed as quoted data, a read-only database role.
 - [ ] 6.3 Streamlit UI: streaming chat, a citation drawer with page previews, charts, SQL details, "interpreted as" for follow-ups, feedback buttons, a trace view and an eval dashboard.
 - [ ] 6.4 MCP server: tools (`search_filings`, `query_financials`, `ask_copilot`), filing pages as resources, a company-comparison prompt; tested in Claude Desktop.
@@ -352,6 +352,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-24 | Step 5.1's graph holds plain JSON state, and its trace is the graph's own event stream until Langfuse (Phase 6) | Any checkpointer can store JSON, and every node's start and end is then on record ([ADR-0018](decisions/0018-graph-design.md)) |
 | 2026-10-25 | Step 5.3's checker runs on the `small` role, not the evaluation's judge | A loop that rewrites answers until the grader approves would raise measured faithfulness by construction ([ADR-0019](decisions/0019-validator-loop.md)) |
 | 2026-10-25 | Step 5.5's notes keep only what users say about themselves | The first prompt turned questions into notes ("Follows Coca-Cola." after a question about its net income); a note the user never stated misleads every later rewrite ([guide](concepts/agent-memory.md)) |
+| 2026-10-26 | `/v1/brief` moves from step 6.1 to Phase 7 | Briefs come from Phase 7's brief crew; until then a request for a brief goes through `/v1/ask`, whose router sends it to the brief note ([ADR-0020](decisions/0020-api-and-streaming.md)) |
 
 ## 11. Status tracker
 
@@ -363,7 +364,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 3 Doc agent | Done | 2026-10-19 | 2026-10-23 |
 | 4 Data agent | Done | 2026-10-23 | 2026-10-23 |
 | 5 Orchestration | In progress | 2026-10-24 | |
-| 6 API, UI, MCP, observability | Planned | | |
+| 6 API, UI, MCP, observability | In progress | 2026-10-26 | |
 | 7 Fine-tuning and optimisation | Planned | | |
 | 8 Google Cloud deployment | Planned | | |
 | 9 Online evaluation | Planned | | |
