@@ -15,6 +15,26 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-26 · Phase 6 · Guardrails
+
+- **Goal:** protect the copilot and its quota before it is public: limits on spending, and instructions hidden in what it reads (step 6.2).
+- **Done:**
+  - Daily question quotas, per visitor (`X-Visitor-ID`, or the address) and in total, kept in Postgres or in memory: a question over either gets a 429 with `Retry-After` before any model call. The check takes the validated request, so a malformed one counts for nothing.
+  - Anonymous callers: a question without a `user_id` keeps and reads no notes. Before, every such caller shared the user `default`, so one visitor's notes could shape another visitor's follow-ups.
+  - `copilot.answer.injection`: every retrieved source is checked for instruction-like sentences (ignore your instructions, a system prompt, chat role markers, "respond only with" and the like), which are replaced by a notice before the model reads them; a page without one passes through unchanged.
+  - A red-team set of our own ([data card](data/injection-set.md)), `poe scan-injections` for the whole corpus, and the [prompt injection guide](concepts/prompt-injection.md).
+- **Commands:** `uv run poe scan-injections`, `uv run poe check`, and `pytest -m integration tests/test_quotas.py` for the Postgres quotas.
+- **Results:**
+  - The red-team set: all 12 instructions caught, none of the 12 look-alikes flagged; it was written alongside the patterns, so it shows they do what they were written for.
+  - The corpus: none of 53,901 parsed pages in 366 filings flagged, so no real source changes and no cached answer is lost.
+  - The router declined all 30 of the routing set's `decline` questions, three of which try to override the copilot.
+- **Problems and fixes:**
+  - **A shared anonymous user:** found while adding the quotas; anonymous ids are now per conversation and keep no notes.
+  - **A 429 from inside a stream** can't be sent: the response has started. The quota check is a dependency that runs before the stream.
+  - **A prompt change would have cost every cached answer:** delimiting the sources in the answer prompt is left for Phase 7, when that prompt is optimised and evaluated anyway.
+- **Decisions:** none new; the [guide](concepts/prompt-injection.md) explains the layers.
+- **Next:** a semantic cache (the rest of step 6.2), then the UI (step 6.3).
+
 ### 2026-10-26 · Phase 6 · The API
 
 - **Goal:** the copilot over HTTP, its progress streamed as it happens (step 6.1).
