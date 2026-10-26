@@ -182,6 +182,7 @@ DECLINE_REPLY = (
     "investment advice, predict prices or help with tasks outside the filings."
 )
 QUOTA_REPLY = "The language model's free quota is used up for now. Please try again later."
+TABLE_ROWS = 50  # rows of a query result a response carries, for a table or a chart
 SMALLTALK_PROMPT = (
     "You are the research assistant of a copilot for public-company filings. It answers "
     "questions about the 10-K and 10-Q filings, and the figures reported in them, of these "
@@ -290,6 +291,7 @@ def to_draft(result: dict[str, Any]) -> dict[str, Any]:
             "missing": answer["missing"],
             "citations": answer["citations"],
             "sql": (result.get("data") or {}).get("sql") if database else None,
+            **_table(result.get("data") if database else None),
         }
     if kind == "data" and "data" in result:
         data = result["data"]
@@ -302,6 +304,7 @@ def to_draft(result: dict[str, Any]) -> dict[str, Any]:
             "missing": "" if answered else data["answer"],
             "citations": [query] if answered and data.get("sql") else [],
             "sql": data.get("sql"),
+            **_table(data if answered else None),
         }
     return {
         "kind": kind,
@@ -310,7 +313,22 @@ def to_draft(result: dict[str, Any]) -> dict[str, Any]:
         "missing": "",
         "citations": [],
         "sql": None,
+        "table": None,
+        "chart": None,
     }
+
+
+def _table(data: dict[str, Any] | None) -> dict[str, Any]:
+    """The query result a draft shows (at most TABLE_ROWS rows) and its chart, if any."""
+    if not data or not data.get("columns"):
+        return {"table": None, "chart": None}
+    rows = data.get("rows", [])
+    table = {
+        "columns": data["columns"],
+        "rows": rows[:TABLE_ROWS],
+        "truncated": len(rows) > TABLE_ROWS,
+    }
+    return {"table": table, "chart": data.get("chart")}
 
 
 def _refusal(missing: str) -> str:
@@ -563,6 +581,8 @@ def build_graph(
                 for citation in draft.get("citations", [])
             ],
             "sql": draft.get("sql"),
+            "table": draft.get("table"),
+            "chart": draft.get("chart"),
             "validation": {
                 key: value
                 for key, value in state.get("validation", {}).items()
