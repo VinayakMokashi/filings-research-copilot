@@ -26,10 +26,13 @@ class AskRequest(BaseModel):
         pattern=ID_PATTERN,
         description="A conversation's id: give it again to ask a follow-up. A new one if empty.",
     )
-    user_id: str = Field(
-        default="default",
+    user_id: str | None = Field(
+        default=None,
         pattern=ID_PATTERN,
-        description="Whose notes to read and keep (step 5.5).",
+        description=(
+            "Whose notes to read and keep (step 5.5). Without one the caller is anonymous, and "
+            "nothing is noted about them."
+        ),
     )
 
     @field_validator("question")

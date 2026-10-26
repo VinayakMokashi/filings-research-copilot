@@ -62,6 +62,9 @@ class Settings(BaseSettings):
 
     # The API's conversations, notes and feedback: in memory, or in Postgres to outlive it
     api_state: Literal["memory", "postgres"] = "memory"
+    # Questions a day before a 429: per visitor, and from everyone together (step 6.2)
+    api_daily_questions: int = Field(default=20, ge=1)
+    api_daily_total: int = Field(default=200, ge=1)
 
     # SEC EDGAR asks every client to identify itself as "Name contact@example.com".
     sec_user_agent: str | None = Field(default=None, validation_alias="SEC_USER_AGENT")

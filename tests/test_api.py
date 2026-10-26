@@ -114,7 +114,7 @@ def test_a_question_streams_the_graphs_events(tmp_path: Path) -> None:
     assert events[4][1]["text"] == "Capex was $1,577 million [1]."
     copilot = services.copilot
     assert isinstance(copilot, FakeCopilot)
-    assert copilot.calls == [(QUESTION, meta["thread_id"], "default")]
+    assert copilot.calls == [(QUESTION, meta["thread_id"], f"anon-{meta['thread_id']}")]
 
 
 def test_a_follow_up_continues_its_thread_and_keeps_the_request_id(tmp_path: Path) -> None:
@@ -224,3 +224,48 @@ def test_the_openapi_document_lists_every_endpoint(tmp_path: Path) -> None:
         "/v1/feedback",
         "/v1/sources/{doc_name}/{page}",
     } <= paths
+
+
+def test_a_visitor_over_the_daily_quota_gets_a_429(tmp_path: Path) -> None:
+    services = make_services(tmp_path)
+    services.per_visitor, services.total = 2, 100
+    ask = {"question": QUESTION}
+    first = {"X-Visitor-ID": "visitor-0001"}
+    with TestClient(api.create_app(services)) as client:
+        allowed = [client.post("/v1/ask", json=ask, headers=first).status_code for _ in range(2)]
+        refused = client.post("/v1/ask", json=ask, headers=first)
+        other = client.post("/v1/ask", json=ask, headers={"X-Visitor-ID": "visitor-0002"})
+
+    assert allowed == [200, 200]
+    assert refused.status_code == 429
+    assert "your" in refused.json()["detail"]
+    assert 0 < int(refused.headers["retry-after"]) <= 86_400
+    assert other.status_code == 200
+
+
+def test_the_total_quota_holds_for_everyone(tmp_path: Path) -> None:
+    services = make_services(tmp_path)
+    services.per_visitor, services.total = 10, 2
+    ask = {"question": QUESTION}
+    with TestClient(api.create_app(services)) as client:
+        codes = [
+            client.post(
+                "/v1/ask", json=ask, headers={"X-Visitor-ID": f"visitor-000{n}"}
+            ).status_code
+            for n in range(3)
+        ]
+        refused = client.post("/v1/ask", json=ask, headers={"X-Visitor-ID": "visitor-0009"})
+
+    assert codes == [200, 200, 429]
+    assert "everyone" in refused.json()["detail"]
+
+
+def test_a_malformed_question_counts_for_nothing(tmp_path: Path) -> None:
+    services = make_services(tmp_path)
+    services.per_visitor = 1
+    headers = {"X-Visitor-ID": "visitor-0001"}
+    with TestClient(api.create_app(services)) as client:
+        assert client.post("/v1/ask", json={"question": " "}, headers=headers).status_code == 422
+        assert (
+            client.post("/v1/ask", json={"question": QUESTION}, headers=headers).status_code == 200
+        )
