@@ -30,6 +30,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Cross-encoder** | A model that reads the query and a passage together to score relevance. Slower than embedding search, but more precise. |
 | **Data card** | A short document describing a dataset: source, licence, size, checksums, fields, splits and known issues. |
 | **Demo window** | A period when the part of the cloud deployment that costs money while idle, here the database, is started for a demo and stopped afterwards. |
+| **DNS rebinding** | An attack in which a web page gets the browser to send requests to a server on the reader's own machine under the page's own name; a server defends itself by accepting only the host names it expects. |
 | **DSPy** | A framework that treats prompts as programs and optimises them against a metric. |
 | **Duration and instant facts** | A duration fact covers a period with a start and end date (revenue for a year); an instant fact is measured on one date (total assets at the year end). |
 | **Embedding** | A vector that represents meaning; similar texts get nearby vectors. |
@@ -69,6 +70,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **MNRL** | MultipleNegativesRankingLoss: a contrastive loss that treats the other examples in a batch as negatives. |
 | **Model role** | A named job (`strong`, `fast` or `small`) that code asks for instead of a specific model; settings decide which model fills it. |
 | **Multi-query retrieval** | Asking a model for several rewordings of a question, searching each, and fusing the rankings. |
+| **Multi-stage build** | A Dockerfile with several stages, where a later stage copies only what it needs from an earlier one, so build tools stay out of the final image. |
 | **MRR** | Mean Reciprocal Rank: the average of 1/rank of the first relevant result. |
 | **OIDC (for deploys)** | Lets GitHub Actions prove who it is to a cloud with short-lived tokens, so no keys are stored; Google Cloud does it through Workload Identity Federation. |
 | **ONNX Runtime** | An engine that runs neural networks exported in the ONNX format quickly on a CPU. FastEmbed runs its models with it. |
