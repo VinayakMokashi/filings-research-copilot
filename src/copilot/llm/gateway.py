@@ -33,6 +33,15 @@ _PROVIDER_KEY_FIELDS = {
     "openrouter": "openrouter_api_key",
 }
 
+# Settings sent with every call to a model, so that a provider's copy of open weights runs
+# the way the evaluations measured them. Groq's Qwen3.8 27B answers without reasoning, but
+# Cerebras's reasons at high effort unless told not to: the judge's verdict of about 40
+# tokens becomes hundreds of tokens of reasoning first, sometimes cut off before the verdict.
+# gpt-oss models reason at medium effort on both providers by default.
+MODEL_PARAMS: dict[str, dict[str, Any]] = {
+    "cerebras/qwen-3.8-27b": {"reasoning_effort": "none"},
+}
+
 # Key shapes for the providers this project uses. Error text is scrubbed of anything that
 # looks like one, in case an upstream service echoes a key back in an error message.
 _KEY_PATTERN = re.compile(r"\b(?:gsk_|csk-|sk-or-v1-|sk-lf-)[A-Za-z0-9_-]{16,}")
@@ -55,6 +64,11 @@ def api_key_for(model: str, settings: Settings) -> str | None:
     return secret.get_secret_value() if secret is not None else None
 
 
+def model_params(model: str) -> dict[str, Any]:
+    """The settings a model is always called with (see `MODEL_PARAMS`); usually none."""
+    return dict(MODEL_PARAMS.get(model, {}))
+
+
 def role_models(settings: Settings) -> dict[ModelRole, str]:
     """The model each role resolves to; disk caches key their entries by it."""
     return {
@@ -68,7 +82,7 @@ def build_router(settings: Settings) -> Router:
     """A LiteLLM router with one deployment per role plus the shared fallback chain."""
 
     def deployment(name: str, model: str) -> dict[str, Any]:
-        params: dict[str, Any] = {"model": model}
+        params: dict[str, Any] = {"model": model, **model_params(model)}
         key = api_key_for(model, settings)
         if key:
             params["api_key"] = key

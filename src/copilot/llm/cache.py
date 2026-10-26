@@ -10,8 +10,10 @@ everything it has paid for. A line that can't be read, such as one cut short whe
 was killed mid-write, is skipped and counted, and the call it held is made again.
 
 The key includes the model the role resolves to, so changing a role's model never returns
-another model's answer. Sampling at a non-zero temperature is still cached: a cached run
-replays the same sample, which is what makes it repeatable.
+another model's answer, and the settings the gateway always sends with that model (such as
+reasoning turned off), so a reply made under other settings is never replayed. Sampling at
+a non-zero temperature is still cached: a cached run replays the same sample, which is
+what makes it repeatable.
 """
 
 from __future__ import annotations
@@ -25,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from copilot.llm.base import LLMClient, LLMResponse, Message, ModelRole
+from copilot.llm.gateway import model_params
 
 
 def cache_key(model: str, messages: Sequence[Message], params: Mapping[str, Any]) -> str:
@@ -69,8 +72,14 @@ class CachedLLM:
         max_tokens: int | None,
         extra: Mapping[str, Any],
     ) -> str:
-        params = {"temperature": temperature, "max_tokens": max_tokens, **extra}
-        return cache_key(self._models.get(role, role), messages, params)
+        model = self._models.get(role, role)
+        params = {
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            **model_params(model),
+            **extra,
+        }
+        return cache_key(model, messages, params)
 
     def _cached(self, key: str) -> LLMResponse | None:
         stored = self._entries.get(key)
