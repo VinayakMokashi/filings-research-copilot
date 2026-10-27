@@ -5,12 +5,14 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Sequence
+from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
 from qdrant_client import QdrantClient
 
 from copilot.answer.agent import DocAgent
+from copilot.answer.bandit import ArmChooser
 from copilot.ingest import index
 from copilot.ingest.chunking import Chunk
 from copilot.ingest.embed import HashingDense, HashingSparse
@@ -139,3 +141,23 @@ def test_a_refusal_with_nothing_to_widen_or_search_is_final() -> None:
 
     assert not result.retried
     assert sum(call.role == "strong" for call in llm.calls) == 1
+
+
+def test_a_bandit_chooses_the_answer_model_and_the_answer_names_its_arm(tmp_path: Path) -> None:
+    llm = _replies(
+        [{"answerable": True, "answer": "Revenue was $1,200 million [1].", "calculations": []}]
+    )
+    arms = ArmChooser(tmp_path / "arms.json", arms=("strong-low",))
+    agent = DocAgent(_searcher(), CompanyMatcher(["Acme"], {"Acme": None}), FILINGS, llm, arms=arms)
+
+    result = agent.answer("What was Acme's FY2022 revenue?")
+
+    answer_calls = [call for call in llm.calls if call.role == "strong"]
+    assert answer_calls[0].extra.get("reasoning_effort") == "low"
+    assert result.arm == "strong-low"
+    assert (
+        _agent(_replies([{"answerable": True, "answer": "x [1].", "calculations": []}]))
+        .answer("What was Acme's FY2022 revenue?")
+        .arm
+        is None
+    )

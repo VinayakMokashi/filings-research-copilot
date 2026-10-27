@@ -24,8 +24,9 @@ from typing import Literal
 
 from qdrant_client import QdrantClient
 
+from copilot.answer.bandit import ArmChooser
 from copilot.answer.context import BUDGET_TOKENS, Source, pack
-from copilot.answer.generate import Answer, generate
+from copilot.answer.generate import ROLE, Answer, generate
 from copilot.config import Settings
 from copilot.eval import financebench as fb
 from copilot.ingest.embed import FastEmbedBM25, FastEmbedDense, dense_for_card
@@ -66,6 +67,7 @@ class DocAgent:
         retry_budget: int | None = None,
         siblings: bool = False,
         hyde: HydePrompt | None = None,
+        arms: ArmChooser | None = None,
     ) -> None:
         self.searcher = searcher
         self.matcher = matcher
@@ -77,6 +79,7 @@ class DocAgent:
         self.retry_budget = retry_budget or budget * 3 // 2
         self.siblings = siblings
         self.hyde = hyde
+        self.arms = arms
 
     def retrieve(
         self,
@@ -120,19 +123,24 @@ class DocAgent:
         return names or None
 
     def answer(self, question: str) -> AgentAnswer:
+        """The answer, from the arm the bandit chooses when one is set (step 7.5)."""
+        arm = self.arms.choose() if self.arms is not None else None
+        role, params = (arm.role, arm.settings) if arm is not None else (ROLE, {})
+        name = arm.name if arm is not None else None
         retrieval = self.retrieve(question)
-        answer = generate(self.llm, question, self.context(retrieval))
+        answer = generate(self.llm, question, self.context(retrieval), role=role, **params)
         if answer.answerable:
-            return AgentAnswer(answer, retrieval)
+            return AgentAnswer(answer, retrieval, arm=name)
         documents = retrieval.filings
         if documents is not None:
             documents = self.company_filings(question) or documents
         widened = documents is not None and set(documents) != set(retrieval.filings or [])
         if not widened and not answer.missing.strip():
-            return AgentAnswer(answer, retrieval)
+            return AgentAnswer(answer, retrieval, arm=name)
         second = self.retrieve(question, documents, missing=answer.missing)
         sources = self.context(second, self.retry_budget)
-        return AgentAnswer(generate(self.llm, question, sources), second, answer)
+        final = generate(self.llm, question, sources, role=role, **params)
+        return AgentAnswer(final, second, answer, arm=name)
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +150,7 @@ class AgentAnswer:
     answer: Answer
     retrieval: Retrieval
     first: Answer | None = None
+    arm: str | None = None  # the bandit's arm that wrote it, when one chose
 
     @property
     def retried(self) -> bool:
@@ -196,4 +205,8 @@ def build_agent(
         cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
         llm = PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
     filings = corpus_filings(settings)
-    return DocAgent(build_searcher(settings, collection), company_matcher(), filings, llm)
+    arms = None
+    if settings.answer_policy == "epsilon-greedy":
+        arms = ArmChooser(settings.data_dir / "processed" / "bandit" / "answer-arms.json")
+    searcher = build_searcher(settings, collection)
+    return DocAgent(searcher, company_matcher(), filings, llm, arms=arms)

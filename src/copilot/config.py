@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     # model its vectors came from, which then embeds the queries too (ADR-0027)
     collection: str = "fb_page_bge-small"
 
+    # How the doc agent chooses its answer model (step 7.5): always the strong role, or an
+    # epsilon-greedy bandit over copilot.answer.bandit.ARMS (its rewards come in Phase 9)
+    answer_policy: Literal["fixed", "epsilon-greedy"] = "fixed"
+
     # Model roles, as LiteLLM model ids ("<provider>/<model>")
     llm_strong_model: str = "groq/openai/gpt-oss-120b"
     llm_fast_model: str = "groq/qwen/qwen3.8-27b"
