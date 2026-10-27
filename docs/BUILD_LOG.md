@@ -15,6 +15,24 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 7 · A domain embedder, measured and not adopted
+
+- **Goal:** step 7.1: fine-tune bge-small on the synthetic questions about training filings, with hard negatives, and see whether the doc agent's search ranks FinanceBench's evidence pages higher; publish the model if it earns its place.
+- **Done:**
+  - The pairs are filing text and can't be committed, so `poe kaggle-embedder` writes them, with the training filings' chunks and the corpus's page chunks, as a private Kaggle dataset (counts and checksums in a committed manifest) and runs the kernel against it. The Kaggle CLI helpers are shared with the router's script now (`copilot.training.kaggle`).
+  - The kernel mines hard negatives with the base model, trains the whole model with MultipleNegativesRankingLoss over three learning rates, exports the trained model and the base model to ONNX, and embeds the corpus's pages with both.
+  - `OnnxDense` serves an exported encoder on the CPU; `poe index-corpus --model-dir --vectors` builds a collection from the GPU's vectors after a CPU check; a collection's index card chooses its query model, and `FRC_COLLECTION` the doc agent's collection.
+  - Ran the retrieval evaluation in three settings for four collections, with the rewrites replayed from the cache, and read where version 1's results went wrong; trained a version 2 for it.
+  - The [report](eval/domain-embedder.md), [ADR-0027](decisions/0027-domain-embedder.md), the [guide](concepts/contrastive-finetuning.md), the [runbook](runbooks/training-models.md), the data card, the plan's step 7.1.
+- **Commands:** `uv run poe kaggle-embedder --user ... --ref ... --name embedder-v1` (and `embedder-v2`); `uv run poe index-corpus --strategy page --docs all --model-dir ... --key ... --vectors ...`; `uv run poe run-retrieval --collection ... --mode dense --setting oracle|corpus|understood [--rewrite all]`; `uv run poe compare-family ... --out eval/results/retrieval/_comparisons/domain-embedder-*`.
+- **Results:**
+  - On held-out training filings, MRR@10 within the filing rose from 0.41 to 0.71 (version 1); version 2 also rose across filings, from 0.25 to 0.43.
+  - On FinanceBench dev, in the doc agent's pipeline: recall@10 0.747 (version 1) and 0.742 (version 2) against 0.722, MRR@10 0.514 and 0.486 against 0.476, none significant. Across all 84 filings, version 1 was significantly worse (recall@10 0.280 against 0.415, Holm p = 0.028); half its top pages came from other companies, against under a quarter for bge-small. Version 2 recovered part of that (0.335).
+  - The base model exported in full precision matches FastEmbed's quantized model to within 0.001 on every metric. Two Kaggle runs of 24 and 32 minutes; no model calls in the evaluation.
+- **Problems and fixes:** a dataset just created, and a kernel just pushed, answered 403 to status requests for a minute, which the first waits took for failures; they now count it as not ready yet. Version 1's validation ranked only within the question's filing, which couldn't see it mixing up companies; version 2 validates across filings too and takes one negative from another company.
+- **Decisions:** [ADR-0027](decisions/0027-domain-embedder.md): bge-small stays, neither embedder is adopted or published, and the code path stays for a later model.
+- **Next:** step 7.6's brief crew, whose brief-set runs are under way.
+
 ### 2026-10-27 · Phase 7 · The copilot's version 2
 
 - **Goal:** step 7.7: win back the dev questions the copilot's first version lost to the doc agent alone, without losing the figure questions the data agent answers.

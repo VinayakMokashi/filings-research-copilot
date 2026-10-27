@@ -254,7 +254,7 @@ Size is relative: S < M < L.
 
 Every experiment gets a before/after on fixed eval sets, an eval report and an adopt-or-reject ADR.
 
-- [ ] 7.1 Domain embedder: MNRL with hard negatives on the synthetic pairs (training documents only), trained on a free GPU; ONNX export; published on Hugging Face.
+- [x] 7.1 Domain embedder: MNRL with hard negatives on the synthetic pairs (training documents only), trained on a free GPU; ONNX export; published on Hugging Face if adopted. Done: trained on a Kaggle GPU from a private dataset, in two versions; neither ranks FinanceBench's evidence pages significantly better in the doc agent's search (recall@10 0.747 and 0.742 against 0.722), and both rank worse across all filings, so bge-small stays and nothing was published ([report](eval/domain-embedder.md), [ADR-0027](decisions/0027-domain-embedder.md)).
 - [x] 7.2 LoRA router: a BERT-family classifier with LoRA (CPU is enough), compared with the semantic and LLM routers. Done: trained on a Kaggle GPU, 0.913 on routing dev and 0.950 on test, against 0.739 and 0.800 for the semantic router; adopted as the LLM router's fallback behind a setting, and published on Hugging Face ([report](eval/lora-router.md), [ADR-0025](decisions/0025-classifier-router.md)).
 - [ ] 7.3 DSPy optimisation of one prompt (answer synthesis or HyDE), adopted only on a significant gain.
 - [ ] 7.4 Stretch: a fine-tuned reranker, or a small distilled query-rewriter served on CPU.
@@ -362,6 +362,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-27 | Step 7.7 added: a copilot version 2 | The end-to-end evaluation found the copilot losing to the doc agent alone on analyst questions, for three causes it can measure a fix for: questions the data agent declines, analyst questions sent to it, and judgements the validator removes ([report](eval/copilot-dev.md)) |
 | 2026-10-27 | Step 7.2 trains on Kaggle, not the CPU, and its classifier becomes the fallback rather than the router | The laptop has too little free memory to train; the classifier beats the semantic fallback on both splits but trails the LLM router, which costs a small share of an answer ([ADR-0025](decisions/0025-classifier-router.md)) |
 | 2026-10-27 | Step 7.7 done: the copilot's version 2 adopted, with a handoff from the data agent to the doc agent, router prompt r2 and the validator's version 2 | It recovered 16 of the 19 dev questions version 1 lost to the doc agent; the rules were written from those losses, so the test split, opened once when the copilot is final, measures how they generalise ([ADR-0026](decisions/0026-copilot-v2.md)) |
+| 2026-10-28 | Step 7.1 done: the fine-tuned embedders not adopted, and not published | Neither was significantly better in the doc agent's search on dev, and both were worse across all filings; the training data come from FinanceBench's filings, read on Kaggle from a private dataset ([ADR-0027](decisions/0027-domain-embedder.md)) |
 
 ## 11. Status tracker
 
