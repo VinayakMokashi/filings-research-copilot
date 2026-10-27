@@ -3,10 +3,11 @@
 Builds the kernel in a temporary folder: kaggle/router/train_router.py with REF pinned to a
 commit of this repository (the kernel reads the training set from GitHub at that commit),
 and a kernel-metadata.json for the given Kaggle user. Pushes it with a T4 GPU, waits for
-it to finish, and downloads its output to data/models/<name>/: router.onnx, metrics.json
-and the merged model's config.json and tokenizer.json, the files `ClassifierRouter.load`
-reads. The Kaggle CLI runs through uvx, so it is no dependency of the project; it reads the
-API token from ~/.kaggle/access_token (or KAGGLE_API_TOKEN).
+it to finish, and downloads its output to data/models/<name>/, with router.onnx,
+metrics.json and the merged model's config.json and tokenizer.json (the files
+`ClassifierRouter.load` reads) at the top of the folder. The Kaggle CLI runs through uvx,
+so it is no dependency of the project; it reads the API token from ~/.kaggle/access_token
+(or KAGGLE_API_TOKEN).
 
 Usage: uv run poe kaggle-router --user KAGGLE_USERNAME --ref COMMIT --name router-v1
 """
@@ -90,14 +91,16 @@ def main(argv: list[str] | None = None) -> int:
     with tempfile.TemporaryDirectory() as temporary:
         download = Path(temporary)
         print(kaggle("kernels", "output", kernel, "-p", str(download)))
+        missing = [name for name in KEEP if not (download / name).exists()]
+        if missing:
+            print(f"The kernel's output has no {', '.join(missing)}.", file=sys.stderr)
+            return 1
         target = args.out / args.name
-        target.mkdir(parents=True, exist_ok=True)
+        # Everything the kernel wrote (the merged model, the adapter, the log), and the
+        # files ClassifierRouter.load reads at the top of the folder.
+        shutil.copytree(download, target, dirs_exist_ok=True)
         for name in KEEP:
-            found = download / name
-            if not found.exists():
-                print(f"The kernel's output has no {name}.", file=sys.stderr)
-                return 1
-            shutil.copy2(found, target / Path(name).name)
+            shutil.copy2(download / name, target / Path(name).name)
     metrics = json.loads((target / "metrics.json").read_text(encoding="utf-8"))
     print(
         f"Wrote {target}: best validation accuracy {metrics['best_val_accuracy']}, "
