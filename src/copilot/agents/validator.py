@@ -16,6 +16,15 @@ doc agent's answers to FinanceBench dev questions had at least one such sentence
 3. **At most twice.** If the answer still fails after two revisions, the sentences that
    passed are kept and the rest are reported as unverified; with none left, the copilot
    declines.
+
+A question that asks for a judgement (whether a margin is healthy, a trend improving) needs
+one, and the sources seldom state it in so many words, so the check rejected such
+sentences and the revisions dropped them: in the end-to-end run, right answers lost their
+verdicts (step 5.6). Since version 2 the writer may keep a judgement the supported facts
+bear out as a sentence of its own that begins "Assessment:" (`ASSESSMENT`). The check
+still reads it, but it doesn't fail the answer, and trimming keeps it beside at least one
+supported sentence, so a reader sees what the sources state and what the answer concludes
+from them, apart.
 """
 
 from __future__ import annotations
@@ -33,7 +42,8 @@ from copilot.llm import LLMClient, Message, ModelRole, system, user
 
 CHECK_ROLE: ModelRole = "small"
 MAX_REVISIONS = 2
-PROMPT_VERSION = "1"
+PROMPT_VERSION = "2"  # 2: a labelled assessment may stay; percentages computed as such
+ASSESSMENT = "Assessment:"
 
 REVISE_INSTRUCTION = """\
 A check found that these sentences of your answer are not supported by the sources they \
@@ -43,7 +53,12 @@ cite:
 
 Write the answer again under the same rules, so that every sentence is supported by the \
 sources it cites: correct each of these sentences from the sources, or leave it out. Keep \
-the sentences that are supported. Return the same JSON object."""
+the sentences that are supported. If the question asks for a judgement, such as whether a \
+margin is healthy or a trend improving, and the supported facts bear one out, give it as \
+the last sentence, beginning "Assessment:", with the citations of the facts it rests on \
+and no new facts. Compute every figure with "calculations" again, as the rules say; for a \
+percentage, the expression multiplies by 100, as in (a - b) / b * 100. Return the same \
+JSON object."""
 
 
 def check_answer(llm: LLMClient, answer: Answer) -> Faithfulness:
@@ -53,9 +68,21 @@ def check_answer(llm: LLMClient, answer: Answer) -> Faithfulness:
     return check(llm, answer.text, sources, calculations, role=CHECK_ROLE)
 
 
+def labelled(text: str) -> bool:
+    """Whether a sentence is the answer's own assessment, labelled as such."""
+    return text.lstrip().startswith(ASSESSMENT)
+
+
 def failing(verdict: Faithfulness) -> list[SentenceCheck]:
-    """The sentences that aren't supported, including those that cite nothing."""
-    return [sentence for sentence in verdict.checks if sentence.supported is not True]
+    """The sentences that aren't supported, including those that cite nothing; a labelled
+    assessment doesn't fail."""
+    return [s for s in verdict.checks if s.supported is not True and not labelled(s.text)]
+
+
+def passes(verdict: Faithfulness) -> bool:
+    """Every sentence is supported by its sources or is a labelled assessment, and at least
+    one is supported."""
+    return not failing(verdict) and verdict.supported_sentences > 0
 
 
 def revise_messages(
@@ -94,14 +121,16 @@ def revise(
 
 
 def trim(answer: Answer, verdict: Faithfulness) -> tuple[Answer, list[str]]:
-    """The answer cut to its supported sentences, and the sentences that were cut.
+    """The answer cut to its supported sentences and labelled assessments, and the sentences
+    that were cut.
 
     With no supported sentence left, the answer becomes a refusal that names what couldn't
-    be verified.
+    be verified: an assessment alone answers nothing.
     """
-    kept = [sentence.text for sentence in verdict.checks if sentence.supported is True]
-    dropped = [sentence.text for sentence in verdict.checks if sentence.supported is not True]
-    if not kept:
+    keep = [s.supported is True or labelled(s.text) for s in verdict.checks]
+    kept = [s.text for s, kept in zip(verdict.checks, keep, strict=True) if kept]
+    dropped = [s.text for s, kept in zip(verdict.checks, keep, strict=True) if not kept]
+    if not verdict.supported_sentences:
         missing = "an answer its sources support; unverified: " + "; ".join(dropped)
         refusal = dataclasses.replace(answer, answerable=False, text="", cited=[], missing=missing)
         return refusal, dropped
@@ -153,7 +182,8 @@ def to_answer(record: dict[str, Any], question: str) -> Answer:
 
 def verdict_record(verdict: Faithfulness) -> dict[str, Any]:
     return {
-        "faithful": verdict.faithful,
+        "faithful": passes(verdict),
+        "assessments": sum(labelled(s.text) for s in verdict.checks),
         "sentences": len(verdict.checks),
         "supported": verdict.supported_sentences,
         "failing": [dataclasses.asdict(sentence) for sentence in failing(verdict)],
