@@ -1,0 +1,57 @@
+[
+  {
+    "threshold": 0.9,
+    "run": "cascade-classifier-v1-t0.9",
+    "accuracy": 0.8913,
+    "accuracy_low": 0.8333,
+    "accuracy_high": 0.942,
+    "sent_on": 0.0725,
+    "errors": 15,
+    "latency_p50_s": 0.0094,
+    "cost_usd_per_question": 1.47e-05
+  },
+  {
+    "threshold": 0.95,
+    "run": "cascade-classifier-v1-t0.95",
+    "accuracy": 0.9058,
+    "accuracy_low": 0.8551,
+    "accuracy_high": 0.9493,
+    "sent_on": 0.1159,
+    "errors": 13,
+    "latency_p50_s": 0.0095,
+    "cost_usd_per_question": 2.28e-05
+  },
+  {
+    "threshold": 0.98,
+    "run": "cascade-classifier-v1-t0.98",
+    "accuracy": 0.9348,
+    "accuracy_low": 0.8913,
+    "accuracy_high": 0.971,
+    "sent_on": 0.1957,
+    "errors": 9,
+    "latency_p50_s": 0.0098,
+    "cost_usd_per_question": 3.77e-05
+  },
+  {
+    "threshold": 0.99,
+    "run": "cascade-classifier-v1-t0.99",
+    "accuracy": 0.9783,
+    "accuracy_low": 0.9493,
+    "accuracy_high": 1.0,
+    "sent_on": 0.3261,
+    "errors": 3,
+    "latency_p50_s": 0.011,
+    "cost_usd_per_question": 6.3e-05
+  },
+  {
+    "threshold": 0.995,
+    "run": "cascade-classifier-v1-t0.995",
+    "accuracy": 1.0,
+    "accuracy_low": 1.0,
+    "accuracy_high": 1.0,
+    "sent_on": 0.5217,
+    "errors": 0,
+    "latency_p50_s": 0.3398,
+    "cost_usd_per_question": 0.0001
+  }
+]

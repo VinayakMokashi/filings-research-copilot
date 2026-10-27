@@ -1,0 +1,13 @@
+[
+  {
+    "threshold": 0.8,
+    "run": "cascade-classifier-v2-t0.8",
+    "accuracy": 0.9667,
+    "accuracy_low": 0.9167,
+    "accuracy_high": 1.0,
+    "sent_on": 0.05,
+    "errors": 2,
+    "latency_p50_s": 0.0079,
+    "cost_usd_per_question": 9.1e-06
+  }
+]
