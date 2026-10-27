@@ -255,7 +255,7 @@ Size is relative: S < M < L.
 Every experiment gets a before/after on fixed eval sets, an eval report and an adopt-or-reject ADR.
 
 - [ ] 7.1 Domain embedder: MNRL with hard negatives on the synthetic pairs (training documents only), trained on a free GPU; ONNX export; published on Hugging Face.
-- [ ] 7.2 LoRA router: a BERT-family classifier with LoRA (CPU is enough), compared with the semantic and LLM routers.
+- [x] 7.2 LoRA router: a BERT-family classifier with LoRA (CPU is enough), compared with the semantic and LLM routers. Done: trained on a Kaggle GPU, 0.913 on routing dev and 0.950 on test, against 0.739 and 0.800 for the semantic router; adopted as the LLM router's fallback behind a setting, and published on Hugging Face ([report](eval/lora-router.md), [ADR-0025](decisions/0025-classifier-router.md)).
 - [ ] 7.3 DSPy optimisation of one prompt (answer synthesis or HyDE), adopted only on a significant gain.
 - [ ] 7.4 Stretch: a fine-tuned reranker, or a small distilled query-rewriter served on CPU.
 - [ ] 7.5 Bandit model routing: replay eval logs offline with decaying ε (reward = judge score minus a cost penalty), then a feature flag online.
@@ -359,6 +359,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-26 | Step 6.2's cache serves exact repeats, not similar questions | On routing-set pairs, a question with its measure swapped was more similar to the original than the original's own paraphrases at every threshold that let paraphrases through, so a semantic cache would serve one measure's answer to another's question ([guide](concepts/semantic-cache.md)) |
 | 2026-10-26 | Step 6.4's MCP server sends questions through the API instead of running its own copilot, and is checked in an MCP host that can be scripted | Questions spend model quota, which only the API guards with quotas, a cache and one run at a time ([ADR-0021](decisions/0021-mcp-server.md)); a host run from a script gives a check that can be repeated, and the runbook carries Claude Desktop's configuration |
 | 2026-10-27 | Phase 5's last evaluations run the strong and fast roles on Cerebras, with each judge checked against its Groq verdicts first | Groq's free tier allows about 200,000 tokens a day for each model and its paid plan wasn't taking sign-ups; Cerebras serves the same open weights, and with its Qwen's reasoning switched off, its judges agree with Groq's on 99 of 100 verdicts ([ADR-0024](decisions/0024-second-provider.md)) |
+| 2026-10-27 | Step 7.2 trains on Kaggle, not the CPU, and its classifier becomes the fallback rather than the router | The laptop has too little free memory to train; the classifier beats the semantic fallback on both splits but trails the LLM router, which costs a small share of an answer ([ADR-0025](decisions/0025-classifier-router.md)) |
 | 2026-10-27 | Step 7.7 added: a copilot version 2 | The end-to-end evaluation found the copilot losing to the doc agent alone on analyst questions, for three causes it can measure a fix for: questions the data agent declines, analyst questions sent to it, and judgements the validator removes ([report](eval/copilot-dev.md)) |
 
 ## 11. Status tracker
