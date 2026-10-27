@@ -472,8 +472,11 @@ def build_graph(
             retried=agent_answer.retried,
             cited=len(record["citations"]),
             filings=filings,
+            arm=agent_answer.arm,
         )
         result = {"kind": "doc", "answer": record, "retried": agent_answer.retried}
+        if agent_answer.arm is not None:
+            result["arm"] = agent_answer.arm
         if handoff is not None:
             result["handoff"] = handoff
         return {"result": result | {"filings": filings}}
