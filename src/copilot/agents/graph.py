@@ -11,14 +11,17 @@ Each question runs through the same nodes:
   in the state.
 - **understand** reads the companies, periods and forms the question names.
 - **route** asks the router (ADR-0017) and branches on its route.
-- The specialists answer: the doc agent, the data agent, the hybrid of the two, a brief
-  (Phase 7; a short note until then), a reply to small talk, or a polite decline. When
+- The specialists answer: the doc agent, the data agent, the hybrid of the two, the
+  brief crew (step 7.6, `copilot.agents.brief`; a short note when none is set), a reply to
+  small talk, or a polite decline. A caller may ask for a route (`requested_route`, as
+  `/v1/brief` does), and the router isn't asked. When
   the data agent finds nothing to answer with (it declines, fails, or its query returns
   no rows), the question goes on to the doc agent (step 7.7), since the filings' text
   holds much the facts database doesn't.
 - **synthesise** puts every specialist's result into one shape, the draft.
 - **validate** checks a cited answer's sentences against their sources (step 5.3,
-  `copilot.agents.validator`). An answer that fails goes to **revise** and back, at most
+  `copilot.agents.validator`); a brief's sections are checked by the crew's own critic.
+  An answer that fails goes to **revise** and back, at most
   twice; after that, only its verified sentences are kept. A revision that would turn an
   answer into a refusal is set aside, and the answer is cut to its verified sentences.
 - **respond** writes the reply and adds the turn to the conversation's history.
@@ -44,6 +47,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.store.base import BaseStore
 from langgraph.types import Checkpointer
 
+from copilot.agents.brief import Brief, Emit
 from copilot.agents.memory import (
     MAX_TURNS,
     anonymous,
@@ -104,6 +108,7 @@ class Turn(TypedDict):
 
 class CopilotState(TypedDict, total=False):
     question: str  # as asked, this turn
+    requested_route: str  # a route the caller asks for this turn, or "" to ask the router
     standalone: str  # after follow-up rewriting
     cues: dict[str, Any]  # the companies, periods and forms the question names
     decision: dict[str, Any]  # the router's RouteDecision
@@ -155,6 +160,10 @@ class HybridAnswerer(Protocol):
     def answer(self, question: str) -> HybridAnswer: ...
 
 
+class BriefWriter(Protocol):
+    def run(self, request: str, emit: Emit = ...) -> Brief: ...
+
+
 @dataclass
 class Components:
     """What the nodes call.
@@ -165,7 +174,8 @@ class Components:
     resume later; otherwise the reply asks the user to try again. `checker` checks cited
     answers on the `small` role and `writer` revises them on the `strong` role; without
     both, answers pass unchecked. `rewriter` makes follow-ups standalone; `notes` and
-    `store` keep notes about the user across conversations, when both are set.
+    `store` keep notes about the user across conversations, when both are set. `brief`
+    writes briefs; without it, a request for one gets a short note.
     """
 
     router: Router
@@ -182,10 +192,11 @@ class Components:
     rewriter: LLMClient | None = None
     notes: LLMClient | None = None
     store: BaseStore | None = None
+    brief: BriefWriter | None = None
 
 
 BRIEF_REPLY = (
-    "Written briefs aren't available yet. Ask about one part at a time, such as a "
+    "Written briefs aren't available here. Ask about one part at a time, such as a "
     "company's revenue trend, what drove it, or the risks it reports, and I'll answer "
     "with sources."
 )
@@ -291,9 +302,50 @@ def data_record(answer: DataAnswer) -> dict[str, Any]:
     return answer.model_dump(mode="json", exclude={"question"})
 
 
+def brief_record(written: Brief) -> dict[str, Any]:
+    """A brief as the state holds it: the Markdown, its citations and how it was made."""
+    return {
+        "kind": "brief",
+        "text": written.markdown(),
+        "answered": bool(written.answered),
+        "citations": written.citations,
+        "brief": {
+            "title": written.plan.title,
+            "planned": written.planned,
+            "modules": written.plan.modules,
+            "sections": [
+                {
+                    "heading": section.plan.heading,
+                    "question": section.plan.question,
+                    "route": section.plan.route,
+                    "answered": section.answered,
+                    "supported": section.supported,
+                    "cut": len(section.dropped),
+                    "error": section.error,
+                }
+                for section in written.sections
+            ],
+            "missing": written.missing,
+            "summary_cut": len(written.summary_dropped),
+            "seconds": written.seconds,
+        },
+    }
+
+
 def to_draft(result: dict[str, Any]) -> dict[str, Any]:
     """Every specialist's result in one shape: the text, whether it answers, its citations."""
     kind = result.get("kind", "")
+    if kind == "brief" and "brief" in result:
+        return {
+            "kind": kind,
+            "text": result["text"],
+            "answered": result["answered"],
+            "missing": "; ".join(result["brief"]["missing"]),
+            "citations": result["citations"],
+            "sql": None,
+            "table": None,
+            "chart": None,
+        }
     if kind in ("doc", "hybrid") and "answer" in result:
         answer = result["answer"]
         database = any(c["doc_name"] == DATABASE for c in answer["citations"])
@@ -439,7 +491,12 @@ def build_graph(
         return {"cues": record}
 
     def route(state: CopilotState) -> dict[str, Any]:
-        decision = parts.router.route(state["standalone"])
+        requested = state.get("requested_route", "")
+        asked = [known for known in ROUTES if known == requested]
+        if asked:
+            decision = RouteDecision(route=asked[0], router="request", reason="asked for")
+        else:
+            decision = parts.router.route(state["standalone"])
         emit(
             "route",
             "route",
@@ -512,8 +569,18 @@ def build_graph(
         return {"result": result | {"filings": found.retrieval.filings}}
 
     def brief(state: CopilotState) -> dict[str, Any]:
-        emit("brief", "not yet", note="research briefs arrive in Phase 7")
-        return {"result": {"kind": "brief", "text": BRIEF_REPLY, "answered": False}}
+        if parts.brief is None:
+            emit("brief", "unavailable", note="no brief crew")
+            return {"result": {"kind": "brief", "text": BRIEF_REPLY, "answered": False}}
+
+        def report(event: str, **data: Any) -> None:
+            emit("brief", event, **data)
+
+        try:
+            written = parts.brief.run(state["standalone"], report)
+        except LLMError as exc:
+            return quota("brief", exc)
+        return {"result": brief_record(written)}
 
     def smalltalk(state: CopilotState) -> dict[str, Any]:
         prompt = SMALLTALK_PROMPT.format(companies=", ".join(parts.companies) or "about 40")
@@ -546,6 +613,9 @@ def build_graph(
     def validate(state: CopilotState) -> dict[str, Any]:
         result = state.get("result", {})
         record = result.get("answer")
+        if result.get("kind") == "brief":
+            emit("validate", "skipped", reason="the brief crew checked its sections")
+            return {"validation": {"checked": False}}
         if parts.checker is None or parts.writer is None:
             emit("validate", "skipped", reason="no checker")
             return {"validation": {"checked": False}}
@@ -628,6 +698,7 @@ def build_graph(
             "table": draft.get("table"),
             "chart": draft.get("chart"),
             "handoff": state.get("result", {}).get("handoff"),
+            "brief": state.get("result", {}).get("brief"),
             "validation": {
                 key: value
                 for key, value in state.get("validation", {}).items()

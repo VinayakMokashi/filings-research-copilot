@@ -12,6 +12,7 @@ import pytest
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 
+from copilot.agents.brief import Brief, BriefCrew
 from copilot.agents.build import postgres_checkpointer
 from copilot.agents.graph import NODES, Components, Turn, to_draft
 from copilot.agents.memory import recall
@@ -270,7 +271,7 @@ def test_decline_and_brief_reply_without_a_model_call() -> None:
 
     assert declined["answered"] is False
     assert "investment advice" in declined["text"]
-    assert "briefs aren't available yet" in briefed["text"]
+    assert "briefs aren't available here" in briefed["text"]
     assert chat.calls == []
 
 
@@ -628,3 +629,81 @@ def test_a_recorded_turn_is_built_on_by_a_follow_up() -> None:
 
     assert f"Q1: {asked}" in rewriter.calls[0].messages[1]["content"]
     assert [t["question"] for t in pilot.history("t")] == [asked, "And in 2021?"]
+
+
+class FakeCrewSpecialist:
+    """The doc agent or the hybrid for the crew: one cited answer to anything."""
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+    def answer(self, question: str) -> AgentAnswer:
+        return AgentAnswer(answer(self.text), Retrieval(["NETFLIX_2022_10K"], [], []))
+
+
+def brief_crew() -> BriefCrew:
+    plan = {
+        "title": "Netflix in 2022",
+        "modules": ["risks", "results"],
+        "sections": [
+            {"heading": "Competition", "question": "Netflix risks 2022?", "route": "doc"},
+            {"heading": "Results", "question": "Netflix revenue 2022?", "route": "hybrid"},
+        ],
+    }
+    replies = [json.dumps(plan), json.dumps({"summary": "Competition is intense [1]."})]
+    llm = FakeLLM(replies)
+    return BriefCrew(
+        FakeCrewSpecialist("Netflix names intense competition as a risk [1]."),
+        FakeCrewSpecialist("The market for entertainment is competitive [1]."),
+        llm,
+        llm,
+        workers=1,
+    )
+
+
+def test_a_brief_comes_from_the_crew_with_its_sections_and_citations() -> None:
+    components = parts(["brief"])
+    components.brief = brief_crew()
+    pilot = Copilot(components)
+
+    events = list(pilot.stream("Write a brief on Netflix's 2022.", thread_id="t"))
+    response = events[-1]
+
+    assert response["route"] == "brief"
+    assert response["answered"] is True
+    assert response["text"].startswith("# Netflix in 2022")
+    assert [c["number"] for c in response["citations"]] == [1]  # one page, numbered once
+    assert [s["heading"] for s in response["brief"]["sections"]] == ["Competition", "Results"]
+    stages = [e["event"] for e in events if e["type"] == "event" and e.get("node") == "brief"]
+    assert stages == ["plan", "section", "section", "edit"]
+    validated = [e for e in events if e["type"] == "event" and e.get("node") == "validate"]
+    assert validated[0]["reason"] == "the brief crew checked its sections"
+
+
+def test_a_requested_route_skips_the_router_for_that_turn_only() -> None:
+    components = parts(["doc"])
+    pilot = Copilot(components)
+
+    briefed = pilot.ask("Netflix, 2022", thread_id="t", route="brief")
+    answered = pilot.ask("What risks does Netflix name?", thread_id="t")
+
+    assert briefed["route"] == "brief"
+    assert answered["route"] == "doc"
+    assert isinstance(components.router, FixedRouter)
+    assert components.router.questions == ["What risks does Netflix name?"]
+
+
+def test_to_draft_keeps_a_briefs_citations_and_what_it_left_out() -> None:
+    result = {
+        "kind": "brief",
+        "text": "# Netflix",
+        "answered": True,
+        "citations": [{"number": 1, "label": "x", "doc_name": "d", "page": 1, "text": "t"}],
+        "brief": {"missing": ["Outlook", "Capital returns"]},
+    }
+
+    draft = to_draft(result)
+
+    assert draft["citations"] == result["citations"]
+    assert draft["missing"] == "Outlook; Capital returns"
+    assert isinstance(Brief, type)
