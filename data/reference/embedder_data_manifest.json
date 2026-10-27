@@ -1,0 +1,28 @@
+{
+  "pairs": {
+    "train": 902,
+    "val": 104,
+    "val_filings": 20
+  },
+  "filings": {
+    "train": 195,
+    "corpus": 84
+  },
+  "val_share": 0.1,
+  "seed": 0,
+  "files": {
+    "pairs.jsonl.gz": {
+      "rows": 1006,
+      "sha256": "1152d9d84680f0fcba1613f7344b6d9c394c4c24d63b1e361cf86128e1c54c90"
+    },
+    "chunks.jsonl.gz": {
+      "rows": 50310,
+      "sha256": "19c5a24eacce44e0d1198bfcbca52e67972ebc40d4899aec76fdbab4d76afa4f"
+    },
+    "pages.jsonl.gz": {
+      "rows": 23585,
+      "sha256": "5611363454c3f1be97311c9d9a1ac8586a6d6c3798a938a421cf8df088534117"
+    }
+  },
+  "source_pairs_sha256": "33100b0b7cc08e15de045ddfa675c5c4d4ded1ee8e7f9205c065609fd072848f"
+}
