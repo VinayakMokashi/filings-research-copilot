@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Sequence
+from pathlib import Path
 
 import pytest
 
@@ -140,3 +142,35 @@ def test_aexpand_matches_expand() -> None:
     together = asyncio.run(rw.aexpand(FakeLLM(reply), QUESTION, rw.REWRITES))
 
     assert together == rw.expand(FakeLLM(reply), QUESTION, rw.REWRITES)
+
+
+def test_another_hyde_prompt_shows_its_examples_before_the_question(tmp_path: Path) -> None:
+    path = tmp_path / "hyde.json"
+    path.write_text(
+        json.dumps(
+            {
+                "version": "2",
+                "instruction": "Write the filing's passage.",
+                "examples": [["What was Acme's revenue in 2022?", "Net sales were $1.0 billion."]],
+            }
+        ),
+        encoding="utf-8",
+    )
+    prompt = rw.load_hyde_prompt(path)
+
+    messages = rw.rewrite_messages("hyde", "What was 3M's capex?", prompt)
+
+    assert [m["role"] for m in messages] == ["system", "user", "assistant", "user"]
+    assert messages[0]["content"] == "Write the filing's passage."
+    assert messages[-1]["content"] == "Question: What was 3M's capex?"
+    assert rw.rewrite_messages("multi", "q", prompt) == rw.rewrite_messages("multi", "q")
+
+
+def test_expand_writes_hyde_with_the_prompt_it_is_given() -> None:
+    prompt = rw.HydePrompt("2", "Write the filing's passage.")
+    llm = FakeLLM(["Capital expenditures were $1.6 billion."])
+
+    searches = rw.expand(llm, "What was 3M's capex?", ("hyde",), prompt)
+
+    assert searches[1].passage
+    assert llm.calls[0].messages[0]["content"] == "Write the filing's passage."
