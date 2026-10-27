@@ -229,7 +229,7 @@ Size is relative: S < M < L.
 - [x] 5.3 Validator loop: claim-level faithfulness check, retry with feedback at most twice, then abstain. The check runs on gpt-oss-20b, apart from the writer and the judges; on the doc agent's dev answers, faithful answers rise from 0.63 to 0.85 (p = 0.0001) and correctness moves from 0.65 to 0.61 (p = 0.28), the loss falling on domain-relevant questions whose judgements the sources don't state; $0.0008 an answer ([ADR-0019](decisions/0019-validator-loop.md), [report](eval/validator-dev.md)).
 - [x] 5.4 Self-consistency for numeric answers, kept only if the gain justifies the cost. Measured and not adopted: a vote of three (the doc agent's answer and two samples at temperature 0.7) left every verdict on the 33 dev figure questions as it was (0.879 both ways, p = 1.00), at 2.8 times the answer's cost; the answers it gets wrong are wrong the same way every time ([report](eval/self-consistency.md), [guide](concepts/self-consistency.md)).
 - [x] 5.5 Memory: conversation state in a checkpointer; long-term memory in the Mem0 style (extract, compare, then add, update, delete or skip). Follow-ups are rewritten into standalone questions from the last three turns and the user's notes; notes about the user live in a LangGraph store, in Postgres for conversations. On a memory set of our own, every one of 20 turns resolves, and the second notes prompt keeps only what users say about themselves (15 of 15 checks, against 7 of 15 for the first) ([guide](concepts/agent-memory.md), [data card](data/memory-set.md)).
-- [ ] 5.6 End-to-end dev evaluation plus agent metrics (steps per task, tool success rate, cost per task).
+- [x] 5.6 End-to-end dev evaluation plus agent metrics (steps per task, tool success rate, cost per task). The copilot answers 49 of the 100 dev questions correctly, against 65 for the doc agent alone on the same provider and judges (p = 0.0003). The data agent answers 31 of the 33 figure questions, and the doc and hybrid answers are fully supported by their citations 76% of the time against 43%. But analyst questions sent to the data agent and the validator's trimming cost more than that gains. 8.7 steps a question, every tool call succeeding, $0.0047 a question ([report](eval/copilot-dev.md)); step 7.7 takes up the fixes.
 
 **Done when:** end-to-end dev results are in and every node shows up in a trace.
 **Docs:** ADRs on graph design and routing; guides `langgraph-orchestration.md`, `semantic-routing.md`, `validator-loop.md`, `self-consistency.md`, `agent-memory.md`.
@@ -260,6 +260,7 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 - [ ] 7.4 Stretch: a fine-tuned reranker, or a small distilled query-rewriter served on CPU.
 - [ ] 7.5 Bandit model routing: replay eval logs offline with decaying ε (reward = judge score minus a cost penalty), then a feature flag online.
 - [ ] 7.6 Brief crew: a Self-Discover plan, parallel section writers, an editor and a critic; optionally a jury of small models with a judge; rubric evaluation.
+- [ ] 7.7 Copilot version 2, from the end-to-end evaluation of step 5.6: a question the data agent declines goes on to the doc agent; analyst questions stay off the data route; an answer may keep a judgement of its own, labelled apart from the cited facts. Measured against version 1 on the same dev questions ([report](eval/copilot-dev.md)).
 
 **Done when:** each experiment has its report and ADR, and adopted models run behind flags.
 **Docs:** guides `contrastive-finetuning.md`, `lora-classifier.md`, `dspy.md`, `bandit-routing.md`, `research-briefs.md`.
@@ -358,6 +359,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-26 | Step 6.2's cache serves exact repeats, not similar questions | On routing-set pairs, a question with its measure swapped was more similar to the original than the original's own paraphrases at every threshold that let paraphrases through, so a semantic cache would serve one measure's answer to another's question ([guide](concepts/semantic-cache.md)) |
 | 2026-10-26 | Step 6.4's MCP server sends questions through the API instead of running its own copilot, and is checked in an MCP host that can be scripted | Questions spend model quota, which only the API guards with quotas, a cache and one run at a time ([ADR-0021](decisions/0021-mcp-server.md)); a host run from a script gives a check that can be repeated, and the runbook carries Claude Desktop's configuration |
 | 2026-10-27 | Phase 5's last evaluations run the strong and fast roles on Cerebras, with each judge checked against its Groq verdicts first | Groq's free tier allows about 200,000 tokens a day for each model and its paid plan wasn't taking sign-ups; Cerebras serves the same open weights, and with its Qwen's reasoning switched off, its judges agree with Groq's on 99 of 100 verdicts ([ADR-0024](decisions/0024-second-provider.md)) |
+| 2026-10-27 | Step 7.7 added: a copilot version 2 | The end-to-end evaluation found the copilot losing to the doc agent alone on analyst questions, for three causes it can measure a fix for: questions the data agent declines, analyst questions sent to it, and judgements the validator removes ([report](eval/copilot-dev.md)) |
 
 ## 11. Status tracker
 
@@ -368,9 +370,9 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2 Ingestion and retrieval baseline | Done | 2026-10-17 | 2026-10-18 |
 | 3 Doc agent | Done | 2026-10-19 | 2026-10-23 |
 | 4 Data agent | Done | 2026-10-23 | 2026-10-23 |
-| 5 Orchestration | In progress | 2026-10-24 | |
+| 5 Orchestration | Done | 2026-10-24 | 2026-10-27 |
 | 6 API, UI, MCP, observability | Done | 2026-10-26 | 2026-10-27 |
-| 7 Fine-tuning and optimisation | Planned | | |
+| 7 Fine-tuning and optimisation | In progress | 2026-10-27 | |
 | 8 Google Cloud deployment | Planned | | |
 | 9 Online evaluation | Planned | | |
 | 10 Showcase and polish | Planned | | |

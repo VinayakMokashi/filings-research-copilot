@@ -15,6 +15,23 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 5 · The copilot end to end, and Phase 5 complete
+
+- **Goal:** step 5.6: the whole copilot on FinanceBench's 100 dev questions against the doc agent alone, with the agent metrics; then close Phase 5.
+- **Done:**
+  - Ran the copilot end to end on Cerebras ([ADR-0024](decisions/0024-second-provider.md)), with the validator's checks on Groq. A partial run on Groq's free tier, which the daily cap had stretched over days and which had stored two stand-in data answers, was set aside.
+  - Answered the dev questions again with the doc agent alone on Cerebras, as the same-provider baseline; every run was graded by the same judges.
+  - The [report](eval/copilot-dev.md), the runbook's section on running the copilot end to end, and the plan's step 5.6, tracker and new step 7.7.
+- **Commands:** `uv run poe run-copilot --run copilot-v1`; `poe judge-answers` and `poe check-faithfulness` for `copilot-v1`, `copilot-v1-drafts` and `doc-agent-v4-cerebras`; `poe latency-report data/traces/copilot-v1.jsonl`; `poe compare-runs`.
+- **Results:**
+  - Correct 0.49 (0.39 to 0.59), against 0.65 for the doc agent alone on the same provider and judges (−0.16, p = 0.0003). The provider itself changed nothing: the doc agent's Phase 3 answers score 0.64 by the same judges.
+  - The data agent answered 31 of the 33 figure questions. The doc and hybrid answers were fully supported by their citations 76% of the time, against 48% before the validator.
+  - 8.7 steps and $0.0047 a question, and every tool call succeeded. The validator changed 8 verdicts and fixed none.
+  - Of 19 questions lost to the doc agent: 10 analyst questions sent to the data agent, 6 to the validator's revisions, and 3 others.
+- **Problems and fixes:** the faithfulness check can't read the data agent's answers, which cite the database rather than pages, so faithfulness is reported for the doc and hybrid answers. Two FinanceBench questions were routed to decline: an analyst's judgement, read as investment advice, and a hypothetical bankruptcy payout, read as speculation.
+- **Decisions:** none adopted. The evaluation sets Phase 7's first experiment, step 7.7: hand declined questions on to the doc agent, keep analyst questions off the data route, and let an answer keep a labelled judgement.
+- **Next:** Phase 7: the LoRA router (its training set is built; training waits for a Kaggle token), then the copilot's version 2.
+
 ### 2026-10-27 · Phase 5 · A spent quota no longer passes as a data answer
 
 - **Goal:** make the end-to-end run stop, rather than store a stand-in, when a quota runs out inside the data agent.
