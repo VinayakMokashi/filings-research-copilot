@@ -92,6 +92,7 @@ The run's last event is the response. Every event carries the time, a run id, th
 - **Event fields that clash.** The trace helper took the event type as a keyword argument named `kind`, and the synthesise node's event has a `kind` field too. The helper's parameter is now positional-only.
 - **Pacing is for batches.** The agents' clients pause after each call to stay under the free tier's tokens-a-minute limit, which would add seconds to an interactive answer; the interactive build counts tokens without pausing.
 - **psycopg on Windows.** The Postgres checkpointer needs libpq; `psycopg[binary]` ships it, so nothing has to be installed on the machine.
+- **A spent quota the data agent hid.** When the data agent's written analysis met a spent quota, text2sql-analyst still returned the rows, with "Here are the results" and a caveat, and reported no rate limit. A batch run therefore stored that stand-in as an answer to grade. The data agent now sends its calls through `QuotaWatch`, which marks the answer as rate limited. The data node shows the rows to a person and stops a strict run.
 
 ## Review questions
 
