@@ -8,12 +8,14 @@ call used, whichever is longer. An answer call of 4,000 tokens under a limit of 
 minute waits 30 seconds; a short rewrite waits the fixed pause. It also retries a
 rate-limited call after a growing pause, and adds up the latency and tokens of the calls
 it makes, in all and by model, so a run can report what it cost. Interactive use asks for
-one attempt: a quick fallback or apology beats minutes of waiting for a quota.
+one attempt: a quick fallback or apology beats minutes of waiting for a quota. The counts
+are kept under a lock, since the brief crew's writers share a client across threads.
 """
 
 from __future__ import annotations
 
 import asyncio
+import threading
 import time
 from collections.abc import Sequence
 from typing import Any
@@ -43,6 +45,7 @@ class PacedLLM:
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.tokens_by_model: dict[str, tuple[int, int]] = {}  # model: (prompt, completion)
+        self._lock = threading.Lock()
 
     def reset(self) -> None:
         self.calls, self.latency_s, self.prompt_tokens, self.completion_tokens = 0, 0.0, 0, 0
@@ -57,15 +60,16 @@ class PacedLLM:
         return max(self._pause_s, 60.0 * tokens / limit if limit else 0.0)
 
     def _count(self, response: LLMResponse) -> None:
-        self.calls += 1
-        self.latency_s += response.latency_s
-        self.prompt_tokens += response.prompt_tokens or 0
-        self.completion_tokens += response.completion_tokens or 0
-        prompt, completion = self.tokens_by_model.get(response.model, (0, 0))
-        self.tokens_by_model[response.model] = (
-            prompt + (response.prompt_tokens or 0),
-            completion + (response.completion_tokens or 0),
-        )
+        with self._lock:
+            self.calls += 1
+            self.latency_s += response.latency_s
+            self.prompt_tokens += response.prompt_tokens or 0
+            self.completion_tokens += response.completion_tokens or 0
+            prompt, completion = self.tokens_by_model.get(response.model, (0, 0))
+            self.tokens_by_model[response.model] = (
+                prompt + (response.prompt_tokens or 0),
+                completion + (response.completion_tokens or 0),
+            )
 
     def complete(
         self,
