@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 7 · The copilot's version 2
+
+- **Goal:** step 7.7: win back the dev questions the copilot's first version lost to the doc agent alone, without losing the figure questions the data agent answers.
+- **Done:**
+  - Read the 19 lost questions one by one: 10 failed on the data route (5 declines, 2 empty queries, 3 wrong figures for analyst questions), 6 were lost in the validator's revisions, 1 was declined as advice, and 2 were drafted wrong.
+  - The graph hands a question the data agent can't answer (declined, failed, or no rows) on to the doc agent, and records the handoff in the response; the UI says so.
+  - Router prompt r2 adds two rules on the database's grain: quarters, segments, product lines, regions and figures it doesn't hold go to the doc agent, and an assessment of reported figures goes to the hybrid, not to a decline.
+  - The validator's version 2: a sentence that begins "Assessment:" is the answer's own reading of its cited facts, kept beside a verified sentence and noted in the UI; the revision prompt asks for every figure to be computed again, a percentage's expression multiplying by 100; a revision that refuses is set aside for the answer's verified sentences.
+  - Ran `copilot-v2` end to end on Cerebras through a resumable loop, graded by the same judges as version 1, and router r2 on the routing set.
+  - The [report](eval/copilot-v2.md), [ADR-0026](decisions/0026-copilot-v2.md), the graph, validator and routing guides, the plan's step 7.7.
+- **Commands:** `uv run poe run-copilot --run copilot-v2`, rerun until done; `poe judge-answers` and `poe check-faithfulness` for `copilot-v2` and `copilot-v2-drafts`; `poe latency-report data/traces/copilot-v2.jsonl`; `uv run poe run-router --router llm --role strong --run llm-r2-gpt-oss-120b-cerebras`; `poe compare-runs`.
+- **Results:**
+  - Correct 0.65 (0.56 to 0.74), against 0.49 for version 1 (+0.160, p = 0.0002) and 0.65 for the doc agent alone (+0.000). Figure questions 32 of 33. 16 of version 1's 19 losses came back: 8 by router r2, 5 by the validator's changes, 4 by the handoff; 1 question was lost against version 1.
+  - On the 55 doc and hybrid answers, faithful 0.82 against 0.49 for the doc agent alone (p = 0.0001). The validator's cost to correctness fell from −0.06 to −0.02 (not significant).
+  - Router r2 routes all 138 routing-set dev questions correctly. $0.0050 a question.
+- **Problems and fixes:** the run paused once on Groq's free-tier quota for the validator's checker and resumed 20 minutes later. Most calls replayed from the cache, so the run's times aren't comparable with version 1's.
+- **Decisions:** [ADR-0026](decisions/0026-copilot-v2.md): version 2 is the copilot. The rules were written from these dev losses, so the FinanceBench test split, opened once when the copilot is final, measures how they generalise.
+- **Next:** the remaining Phase 7 experiments; domain-relevant questions are still 16 against the doc agent's 19.
+
 ### 2026-10-27 · Phase 7 · A LoRA classifier router, trained on Kaggle
 
 - **Goal:** step 7.2: a small encoder, fine-tuned on the LLM router's decisions, that routes on the CPU at no cost; compared with the semantic and LLM routers, alone, in a cascade and as the fallback; published on Hugging Face.
