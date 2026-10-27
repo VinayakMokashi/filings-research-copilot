@@ -28,6 +28,7 @@ import json
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -325,12 +326,22 @@ def build_answer(question: str, sources: Sequence[Source], response: LLMResponse
     )
 
 
-def generate(llm: LLMClient, question: str, sources: Sequence[Source]) -> Answer:
+def generate(
+    llm: LLMClient,
+    question: str,
+    sources: Sequence[Source],
+    *,
+    role: ModelRole = ROLE,
+    **params: Any,
+) -> Answer:
+    """The answer model's cited answer from `sources`; `role` and `params` (such as a
+    reasoning effort) choose another model setting, as the answer bandit's arms do."""
     response = llm.complete(
         answer_messages(question, sources),
-        role=ROLE,
+        role=role,
         temperature=0.0,
         max_tokens=4096,
         response_format={"type": "json_object"},
+        **params,
     )
     return build_answer(question, sources, response)
