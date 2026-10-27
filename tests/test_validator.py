@@ -6,13 +6,17 @@ import json
 
 from copilot.agents.graph import answer_record
 from copilot.agents.validator import (
+    ASSESSMENT,
     CHECK_ROLE,
     check_answer,
     failing,
+    labelled,
+    passes,
     revise,
     revise_messages,
     to_answer,
     trim,
+    verdict_record,
 )
 from copilot.answer.calculator import Calculation
 from copilot.answer.context import Source
@@ -117,3 +121,58 @@ def test_an_answer_survives_the_trip_through_the_state() -> None:
     assert rebuilt.sources == original.sources
     assert rebuilt.cited == original.cited
     assert rebuilt.calculations == original.calculations
+
+
+JUDGEMENT = f"{ASSESSMENT} competition weighs on Netflix's growth [1]."
+
+
+def judged(*supported: bool | None) -> Faithfulness:
+    """A verdict on a fact and a labelled assessment, in that order."""
+    texts = ["Netflix calls competition intense [1].", JUDGEMENT]
+    return Faithfulness(
+        [SentenceCheck(text, [1], ok) for text, ok in zip(texts, supported, strict=True)]
+    )
+
+
+def test_a_labelled_assessment_doesn_t_fail_the_answer() -> None:
+    result = judged(True, False)
+
+    assert labelled(JUDGEMENT)
+    assert not labelled("Netflix calls competition intense [1].")
+    assert failing(result) == []
+    assert passes(result)
+    assert not result.faithful  # the strict reading, as the evaluation's judge has it
+    assert verdict_record(result)["faithful"] is True
+    assert verdict_record(result)["assessments"] == 1
+
+
+def test_an_assessment_alone_answers_nothing() -> None:
+    result = judged(False, False)
+
+    assert [check.text for check in failing(result)] == ["Netflix calls competition intense [1]."]
+    assert not passes(result)
+    trimmed, dropped = trim(answer(), result)
+    assert not trimmed.answerable
+    assert dropped == ["Netflix calls competition intense [1]."]
+
+
+def test_trim_keeps_a_labelled_assessment_beside_a_verified_fact() -> None:
+    result = Faithfulness(
+        [
+            SentenceCheck("Netflix calls competition intense [1].", [1], True),
+            SentenceCheck("Its members grew 9% [2].", [2], False),
+            SentenceCheck(JUDGEMENT, [1], False),
+        ]
+    )
+
+    trimmed, dropped = trim(answer(), result)
+
+    assert trimmed.text == f"Netflix calls competition intense [1]. {JUDGEMENT}"
+    assert dropped == ["Its members grew 9% [2]."]
+
+
+def test_a_revision_may_keep_a_labelled_judgement_and_scales_percentages() -> None:
+    prompt = revise_messages(SYSTEM_PROMPT, "Q?", answer(), failing(verdict(True, False)))[1]
+
+    assert 'beginning "Assessment:"' in prompt["content"]
+    assert "multiplies by 100" in prompt["content"]
