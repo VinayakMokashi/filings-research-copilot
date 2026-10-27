@@ -30,5 +30,6 @@
 | [0026](0026-copilot-v2.md) | Hand on what the data agent can't answer, route by the database's grain, and let a checked answer keep a labelled assessment | Accepted | 2026-10-27 |
 | [0027](0027-domain-embedder.md) | Keep bge-small; the embedders fine-tuned on filings aren't adopted | Accepted | 2026-10-28 |
 | [0028](0028-dspy-hyde.md) | Keep the hand-written HyDE prompt; DSPy found no better instruction | Accepted | 2026-10-28 |
+| [0029](0029-bandit-routing.md) | Answer with one fixed model; keep the answer bandit behind a setting for Phase 9 | Accepted | 2026-10-28 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
