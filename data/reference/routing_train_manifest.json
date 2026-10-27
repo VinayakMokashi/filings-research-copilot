@@ -1,0 +1,57 @@
+{
+  "rows": 2291,
+  "by_route": {
+    "doc": 402,
+    "data": 381,
+    "hybrid": 417,
+    "brief": 385,
+    "smalltalk": 304,
+    "decline": 402
+  },
+  "by_split": {
+    "train": 2062,
+    "val": 229
+  },
+  "intended_agrees_with_teacher": {
+    "doc": "395/400",
+    "data": "381/382",
+    "hybrid": "399/399",
+    "brief": "384/395",
+    "smalltalk": "304/321",
+    "decline": "393/394"
+  },
+  "teacher_errors": 0,
+  "written": 2430,
+  "unique": 2392,
+  "distinct": 2368,
+  "leaked": 77,
+  "leak_limit": 0.85,
+  "duplicate_limit": 0.95,
+  "nearest_routing_similarity": {
+    "median": 0.744,
+    "p95": 0.821,
+    "max": 0.85
+  },
+  "writer": {
+    "model": "cerebras/gpt-oss-120b",
+    "prompt_version": "w2",
+    "batches": 162,
+    "tokens": [
+      99111,
+      107329
+    ],
+    "cost_usd": 0.1151856
+  },
+  "teacher": {
+    "model": "cerebras/gpt-oss-120b",
+    "router": "llm",
+    "prompt_version": "r1",
+    "tokens": [
+      2003218,
+      266554
+    ],
+    "cost_usd": 0.9010418,
+    "routing_dev_right": "138/138"
+  },
+  "sha256": "642a56545c1f9573f002aecdce2667a648a4bed1ceb6b71a5a9e569a21071abf"
+}
