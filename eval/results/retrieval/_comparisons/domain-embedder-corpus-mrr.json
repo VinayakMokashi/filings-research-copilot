@@ -1,0 +1,40 @@
+{
+  "metric": "mrr@10",
+  "baseline": "page_bge-small-dense-corpus",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-fp32-dense-corpus",
+      "baseline": 0.23,
+      "candidate": 0.2307,
+      "difference": 0.0007,
+      "low": -0.0004,
+      "high": 0.0025,
+      "p": 1.0,
+      "holm_p": 1.0,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "page_embedder-v1-dense-corpus",
+      "baseline": 0.23,
+      "candidate": 0.134,
+      "difference": -0.096,
+      "low": -0.1598,
+      "high": -0.0357,
+      "p": 0.0023,
+      "holm_p": 0.0069,
+      "verdict": "worse"
+    },
+    {
+      "run": "page_embedder-v2-dense-corpus",
+      "baseline": 0.23,
+      "candidate": 0.1623,
+      "difference": -0.0677,
+      "low": -0.1311,
+      "high": -0.0065,
+      "p": 0.0364,
+      "holm_p": 0.0728,
+      "verdict": "no significant difference"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "metric": "mrr@10",
+  "baseline": "page_bge-small-dense-oracle",
+  "alpha": 0.05,
+  "rows": [
+    {
+      "run": "page_bge-small-fp32-dense-oracle",
+      "baseline": 0.4226,
+      "candidate": 0.4226,
+      "difference": 0.0,
+      "low": 0.0,
+      "high": 0.0,
+      "p": 1.0,
+      "holm_p": 1.0,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "page_embedder-v1-dense-oracle",
+      "baseline": 0.4226,
+      "candidate": 0.3732,
+      "difference": -0.0494,
+      "low": -0.1122,
+      "high": 0.0124,
+      "p": 0.125,
+      "holm_p": 0.3666,
+      "verdict": "no significant difference"
+    },
+    {
+      "run": "page_embedder-v2-dense-oracle",
+      "baseline": 0.4226,
+      "candidate": 0.3693,
+      "difference": -0.0533,
+      "low": -0.1219,
+      "high": 0.0133,
+      "p": 0.1222,
+      "holm_p": 0.3666,
+      "verdict": "no significant difference"
+    }
+  ]
+}
