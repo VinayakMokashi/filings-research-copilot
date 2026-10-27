@@ -1,0 +1,141 @@
+{
+  "suite": "bandit",
+  "run": "answer-arms",
+  "split": "dev",
+  "created": "2026-10-27T22:46:41+00:00",
+  "questions": 100,
+  "orders": 2000,
+  "judge": "qwen-3.8-27b-p2",
+  "arms": {
+    "strong": "arm-strong",
+    "strong-low": "arm-strong-low",
+    "fast": "arm-fast"
+  },
+  "per_arm": {
+    "strong": {
+      "model": "cerebras/gpt-oss-120b",
+      "correct": 0.65,
+      "cost_usd": 0.001946
+    },
+    "strong-low": {
+      "model": "cerebras/gpt-oss-120b",
+      "correct": 0.63,
+      "cost_usd": 0.001656
+    },
+    "fast": {
+      "model": "cerebras/qwen-3.8-27b",
+      "correct": 0.61,
+      "cost_usd": 0.005066
+    }
+  },
+  "results": [
+    {
+      "lambda": 0.0,
+      "fixed": {
+        "strong": 0.65,
+        "strong-low": 0.63,
+        "fast": 0.61
+      },
+      "oracle": 0.71,
+      "best_fixed": "strong",
+      "learners": [
+        {
+          "policy": "epsilon-greedy",
+          "mean": 0.6299,
+          "low": 0.59,
+          "high": 0.66,
+          "shares": {
+            "strong": 0.387,
+            "strong-low": 0.347,
+            "fast": 0.266
+          },
+          "regret_vs_best_fixed": 0.0201
+        },
+        {
+          "policy": "ucb1",
+          "mean": 0.6292,
+          "low": 0.59,
+          "high": 0.67,
+          "shares": {
+            "strong": 0.362,
+            "strong-low": 0.33,
+            "fast": 0.308
+          },
+          "regret_vs_best_fixed": 0.0208
+        }
+      ]
+    },
+    {
+      "lambda": 100.0,
+      "fixed": {
+        "strong": 0.4554,
+        "strong-low": 0.4644,
+        "fast": 0.1034
+      },
+      "oracle": 0.5301,
+      "best_fixed": "strong-low",
+      "learners": [
+        {
+          "policy": "epsilon-greedy",
+          "mean": 0.4254,
+          "low": 0.3872,
+          "high": 0.4562,
+          "shares": {
+            "strong": 0.436,
+            "strong-low": 0.471,
+            "fast": 0.094
+          },
+          "regret_vs_best_fixed": 0.0389
+        },
+        {
+          "policy": "ucb1",
+          "mean": 0.4075,
+          "low": 0.364,
+          "high": 0.449,
+          "shares": {
+            "strong": 0.417,
+            "strong-low": 0.438,
+            "fast": 0.144
+          },
+          "regret_vs_best_fixed": 0.0569
+        }
+      ]
+    },
+    {
+      "lambda": 300.0,
+      "fixed": {
+        "strong": 0.0663,
+        "strong-low": 0.1331,
+        "fast": -0.9097
+      },
+      "oracle": 0.1704,
+      "best_fixed": "strong-low",
+      "learners": [
+        {
+          "policy": "epsilon-greedy",
+          "mean": 0.0219,
+          "low": -0.0542,
+          "high": 0.0877,
+          "shares": {
+            "strong": 0.359,
+            "strong-low": 0.558,
+            "fast": 0.083
+          },
+          "regret_vs_best_fixed": 0.1111
+        },
+        {
+          "policy": "ucb1",
+          "mean": 0.0527,
+          "low": 0.0088,
+          "high": 0.0919,
+          "shares": {
+            "strong": 0.407,
+            "strong-low": 0.543,
+            "fast": 0.05
+          },
+          "regret_vs_best_fixed": 0.0803
+        }
+      ]
+    }
+  ]
+}
