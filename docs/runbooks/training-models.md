@@ -1,6 +1,6 @@
 # Training models
 
-How to train the classifier router on a free Kaggle GPU, score it, and publish it on Hugging Face (step 7.2; [guide](../concepts/lora-classifier.md)). Training never runs on the laptop: the kernel trains, and the laptop serves the exported model on its CPU.
+How to train the classifier router on a free Kaggle GPU, score it, and publish it on Hugging Face (step 7.2; [guide](../concepts/lora-classifier.md)), and how to train and evaluate a domain embedder (step 7.1; [guide](../concepts/contrastive-finetuning.md)). Training never runs on the laptop: the kernel trains, and the laptop serves the exported model on its CPU.
 
 ## Before you start
 
@@ -45,6 +45,31 @@ uv run poe publish-router --model-dir data/models/router-v2 --repo NAMESPACE/NAM
 
 The dry run lists the files as they will be published: the model card (`docs/models/router-card.md`) as README.md, the merged model, `onnx/model.onnx`, the adapter and the training metrics. The second command creates the public repository if needed and uploads them.
 
+## Train and evaluate a domain embedder
+
+The embedder's training data are filing text, which the repository never commits, so the kernel reads them from a private Kaggle dataset instead of GitHub.
+
+```bash
+uv run poe kaggle-embedder --user KAGGLE_USERNAME --ref COMMIT --name embedder-v2
+```
+
+The script writes the data to `data/processed/embedder/` (the synthetic pairs with their validation split, the training filings' 480-token chunks, and the corpus's page chunks, gzipped and byte for byte the same on every run) and the manifest to `data/reference/embedder_data_manifest.json`. It uploads the folder as the private dataset `frc-embedder-data` when its checksums differ from the last upload's (recorded in `uploaded.json`), waits for Kaggle to process it, pushes `kaggle/embedder/train_embedder.py` as the kernel `frc-embedder` with a T4, and downloads its output to `data/models/<name>/`: the trained model in `model/`, the ONNX exports in `embedder/` and `base/`, the page vectors of both in `vectors/`, and `metrics.json`. About 30 minutes. `--prepare-only` writes the data and stops.
+
+Check `metrics.json`: `base_val` against `chosen.val` shows what training did on held-out training filings, and `onnx` should show differences of about 1e-7.
+
+Build a collection from the kernel's vectors, then run the retrieval evaluation on it:
+
+```bash
+uv run poe index-corpus --strategy page --docs all --key embedder-v2 \
+    --model-dir data/models/embedder-v2/embedder \
+    --vectors data/models/embedder-v2/vectors/embedder.npy
+uv run poe run-retrieval --collection fb_page_embedder-v2 --mode dense --setting understood --rewrite all
+```
+
+The indexer embeds 16 chunks again on the CPU and stops if they differ from the stored vectors by more than 1e-3; the collection's card records the model's folder, so the retrieval run embeds its queries with the same model. The rewrites come from the cache, so the run makes no model calls. Compare the run with production's with `poe compare-family`, in each of the three settings ([report](../eval/domain-embedder.md)).
+
+To try a collection in the doc agent, set `FRC_COLLECTION=fb_page_embedder-v2` in the run's environment.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -54,3 +79,5 @@ The dry run lists the files as they will be published: the model card (`docs/mod
 | The kernel's status is `ERROR` | `uvx kaggle kernels output USER/frc-router -p DIR` downloads its log (JSON lines; the text is in each line's `data`) |
 | The ONNX export fails | The kernel reloads the saved model with eager attention and tries the TorchScript exporter, then the dynamo one; the log names both errors |
 | `publish-router` says HF_TOKEN isn't set | Add it to `.env`; the script reads it through the settings and never prints it |
+| A status request answers 403 right after a dataset is created or a kernel pushed | Kaggle takes a minute to show a new one; the waits count it as not ready yet |
+| `index-corpus` says the stored vectors differ from the CPU's | The vectors and `--model-dir` come from different models, or the export changed; use the folders from the same kernel run |

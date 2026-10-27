@@ -44,6 +44,7 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Generation (tracing)** | A span for one model call, carrying the model's name, the tokens in and out, and their cost. |
 | **Grounded answer** | An answer whose every claim cites a retrieved source that states it, so a reader can check it. |
 | **Grouped split** | A split that keeps every item of a group (here, a company) on the same side, so nothing about the group leaks across. |
+| **Hard negative** | A passage that looks relevant to a question and isn't, such as another page of the same filing; training against hard negatives teaches an embedder fine distinctions that random passages can't. |
 | **Held-out test set** | Questions set aside while building and opened only at milestones, so the reported result isn't tuned to them. |
 | **Hit@k** | Whether at least one relevant item appears in the top k results: 1 or 0 for each question. |
 | **HNSW** | A graph-based index for fast approximate nearest-neighbour search. |
@@ -52,7 +53,8 @@ Terms used in this project, in alphabetical order. New terms are added as they c
 | **Hybrid search** | Combining keyword (BM25) and semantic (dense) search. |
 | **HyDE** | Hypothetical Document Embeddings: write a hypothetical answer, embed it, and search with that instead of the raw question. |
 | **IDF** | Inverse document frequency: how rare a term is across the collection. BM25 multiplies each term's weight by it, so a rare word like a ticker counts for more than "the". |
-| **Index card** | A JSON file kept beside each Qdrant collection, recording its models, query prefix, vector and HNSW settings, payload indexes, counts and timing. |
+| **In-batch negatives** | In contrastive training, the other questions' passages in the same batch, used as negatives for each question at no extra cost. |
+| **Index card** | A JSON file kept beside each Qdrant collection, recording its models, query prefix, vector and HNSW settings, payload indexes, counts and timing; a search embeds its queries with the model the card names. |
 | **Indirect prompt injection** | Instructions hidden in content an application feeds its model, such as a retrieved page, rather than typed by the user. |
 | **JSON mode** | A provider option that makes the model reply with one valid JSON object, so code can read the answer's fields. |
 | **Langfuse** | An open-source store and viewer for traces of LLM applications, built on OpenTelemetry, with tokens, costs and sessions. |

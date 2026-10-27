@@ -6,7 +6,7 @@
 | **Files** | `data/processed/synthetic/pairs.jsonl` (kept pairs) and `rejected.jsonl` (replies that failed a check, with the reason); both local and git-ignored. [`data/reference/synthetic_pairs_manifest.json`](../../data/reference/synthetic_pairs_manifest.json) records counts and checksums |
 | **Licence** | Derived from FinanceBench's filings (CC BY-NC 4.0), so the pairs are never committed; rebuild them with `uv run poe generate-pairs` |
 | **Built** | 2026-10-17 to 2026-10-18 |
-| **Used for** | Fine-tuning the embedding model in Phase 7 (contrastive training with in-batch and hard negatives) |
+| **Used for** | Fine-tuning the embedding model in step 7.1 (contrastive training with in-batch and hard negatives), through a private Kaggle dataset ([manifest](../../data/reference/embedder_data_manifest.json)); the embedders weren't adopted ([report](../eval/domain-embedder.md)) |
 
 ## Which filings
 
@@ -44,3 +44,4 @@ That leaves 198 of the 368 FinanceBench PDFs, from 27 companies: other years and
 - **Easy pairs.** A question generated from a chunk tends to reuse its vocabulary, which makes the pair easier than a real query. The copy check removes the most literal ones; hard negatives mined from the same filing in Phase 7 counter the rest.
 - **One chunk per question.** The answer may also appear elsewhere in the filing (the income statement and MD&A repeat figures), so a "negative" chunk can sometimes answer the question too.
 - **Rejected replies are kept.** `rejected.jsonl` keeps every rejected reply with its reason, so the rules can be revisited without new model calls.
+- **What training on them showed (step 7.1).** An embedder trained on these pairs ranked held-out training filings' chunks far better (MRR@10 0.41 to 0.71) but FinanceBench's dev questions no better, and, with negatives from one filing only, mixed up companies when it searched every filing. Questions written from their own chunk are easier than people's questions.
