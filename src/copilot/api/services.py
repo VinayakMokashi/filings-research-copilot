@@ -23,6 +23,7 @@ import psycopg
 
 from copilot.agents.build import build_components, postgres_checkpointer, postgres_store
 from copilot.agents.graph import Turn
+from copilot.agents.router import Route
 from copilot.agents.runner import Copilot, Fanout, TraceWriter
 from copilot.agents.tracing import build_tracer
 from copilot.answer.context import describe
@@ -39,7 +40,12 @@ class Asker(Protocol):
     """What the API needs from the copilot: its events for one question."""
 
     def stream(
-        self, question: str, *, thread_id: str, user_id: str = "default"
+        self,
+        question: str,
+        *,
+        thread_id: str,
+        user_id: str = "default",
+        route: Route | None = None,
     ) -> Iterator[dict[str, Any]]: ...
 
     def record(self, thread_id: str, turn: Turn) -> None: ...
