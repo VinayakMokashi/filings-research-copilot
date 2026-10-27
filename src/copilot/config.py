@@ -46,6 +46,14 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("LANGFUSE_BASE_URL", "LANGFUSE_HOST"),
     )
 
+    # The router's fallback when the LLM router's call fails (ADR-0017, ADR-0025): the
+    # semantic router, or the fine-tuned classifier exported to router_model_dir
+    router_fallback: Literal["semantic", "classifier"] = "semantic"
+    router_model_dir: Path = Path("data/models/router-v2")
+
+    # Hugging Face, for publishing the models trained in Phase 7
+    hf_token: SecretStr | None = Field(default=None, validation_alias="HF_TOKEN")
+
     # Model roles, as LiteLLM model ids ("<provider>/<model>")
     llm_strong_model: str = "groq/openai/gpt-oss-120b"
     llm_fast_model: str = "groq/qwen/qwen3.8-27b"

@@ -48,3 +48,22 @@ def test_labels_come_from_the_model_config_in_output_order(tmp_path: Path) -> No
     (tmp_path / "config.json").write_text(json.dumps(config), encoding="utf-8")
     with pytest.raises(ValueError, match="weather"):
         read_labels(tmp_path)
+
+
+def test_a_cascade_can_fall_back_on_the_classifier() -> None:
+    from copilot.agents.router import CascadeRouter, LLMRouter
+    from copilot.llm import FakeLLM
+
+    def scorer(questions: Sequence[str]) -> NDArray[np.float32]:
+        return np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 5.0]], dtype=np.float32)  # decline
+
+    classifier = ClassifierRouter(scorer, list(ROUTES), model="router-v2")
+    reply = json.dumps({"reason": "a filing question", "route": "doc"})
+
+    decided = CascadeRouter(classifier, LLMRouter(FakeLLM([reply])), threshold=2.0).route("Q?")
+    failed = CascadeRouter(classifier, LLMRouter(FakeLLM([])), threshold=2.0).route("Q?")
+
+    assert (decided.route, decided.router) == ("doc", "cascade")
+    assert decided.confidence == pytest.approx(float(softmax(scorer(["Q?"]))[0][5]))
+    assert failed.route == "decline"
+    assert "LLM router failed" in (failed.error or "")
