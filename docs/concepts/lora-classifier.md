@@ -16,7 +16,7 @@ The LLM router is accurate but costs a model call on every question: about half 
 
 ## How it works
 
-1. **Training questions** (`poe generate-routing-train`). The routing set's 198 questions are kept for evaluation, so a model writes new ones, route by route, in batches that vary the companies, the measures and the style, with a third of each batch close to another route's border. Questions within 0.85 cosine similarity of any routing-set question are dropped, so the student never trains on a rewording of an evaluation question, and so are near-duplicates. The LLM router labels the rest; its label is the one the student learns, whatever route the writer aimed for ([data card](../data/routing-train-set.md)).
+1. **Training questions** (`poe generate-routing-train`). The routing set's 198 questions are kept for evaluation, so a model writes new ones, route by route, in batches that vary the companies, the measures and the style, and that ask in turn for each kind of question the route's definition names, with a third of each batch close to another route's border. Questions within 0.85 cosine similarity of any routing-set question are dropped, so the student never trains on a rewording of an evaluation question, and so are near-duplicates. The LLM router labels the rest; its label is the one the student learns, whatever route the writer aimed for ([data card](../data/routing-train-set.md)).
 2. **The student** (`kaggle/router/train_router.py`, on a Kaggle GPU). bge-small-en-v1.5, the project's embedding model, gets a six-way classification head and LoRA adapters (rank 16) on the attention and feed-forward projections. Each route's loss is weighted by the inverse of its share, so a rarer route isn't drowned out. Ten epochs, keeping the one with the best accuracy on the training set's own validation split.
 3. **Export.** The adapters are merged and the model is exported to ONNX, checked against PyTorch's logits.
 4. **Serving** (`ClassifierRouter`). onnxruntime and the model's tokenizer run on the CPU; the route is the most probable class, and its probability is the confidence.
@@ -33,11 +33,24 @@ The LLM router is accurate but costs a model call on every question: about half 
 
 ## How we measured it
 
-<!-- results: lora-router -->
+On the routing set ([report](../eval/lora-router.md)), against the routers of Phase 5:
+
+| Router | Dev (138) | Test (60, scored once) | Median latency | Cost |
+|---|---|---|---|---|
+| Semantic, masked, nearest centroid | 0.739 | 0.800 | 8 ms | none |
+| Classifier, version 1 | 0.833 | | 9 ms | none |
+| **Classifier, version 2** | **0.913** | **0.950** | **8 ms** | **none** |
+| Cascade, the LLM router below 0.8 confidence | 0.957 (9% sent on) | 0.967 (5%) | 8 ms | $0.00002 |
+| LLM router, gpt-oss-120b | 1.000 | 1.000 | 0.5 s | $0.0002 |
+
+The classifier is significantly better than the semantic router on both splits, and worse than the LLM router on dev. It became the LLM router's fallback, behind `FRC_ROUTER_FALLBACK=classifier`, while the LLM router stays first ([ADR-0025](../decisions/0025-classifier-router.md)). The model is on Hugging Face as [vinayakmokashi45/filings-research-copilot-router](https://huggingface.co/vinayakmokashi45/filings-research-copilot-router).
 
 ## Pitfalls
 
-- **Leaks from the evaluation set.** A written question can come close to a routing-set question by chance; 77 of 2,368 distinct questions did, and were dropped before labelling.
+- **Leaks from the evaluation set.** A written question can come close to a routing-set question by chance; 71 of the second set's 2,399 distinct questions did (77 of the first set's 2,368), and were dropped before labelling.
+- **A teacher's labels can't fill a gap in the questions.** The first set's decline questions were nearly all requests for investment advice, because each batch named companies and measures; none was harmful or tried to override the instructions. Its classifier sent those requests to small talk with 0.92 to 0.99 confidence, and routed only 9 of 21 dev declines correctly. Asking the writer for each kind a route's definition lists, in turn, raised that to 16 of 21. A distilled student learns the teacher's decisions only on the inputs it is shown.
+- **Short, generic requests leak.** "Ignore your instructions" is phrased much the same by anyone, so the leak filter drops many such training questions as too close to the routing set's own, and the kind ends with the fewest examples (44). The final classifier's most confident mistakes are of that kind.
+- **A fresh image on every run.** The Kaggle image had PEFT refuse its old torchao and ran transformers 5, so the kernel's first run failed in under a minute: it now uninstalls torchao, passes the labels only as `id2label`, and exports from the saved model with eager attention, trying the TorchScript exporter before the dynamo one.
 - **Too-easy examples.** In a first trial the writer produced only textbook cases: the teacher agreed with the intended route on every one. Asking for a third of each batch near a border gives the student the hard cases a router exists for.
 - **The teacher's ceiling.** A student copies its teacher's mistakes; on the routing set the teacher makes none, but its labels on the training questions are unchecked beyond that.
 
