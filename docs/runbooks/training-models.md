@@ -70,6 +70,20 @@ The indexer embeds 16 chunks again on the CPU and stops if they differ from the 
 
 To try a collection in the doc agent, set `FRC_COLLECTION=fb_page_embedder-v2` in the run's environment.
 
+## Search for a HyDE prompt with DSPy
+
+```bash
+FRC_LLM_STRONG_MODEL=cerebras/gpt-oss-120b FRC_LLM_FAST_MODEL=cerebras/qwen-3.8-27b \
+FRC_LLM_TOKENS_PER_MINUTE=100000 uv run poe optimise-hyde
+```
+
+The script embeds the chunks of the filings its examples come from (once, a file a filing in `data/processed/dspy/vectors/`; `--embed-only` stops there), scores the hand-written HyDE prompt, runs MIPROv2 over the instruction with DSPy's cache in `data/cache/dspy`, writes the result to `data/processed/dspy/hyde-2.json`, and scores it again; the scores go to `eval/results/dspy/`. DSPy and optuna come with the development tools (`uv sync`). To try a prompt in the doc agent's retrieval, without appending to the shared cache:
+
+```bash
+uv run poe run-retrieval --collection fb_page_bge-small --mode dense --setting understood \
+    --rewrite all --hyde-prompt data/processed/dspy/hyde-2.json --cache hyde-dev.jsonl
+```
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -80,4 +94,5 @@ To try a collection in the doc agent, set `FRC_COLLECTION=fb_page_embedder-v2` i
 | The ONNX export fails | The kernel reloads the saved model with eager attention and tries the TorchScript exporter, then the dynamo one; the log names both errors |
 | `publish-router` says HF_TOKEN isn't set | Add it to `.env`; the script reads it through the settings and never prints it |
 | A status request answers 403 right after a dataset is created or a kernel pushed | Kaggle takes a minute to show a new one; the waits count it as not ready yet |
+| MIPROv2 stops with "requires optional dependency 'optuna'" | Install the development tools, which pin `dspy[optuna]`: `uv sync` |
 | `index-corpus` says the stored vectors differ from the CPU's | The vectors and `--model-dir` come from different models, or the export changed; use the folders from the same kernel run |
