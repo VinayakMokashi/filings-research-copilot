@@ -105,6 +105,7 @@ judge-agreement = { cmd = "python scripts/judge_agreement.py", help = "Agreement
 compare-judges = { cmd = "python scripts/compare_judges.py", help = "Agreement and Cohen's kappa between two judges on the same answers (--run, two judge names, --suite)" }
 generate-routing-train = { cmd = "python scripts/generate_routing_train.py", help = "Write training questions for a classifier router and label them with the LLM router (--per-route)" }
 kaggle-router = { cmd = "python scripts/kaggle_router.py", help = "Train the classifier router on a Kaggle GPU and download the model (--user, --ref, --name)" }
+publish-router = { cmd = "python scripts/publish_router.py", help = "Publish a trained classifier router on Hugging Face as a public model (--model-dir, --repo; --dry-run)" }
 check-faithfulness = { cmd = "python scripts/check_faithfulness.py", help = "Check that each answer sentence is supported by the sources it cites (--run NAME)" }
 ui = { cmd = "streamlit run src/copilot/ui/app.py --server.address 127.0.0.1 --server.port 8501 --browser.gatherUsageStats false --client.toolbarMode minimal", help = "Serve the web UI on 127.0.0.1:8501; it talks to the API at FRC_API_URL (default http://127.0.0.1:8000)" }
 self-consistency = { cmd = "python scripts/self_consistency.py", help = "Sample more answers to a run's figure questions, vote on the figure, and keep a new run (--source, --k, --run)" }
