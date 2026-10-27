@@ -1,6 +1,7 @@
 """The copilot's web UI (step 6.3): a chat over the API and a page of evaluation results.
 
-- **Ask:** questions stream through `POST /v1/ask`. While the copilot works, the current step
+- **Ask:** questions stream through `POST /v1/ask`, and with "Write a brief" on, requests
+  for a research brief through `POST /v1/brief`. While the copilot works, the current step
   shows ("Choosing who answers...", "Checking every cited sentence..."); then the answer,
   with how the question was read when it was a follow-up, the chart and table of a query's
   result, every source (a filing page opens in place, the facts database shows its SQL),
@@ -109,6 +110,11 @@ def ask_page() -> None:
     with st.sidebar:
         if st.button("New conversation", icon=":material/add_comment:", width="stretch"):
             state.turns, state.thread = [], None
+        st.toggle(
+            "Write a brief",
+            key="brief_mode",
+            help="Plan a brief in sections, write each from the filings and check it.",
+        )
         st.subheader("Try a question")
         for example in EXAMPLES:
             if st.button(example, key=f"example-{example}", width="stretch"):
@@ -121,20 +127,22 @@ def ask_page() -> None:
             st.warning("Not ready: " + (", ".join(failing) or "the API can't be reached"))
     for number, turn in enumerate(state.turns, start=1):
         show(number, turn)
-    question = st.chat_input("Ask about a company's filings") or state.pop("pending", None)
+    brief = bool(state.get("brief_mode"))
+    prompt = "Ask for a brief on a company" if brief else "Ask about a company's filings"
+    question = st.chat_input(prompt) or state.pop("pending", None)
     if question:
-        state.turns.append(run(question))
+        state.turns.append(run(question, brief=brief))
         st.rerun()
 
 
-def run(question: str) -> dict[str, Any]:
+def run(question: str, *, brief: bool = False) -> dict[str, Any]:
     """Ask the API, showing each step as it starts; the turn as the page keeps it."""
     state = st.session_state
     turn: dict[str, Any] = {"question": question, "events": [], "response": None, "error": None}
     with st.chat_message("user"):
         st.markdown(plain(question))
     with st.chat_message("assistant"), st.status("Working on it...") as status:
-        for event in client().ask(question, state.thread):
+        for event in client().ask(question, state.thread, brief=brief):
             turn["events"].append({"kind": event.kind, **event.data})
             if event.kind == "meta":
                 turn["meta"] = event.data
@@ -168,6 +176,7 @@ def show(number: int, turn: dict[str, Any]) -> None:
             if response.get("cached")
             else "",
             handed_on(response),
+            briefed(response.get("brief") or {}),
             checked(response.get("validation") or {}),
             assessed(response),
         ]
@@ -195,6 +204,24 @@ def handed_on(response: dict[str, Any]) -> str:
     if (response.get("handoff") or {}).get("from") != "data":
         return ""
     return "The facts database had nothing to answer this with; the filings' text answered it."
+
+
+def briefed(brief: dict[str, Any]) -> str:
+    """How a brief was made: its sections, the checks, and what it couldn't cover."""
+    sections = brief.get("sections") or []
+    if not sections:
+        return ""
+    answered = [section for section in sections if section.get("answered")]
+    cut = sum(int(section.get("cut", 0)) for section in sections) + int(brief.get("summary_cut", 0))
+    note = (
+        f"A brief in {len(answered)} section{'s' * (len(answered) != 1)}, each written from "
+        "its own sources and checked against them"
+    )
+    note += f"; {cut} unsupported sentence{'s' * (cut != 1)} cut." if cut else "."
+    missing = brief.get("missing") or []
+    if missing:
+        note += " Not covered: " + "; ".join(missing) + "."
+    return note
 
 
 def assessed(response: dict[str, Any]) -> str:

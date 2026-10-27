@@ -33,7 +33,9 @@ RESPONSE = {
 }
 
 
-def fake_ask(self: CopilotClient, question: str, thread_id: str | None = None) -> Iterator[Event]:
+def fake_ask(
+    self: CopilotClient, question: str, thread_id: str | None = None, *, brief: bool = False
+) -> Iterator[Event]:
     yield Event("meta", {"request_id": "r1", "thread_id": "t1"})
     yield Event("start", {"node": "route"})
     yield Event("event", {"event": "route", "route": "data", "router": "cascade", "model": "m"})
@@ -77,3 +79,24 @@ def test_a_handed_on_answer_and_an_assessment_are_noted() -> None:
     assert "the filings' text answered it" in handed_on(handed)
     assert "reading of the cited facts" in assessed(doc)
     assert assessed(handed) == ""
+
+
+def test_a_brief_says_how_it_was_made_and_what_it_left_out() -> None:
+    from copilot.ui.app import briefed
+
+    brief = {
+        "sections": [
+            {"heading": "Results", "answered": True, "cut": 1},
+            {"heading": "Risks", "answered": True, "cut": 0},
+            {"heading": "Outlook", "answered": False, "cut": 0},
+        ],
+        "summary_cut": 1,
+        "missing": ["Outlook"],
+    }
+
+    note = briefed(brief)
+
+    assert note.startswith("A brief in 2 sections")
+    assert "2 unsupported sentences cut" in note
+    assert note.endswith("Not covered: Outlook.")
+    assert briefed({}) == ""
