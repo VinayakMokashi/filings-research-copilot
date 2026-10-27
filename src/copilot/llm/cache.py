@@ -8,6 +8,9 @@ stored response (marked `cached=True`) instead of calling the model.
 Entries are appended to a JSON Lines file as they arrive, so an interrupted run keeps
 everything it has paid for. A line that can't be read, such as one cut short when a run
 was killed mid-write, is skipped and counted, and the call it held is made again.
+`also_read` names other cache files to answer from without writing to them, so a run can
+replay calls another run made while keeping its own new calls apart, in a file no other
+process appends to.
 
 The key includes the model the role resolves to, so changing a role's model never returns
 another model's answer, and the settings the gateway always sends with that model (such as
@@ -43,7 +46,13 @@ def cache_key(model: str, messages: Sequence[Message], params: Mapping[str, Any]
 class CachedLLM:
     """An LLM client that answers repeated calls from a JSON Lines file."""
 
-    def __init__(self, client: LLMClient, path: Path, models: Mapping[ModelRole, str]) -> None:
+    def __init__(
+        self,
+        client: LLMClient,
+        path: Path,
+        models: Mapping[ModelRole, str],
+        also_read: Sequence[Path] = (),
+    ) -> None:
         self._client = client
         self._path = path
         self._models = dict(models)
@@ -52,17 +61,22 @@ class CachedLLM:
         self.hits = 0
         self.misses = 0
         self.skipped = 0
-        if path.exists():
-            with path.open(encoding="utf-8") as lines:
-                for line in lines:
-                    if not line.strip():
-                        continue
-                    try:
-                        record = json.loads(line)
-                    except json.JSONDecodeError:
-                        self.skipped += 1
-                        continue
-                    self._entries[record["key"]] = record["response"]
+        for source in [*also_read, path]:
+            self._load(source)
+
+    def _load(self, path: Path) -> None:
+        if not path.exists():
+            return
+        with path.open(encoding="utf-8") as lines:
+            for line in lines:
+                if not line.strip():
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    self.skipped += 1
+                    continue
+                self._entries[record["key"]] = record["response"]
 
     def _key(
         self,

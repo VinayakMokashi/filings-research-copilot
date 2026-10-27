@@ -93,3 +93,21 @@ def test_async_calls_share_the_cache(tmp_path: Path) -> None:
 
     assert first.text == second.text == "async answer"
     assert second.cached
+
+
+def test_a_cache_answers_from_another_file_without_writing_to_it(tmp_path: Path) -> None:
+    shared = tmp_path / "llm.jsonl"
+    CachedLLM(FakeLLM(["from the shared file"]), shared, MODELS).complete([user("old")])
+    before = shared.read_bytes()
+    own = tmp_path / "hyde.jsonl"
+    fake = FakeLLM(["a new call"])
+    cached = CachedLLM(fake, own, MODELS, also_read=[shared])
+
+    old = cached.complete([user("old")])
+    new = cached.complete([user("new")])
+
+    assert (old.text, old.cached) == ("from the shared file", True)
+    assert (new.text, new.cached) == ("a new call", False)
+    assert len(fake.calls) == 1
+    assert shared.read_bytes() == before  # only the run's own file grows
+    assert len(own.read_text(encoding="utf-8").splitlines()) == 1
