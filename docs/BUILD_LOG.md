@@ -15,6 +15,16 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 5 · A spent quota no longer passes as a data answer
+
+- **Goal:** make the end-to-end run stop, rather than store a stand-in, when a quota runs out inside the data agent.
+- **Done:**
+  - Found in the end-to-end run on Groq's free tier: two data questions were stored with "Here are the results (1 rows)." as their answer. When the written analysis fails, text2sql-analyst returns the rows and reports no rate limit.
+  - `QuotaWatch` wraps the data agent's model client and notes any refusal for quota reasons, so the answer is marked as rate limited. `DataAgent.build` always adds the watch and passes other options through to the pipeline; the graph, the data agent's FinanceBench run and the hybrid run now build the agent that way.
+  - The data node still shows the rows to a person, and a strict run stops.
+- **Results:** `poe check`: 556 passed. The two stand-ins belong to the end-to-end run on Groq, which is to be run again on Cerebras.
+- **Next:** the copilot's end-to-end run on Cerebras.
+
 ### 2026-10-27 · Phase 5 · A second provider, and the judges checked across providers
 
 - **Goal:** finish Phase 5's last evaluations in hours rather than days, on a provider without the free tier's daily cap, with numbers that still compare with the earlier ones.
