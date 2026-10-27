@@ -46,7 +46,7 @@ from copilot.eval.report import (
     write_run,
 )
 from copilot.eval.splits import HeldOutError, load_split
-from copilot.ingest.embed import DenseEmbedder, FastEmbedBM25, FastEmbedDense
+from copilot.ingest.embed import DenseEmbedder, FastEmbedBM25, dense_for_card
 from copilot.ingest.late_chunking import JinaEmbedder
 from copilot.ingest.universe import read_companies
 from copilot.llm import LLMGateway
@@ -72,14 +72,11 @@ REWRITE_PAUSE_S = 3.0  # between uncached model calls, to stay under 8,000 token
 PAGES = max(retrieval.KS)
 
 
-def query_embedder(card: dict[str, Any], cache_dir: Path) -> DenseEmbedder:
+def query_embedder(card: dict[str, Any], data_dir: Path) -> DenseEmbedder:
     """The embedder a collection's queries need, as its index card records."""
-    model = card["dense"]["query_model"]
-    if model == "bge-small":
-        return FastEmbedDense(cache_dir=cache_dir)
-    if model == "jina-small":
+    if card["dense"]["query_model"] == "jina-small":
         return JinaEmbedder()
-    raise ValueError(f"No query embedder for {model!r}.")
+    return dense_for_card(card, data_dir)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -128,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     searcher = Searcher(
         QdrantClient(url=settings.qdrant_url, timeout=120),
         args.collection,
-        query_embedder(card, cache_dir),
+        query_embedder(card, settings.data_dir),
         FastEmbedBM25(cache_dir=cache_dir),
         rrf_weights=weights,
     )

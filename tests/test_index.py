@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Sequence
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -121,3 +123,44 @@ def test_a_hybrid_query_finds_the_matching_chunk(client: QdrantClient) -> None:
     ).points
 
     assert hits[0].id == CHUNKS[2].point_id
+
+
+def test_read_card_returns_none_without_a_card(tmp_path: Path) -> None:
+    assert index.read_card(tmp_path, "fb_page_missing") is None
+    path = index.card_path(tmp_path, "fb_page_x")
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps({"collection": "fb_page_x"}), encoding="utf-8")
+
+    assert index.read_card(tmp_path, "fb_page_x") == {"collection": "fb_page_x"}
+
+
+def _stored(tmp_path: Path, chunks: Sequence[Chunk], vectors: NDArray[np.float32]) -> Path:
+    path = tmp_path / "vectors" / "tuned.npy"
+    path.parent.mkdir()
+    np.save(path, vectors)
+    (path.parent / "chunk_ids.json").write_text(
+        json.dumps([chunk.chunk_id for chunk in chunks]), encoding="utf-8"
+    )
+    return path
+
+
+def test_stored_vectors_look_up_rows_by_chunk_and_check_against_a_model(tmp_path: Path) -> None:
+    chunks = [_chunk(number, text) for number, text in enumerate(TEXTS)]
+    model = HashingDense()
+    stored = index.StoredVectors(_stored(tmp_path, chunks, model.embed_documents(TEXTS)))
+
+    assert np.array_equal(
+        stored([chunks[2], chunks[0]]), model.embed_documents([TEXTS[2], TEXTS[0]])
+    )
+    assert stored.check(model, chunks) == 0.0
+    assert stored.check(HashingDense(key="other", dim=64), chunks[:1]) == 0.0
+    with pytest.raises(KeyError, match="no vectors for 1"):
+        stored([_chunk(9, "Goodwill was impaired")])
+
+
+def test_stored_vectors_refuse_a_file_whose_ids_dont_match(tmp_path: Path) -> None:
+    chunks = [_chunk(number, text) for number, text in enumerate(TEXTS)]
+    path = _stored(tmp_path, chunks[:3], HashingDense().embed_documents(TEXTS))
+
+    with pytest.raises(ValueError, match="4 rows for 3 chunk ids"):
+        index.StoredVectors(path)

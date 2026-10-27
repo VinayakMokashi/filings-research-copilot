@@ -6,13 +6,19 @@ a chunk twice changes nothing, and an interrupted run resumes by skipping ids al
 present. Payload indexes on document, company, form, fiscal period and section keep filtered
 search fast. HNSW uses Qdrant's defaults (m = 16, ef_construct = 100), recorded here so a
 change is deliberate.
+
+Every collection has an index card (`read_card`) that records what it holds and which model
+made its vectors, so a search embeds its queries with the same model. `StoredVectors` lets a
+collection take vectors computed elsewhere, such as on a GPU for a fine-tuned model.
 """
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from itertools import islice
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -20,7 +26,7 @@ from numpy.typing import NDArray
 from qdrant_client import QdrantClient, models
 
 from copilot.ingest.chunking import Chunk
-from copilot.ingest.embed import SparseEmbedder, SparseVector
+from copilot.ingest.embed import DenseEmbedder, SparseEmbedder, SparseVector
 
 DENSE = "dense"
 SPARSE = "bm25"
@@ -140,3 +146,45 @@ def index_chunks(
 
 def count(client: QdrantClient, collection: str) -> int:
     return int(client.count(collection, exact=True).count)
+
+
+def card_path(data_dir: Path, collection: str) -> Path:
+    """Where a collection's index card is: what it holds, and which models made its vectors."""
+    return data_dir / "processed" / "indexes" / f"{collection}.json"
+
+
+def read_card(data_dir: Path, collection: str) -> dict[str, Any] | None:
+    """A collection's index card, or None if it has none."""
+    path = card_path(data_dir, collection)
+    if not path.exists():
+        return None
+    card: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    return card
+
+
+class StoredVectors:
+    """Passage vectors computed elsewhere (on a GPU, say), looked up by chunk id.
+
+    The file is a NumPy array with one row a chunk; chunk_ids.json beside it names each
+    row's chunk. `check` compares a sample with an embedder's own vectors.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.vectors = np.load(path)
+        ids = json.loads((path.parent / "chunk_ids.json").read_text(encoding="utf-8"))
+        if len(ids) != len(self.vectors):
+            raise ValueError(f"{path} has {len(self.vectors)} rows for {len(ids)} chunk ids.")
+        self.row = {chunk_id: row for row, chunk_id in enumerate(ids)}
+
+    def __call__(self, batch: Sequence[Chunk]) -> NDArray[np.float32]:
+        missing = [chunk.chunk_id for chunk in batch if chunk.chunk_id not in self.row]
+        if missing:
+            raise KeyError(f"{self.path} has no vectors for {len(missing)} chunks.")
+        rows = [self.row[chunk.chunk_id] for chunk in batch]
+        return np.asarray(self.vectors[rows], dtype=np.float32)
+
+    def check(self, dense: DenseEmbedder, chunks: Sequence[Chunk]) -> float:
+        """The largest difference between the stored vectors and `dense`'s, on `chunks`."""
+        expected = dense.embed_documents([chunk.text for chunk in chunks])
+        return float(np.max(np.abs(self(chunks) - expected)))
