@@ -76,12 +76,23 @@ def wait(
     poll_s: float = POLL_S,
     sleep: Callable[[float], None] = time.sleep,
     log: Callable[[str], None] = print,
+    errors: int = 10,
 ) -> str:
-    """Poll `status` until it reports a finished kernel; the last status."""
-    current = ""
+    """Poll `status` until it reports a finished kernel; the last status.
+
+    A kernel just pushed can be denied to a status request for a moment, as a new dataset
+    can, so up to `errors` failed requests in a row count as not finished yet.
+    """
+    current, failed = "", 0
     while not any(word in current.lower() for word in FINISHED):
         sleep(poll_s)
-        current = status().strip()
+        try:
+            current, failed = status().strip(), 0
+        except RuntimeError as error:
+            failed += 1
+            if failed > errors:
+                raise
+            current = f"no status yet: {str(error)[:120]}"
         log(f"  {time.strftime('%H:%M:%S')} {current}")
     return current
 

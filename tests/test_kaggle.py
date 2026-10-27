@@ -46,6 +46,24 @@ def test_wait_polls_until_the_kernel_finishes() -> None:
     assert sleeps == [5, 5, 5]
 
 
+def test_wait_counts_a_few_failed_requests_as_not_finished() -> None:
+    answers: list[str | Exception] = [RuntimeError("kernels.get was denied"), "complete"]
+
+    def status() -> str:
+        answer = answers.pop(0)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    assert kaggle.wait(status, sleep=lambda _: None, log=lambda _: None) == "complete"
+
+    def denied() -> str:
+        raise RuntimeError("kernels.get was denied")
+
+    with pytest.raises(RuntimeError, match="denied"):
+        kaggle.wait(denied, sleep=lambda _: None, log=lambda _: None, errors=2)
+
+
 def test_wait_for_dataset_returns_when_ready_and_raises_on_an_error() -> None:
     statuses = iter(["pending", "ready"])
 
