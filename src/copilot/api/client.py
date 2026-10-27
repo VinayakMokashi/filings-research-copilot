@@ -17,6 +17,7 @@ from typing import Any
 import httpx
 
 ASK_TIMEOUT_S = 300.0  # an answer, a revision and a slow quota retry fit well within it
+BRIEF_TIMEOUT_S = 600.0  # a brief's sections, each an answer of its own
 STEPS = {
     "rewrite": "Reading the conversation",
     "understand": "Finding the companies and years",
@@ -26,7 +27,7 @@ STEPS = {
     "hybrid": "Combining figures and filings",
     "smalltalk": "Replying",
     "decline": "Declining",
-    "brief": "Briefs",
+    "brief": "Planning and writing the brief's sections",
     "synthesise": "Assembling the answer",
     "validate": "Checking every cited sentence",
     "revise": "Revising unsupported sentences",
@@ -71,15 +72,21 @@ class CopilotClient:
         self.visitor_id = visitor_id
         self._http = httpx.Client(base_url=base_url, transport=transport, timeout=30.0)
 
-    def ask(self, question: str, thread_id: str | None = None) -> Iterator[Event]:
-        """The answer's events as they arrive; a refused question is one `error` event."""
+    def ask(
+        self, question: str, thread_id: str | None = None, *, brief: bool = False
+    ) -> Iterator[Event]:
+        """The answer's events as they arrive; a refused question is one `error` event.
+
+        `brief=True` asks `/v1/brief` for a research brief on the request instead.
+        """
         body: dict[str, Any] = {"question": question}
         if thread_id:
             body["thread_id"] = thread_id
         headers = {"X-Visitor-ID": self.visitor_id}
+        path, timeout = ("/v1/brief", BRIEF_TIMEOUT_S) if brief else ("/v1/ask", ASK_TIMEOUT_S)
         try:
             with self._http.stream(
-                "POST", "/v1/ask", json=body, headers=headers, timeout=ASK_TIMEOUT_S
+                "POST", path, json=body, headers=headers, timeout=timeout
             ) as response:
                 if response.status_code != 200:
                     response.read()

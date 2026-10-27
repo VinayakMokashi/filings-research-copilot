@@ -81,3 +81,16 @@ def test_feedback_pages_and_readiness() -> None:
     assert api.source("3M_2018_10K", 59) == {"label": "3M, PDF page 60", "text": "Capex..."}
     assert api.source("3M_2018_10K", 999) is None
     assert api.ready() == {"ready": False, "checks": {"qdrant": False}}
+
+
+def test_a_brief_goes_to_the_brief_endpoint() -> None:
+    paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paths.append(request.url.path)
+        return httpx.Response(200, text=STREAM, headers={"content-type": "text/event-stream"})
+
+    list(client(httpx.MockTransport(handler)).ask("Brief on 3M's 2022.", brief=True))
+    list(client(httpx.MockTransport(handler)).ask("What was 3M's capex?"))
+
+    assert paths == ["/v1/brief", "/v1/ask"]
