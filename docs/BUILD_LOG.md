@@ -15,6 +15,24 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-27 · Phase 7 · A LoRA classifier router, trained on Kaggle
+
+- **Goal:** step 7.2: a small encoder, fine-tuned on the LLM router's decisions, that routes on the CPU at no cost; compared with the semantic and LLM routers, alone, in a cascade and as the fallback; published on Hugging Face.
+- **Done:**
+  - Wrote and labelled the training questions (`poe generate-routing-train`), trained bge-small-en-v1.5 with LoRA on a Kaggle T4 (`poe kaggle-router`), merged and exported it to ONNX, and served it with `ClassifierRouter` on the CPU.
+  - Scored version 1 on routing dev, read its mistakes, and found the training set's gap: its decline questions left out four of the route's seven kinds. Writer prompt w3 asks for every kind each route's definition names; version 2 of the set and of the model followed, and the final model was scored once on the test split.
+  - `scripts/simulate_cascade.py` computes a cascade from two routers' runs; `CascadeRouter` takes the classifier as its first stage, and `FRC_ROUTER_FALLBACK=classifier` makes it the LLM router's fallback.
+  - Published the model with `poe publish-router` (`copilot.training.hub`): the merged model, the ONNX export, the adapter and a model card.
+  - The [report](eval/lora-router.md), [ADR-0025](decisions/0025-classifier-router.md), the [guide](concepts/lora-classifier.md)'s results, the [data card](data/routing-train-set.md), a [runbook](runbooks/training-models.md), the plan's step 7.2.
+- **Commands:** `uv run poe generate-routing-train --per-route 400 --pause 0.3`; `uv run poe kaggle-router --user ... --ref ... --name router-v2`; `uv run poe run-router --router classifier --model-dir data/models/router-v2 --run classifier-v2` (and `--split test --allow-test`, once); `uv run python scripts/simulate_cascade.py ...`; `uv run poe publish-router ...`.
+- **Results:**
+  - Version 2: 0.913 (0.862 to 0.957) on dev and 0.950 (0.883 to 1.000) on test, against 0.739 and 0.800 for the semantic router (+0.174, p = 0.0001; +0.150, p = 0.035) and 1.000 for the LLM router (−0.087 on dev, p = 0.001). 8 ms at the median on the CPU. Version 1: 0.833 on dev, 9 of 21 declines right; version 2: 16 of 21.
+  - A cascade at 0.8 confidence: 0.957 on dev and 0.967 on test, with 9% and 5% of questions sent to the LLM router.
+  - Training took under a minute on the GPU, with 1.34 million of 34.7 million parameters trained; ONNX and PyTorch agree to within 6e-6. The training sets cost about $1 each to write and label.
+- **Problems and fixes:** the kernel's first run failed in PEFT on the image's old torchao, and the image runs transformers 5: the kernel now uninstalls torchao, passes labels as `id2label` only, and exports from the saved model with eager attention, TorchScript first. The second set's labelling first ran at the free tier's pacing because the run didn't set the tokens-a-minute limit; it resumed from its cache.
+- **Decisions:** [ADR-0025](decisions/0025-classifier-router.md): the classifier is the LLM router's fallback behind a setting; the LLM router stays first, since routing is a small share of an answer's cost and the cascade is less accurate. It learned prompt r1's routing; the copilot's version 2 routes with r2.
+- **Next:** step 7.7's copilot version 2.
+
 ### 2026-10-27 · Phase 5 · The copilot end to end, and Phase 5 complete
 
 - **Goal:** step 5.6: the whole copilot on FinanceBench's 100 dev questions against the doc agent alone, with the agent metrics; then close Phase 5.
