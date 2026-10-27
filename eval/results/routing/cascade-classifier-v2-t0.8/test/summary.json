@@ -1,0 +1,127 @@
+{
+  "suite": "routing",
+  "run": "cascade-classifier-v2-t0.8",
+  "split": "test",
+  "created": "2026-10-27T05:16:09.561800Z",
+  "questions": 60,
+  "test_split_opened": true,
+  "system": {
+    "router": "cascade (simulated)",
+    "first": "eval/results/routing/classifier-v2/test",
+    "second": "eval/results/routing/llm-gpt-oss-120b/test",
+    "threshold": 0.8,
+    "latency_s": {
+      "p50": 0.0079,
+      "p95": 0.0264
+    },
+    "cost_usd_per_question": 9.1e-6
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.9666666666666667,
+      "low": 0.9166666666666666,
+      "high": 1.0
+    },
+    "llm_used": {
+      "mean": 0.05,
+      "low": 0.0,
+      "high": 0.11666666666666667
+    }
+  },
+  "by": {
+    "route": {
+      "brief": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.6666666666666666,
+            "low": 0.3333333333333333,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "data": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "decline": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.1111111111111111,
+            "low": 0.0,
+            "high": 0.3333333333333333
+          }
+        }
+      },
+      "doc": {
+        "questions": 15,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.06666666666666667,
+            "low": 0.0,
+            "high": 0.2
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 9,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.1111111111111111,
+            "low": 0.0,
+            "high": 0.3333333333333333
+          }
+        }
+      },
+      "smalltalk": {
+        "questions": 6,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      }
+    }
+  }
+}

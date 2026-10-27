@@ -1,0 +1,127 @@
+{
+  "suite": "routing",
+  "run": "cascade-classifier-v1-t0.95",
+  "split": "dev",
+  "created": "2026-10-27T03:26:44.707101Z",
+  "questions": 138,
+  "test_split_opened": false,
+  "system": {
+    "router": "cascade (simulated)",
+    "first": "eval/results/routing/classifier-v1/dev",
+    "second": "eval/results/routing/llm-gpt-oss-120b/dev",
+    "threshold": 0.95,
+    "latency_s": {
+      "p50": 0.0095,
+      "p95": 0.783
+    },
+    "cost_usd_per_question": 0.0000228
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "accuracy": {
+      "mean": 0.9057971014492754,
+      "low": 0.855072463768116,
+      "high": 0.9492753623188406
+    },
+    "llm_used": {
+      "mean": 0.11594202898550725,
+      "low": 0.06521739130434782,
+      "high": 0.17391304347826086
+    }
+  },
+  "by": {
+    "route": {
+      "brief": {
+        "questions": 18,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.8888888888888888,
+            "low": 0.7222222222222222,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.1111111111111111,
+            "low": 0.0,
+            "high": 0.2777777777777778
+          }
+        }
+      },
+      "data": {
+        "questions": 30,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.03333333333333333,
+            "low": 0.0,
+            "high": 0.1
+          }
+        }
+      },
+      "decline": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.5714285714285714,
+            "low": 0.38095238095238093,
+            "high": 0.7619047619047619
+          },
+          "llm_used": {
+            "mean": 0.14285714285714285,
+            "low": 0.0,
+            "high": 0.2857142857142857
+          }
+        }
+      },
+      "doc": {
+        "questions": 30,
+        "metrics": {
+          "accuracy": {
+            "mean": 0.9333333333333333,
+            "low": 0.8333333333333334,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.23333333333333334,
+            "low": 0.1,
+            "high": 0.4
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 21,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.14285714285714285,
+            "low": 0.0,
+            "high": 0.2857142857142857
+          }
+        }
+      },
+      "smalltalk": {
+        "questions": 18,
+        "metrics": {
+          "accuracy": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "llm_used": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      }
+    }
+  }
+}
