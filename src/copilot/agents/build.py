@@ -5,9 +5,10 @@
 - the doc agent over the evaluation corpus, the data agent with its answer written on the
   `strong` model, and hybrid answers from both (version 2: routed by need, split by a
   planner, partial when the sources are);
-- the router of ADR-0017: the LLM router on the `strong` role decides, and the semantic
-  router (company names and years masked, the nearest route centroid) decides only when
-  the LLM call fails;
+- the router of ADR-0017: the LLM router on the `strong` role decides, and a fallback
+  decides only when the LLM call fails: the semantic router (company names and years
+  masked, the nearest route centroid), or with `FRC_ROUTER_FALLBACK=classifier` the
+  fine-tuned classifier in `FRC_ROUTER_MODEL_DIR` (ADR-0025);
 - a client for small talk, on the `small` role;
 - the validator's checker on the `small` role, and the doc agent's client as the writer
   of revisions (step 5.3);
@@ -37,8 +38,15 @@ from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 from langgraph.store.postgres import PostgresStore
 
+from copilot.agents.classifier import ClassifierRouter
 from copilot.agents.graph import Components
-from copilot.agents.router import CascadeRouter, LLMRouter, SemanticRouter, entity_mask
+from copilot.agents.router import (
+    CascadeRouter,
+    FirstStage,
+    LLMRouter,
+    SemanticRouter,
+    entity_mask,
+)
 from copilot.answer.agent import build_agent
 from copilot.answer.hybrid_v2 import HybridAgentV2
 from copilot.config import Settings
@@ -82,14 +90,18 @@ def build_components(
         [company.name for company in companies],
         {company.name: company.ticker for company in companies},
     )
-    semantic = SemanticRouter(
-        FastEmbedDense(cache_dir=settings.data_dir / "models"),
-        [(query.query, query.route) for query in load_queries("dev")],
-        method="centroid",
-        mask=entity_mask(matcher),
-    )
+    fallback: FirstStage
+    if settings.router_fallback == "classifier":
+        fallback = ClassifierRouter.load(settings.router_model_dir)
+    else:
+        fallback = SemanticRouter(
+            FastEmbedDense(cache_dir=settings.data_dir / "models"),
+            [(query.query, query.route) for query in load_queries("dev")],
+            method="centroid",
+            mask=entity_mask(matcher),
+        )
     router = CascadeRouter(
-        semantic,
+        fallback,
         LLMRouter(router_llm, role="strong"),
         threshold=math.inf,  # the LLM router always decides; see ADR-0017
         fallback_on_error=not batch,

@@ -418,33 +418,46 @@ class LLMRouter:
 # ---------------------------------------------------------------------------------------
 
 
-class CascadeRouter:
-    """The semantic route when it is decisive enough, the LLM router's otherwise.
+class FirstStage(Protocol):
+    """A cascade's first router: one that decides on the CPU and says how sure it is."""
 
-    `threshold` is the confidence the semantic route needs (see `RouteDecision`): with a
-    vote, 1.0 means every one of the k nearest examples must agree; with centroids, it is
-    the margin over the runner-up. When the LLM router fails or its reply can't be read,
-    the semantic route stands, with the error recorded; `fallback_on_error=False` raises a
-    failed call instead, for batch runs that stop and resume.
+    def route(self, question: str) -> RouteDecision: ...
+
+
+class CascadeRouter:
+    """The first router's route when it is decisive enough, the LLM router's otherwise.
+
+    The first router is the semantic router or the fine-tuned classifier
+    (`copilot.agents.classifier.ClassifierRouter`, step 7.2). `threshold` is the
+    confidence its route needs (see `RouteDecision`): with a vote, 1.0 means every one of
+    the k nearest examples must agree; with centroids, it is the margin over the
+    runner-up; with the classifier, the route's probability. When the LLM router fails or
+    its reply can't be read, the first route stands, with the error recorded;
+    `fallback_on_error=False` raises a failed call instead, for batch runs that stop and
+    resume. `exclude` leaves the semantic router's examples out, for evaluations.
     """
 
     name = "cascade"
 
     def __init__(
         self,
-        semantic: SemanticRouter,
+        first: FirstStage,
         llm: LLMRouter,
         *,
         threshold: float = 1.0,
         fallback_on_error: bool = True,
     ) -> None:
-        self.semantic = semantic
+        self.first = first
         self.llm = llm
         self.threshold = threshold
         self._fallback_on_error = fallback_on_error
 
     def route(self, question: str, exclude: Collection[int] = ()) -> RouteDecision:
-        first = replace(self.semantic.route(question, exclude), router=self.name)
+        if exclude and isinstance(self.first, SemanticRouter):
+            decided = self.first.route(question, exclude)
+        else:
+            decided = self.first.route(question)
+        first = replace(decided, router=self.name)
         if first.confidence is not None and first.confidence >= self.threshold:
             return first
         try:
