@@ -1,0 +1,29 @@
+{
+  "suite": "dspy",
+  "run": "hyde-2",
+  "split": "train",
+  "created": "2026-10-27T22:33:44.805751Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "model": "cerebras/qwen-3.8-27b",
+    "metric": "reciprocal rank to 10, within the filing",
+    "prompt_version": "2",
+    "instruction": "You write short excerpts in the style of SEC filings. Write the passage, three to five sentences, that the company's filing would contain to answer this question, in the filing's own wording: a few lines of a financial statement, or a paragraph of management's discussion. Use plausible figures if you don't know the real ones. Return only the passage."
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "rr@10": {
+      "mean": 0.45924206349206353,
+      "low": 0.38876498015873023,
+      "high": 0.5313191468253968
+    },
+    "words": {
+      "mean": 52.07,
+      "low": 46.98,
+      "high": 57.38
+    }
+  },
+  "by": {}
+}

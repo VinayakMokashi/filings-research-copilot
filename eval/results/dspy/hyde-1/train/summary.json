@@ -1,0 +1,28 @@
+{
+  "suite": "dspy",
+  "run": "hyde-1",
+  "split": "train",
+  "created": "2026-10-27T22:26:07.745681Z",
+  "questions": 100,
+  "test_split_opened": false,
+  "system": {
+    "model": "cerebras/qwen-3.8-27b",
+    "metric": "reciprocal rank to 10, within the filing",
+    "prompt_version": "1"
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "rr@10": {
+      "mean": 0.528063492063492,
+      "low": 0.45474285714285717,
+      "high": 0.6029932539682539
+    },
+    "words": {
+      "mean": 81.31,
+      "low": 77.53,
+      "high": 85.17
+    }
+  },
+  "by": {}
+}
