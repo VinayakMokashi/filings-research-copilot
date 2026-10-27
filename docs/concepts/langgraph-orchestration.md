@@ -34,13 +34,14 @@ flowchart LR
     R -->|brief| B[brief note]
     R -->|smalltalk| ST[small talk]
     R -->|decline| X[decline]
+    DA -->|nothing to answer with| D
     D & DA & H & B & ST & X --> SY[synthesise] --> V[validate] --> RE[respond] --> E((end))
 ```
 
 1. **rewrite** makes a follow-up standalone. It is a pass-through until step 5.5, and it clears what the previous turn left in the state.
 2. **understand** reads the companies, years, quarters and forms the question names, with the rules from [query understanding](query-understanding.md).
 3. **route** asks the router ([ADR-0017](../decisions/0017-routing.md)): the LLM router on the `strong` role decides, and the semantic router steps in only if that call fails. A conditional edge then picks the specialist.
-4. **The specialists.** The doc agent, the data agent (its answer written on the `strong` model) and the hybrid of the two answer with citations. A brief gets a note that briefs come later (Phase 7). Small talk gets a short reply on the `small` role, from a prompt that lists the companies covered. A decline gets a fixed reply, with no model call.
+4. **The specialists.** The doc agent, the data agent (its answer written on the `strong` model) and the hybrid of the two answer with citations. A brief gets a note that briefs come later (Phase 7). Small talk gets a short reply on the `small` role, from a prompt that lists the companies covered. A decline gets a fixed reply, with no model call. **The handoff** (step 7.7): when the data agent declines, fails, or its query returns no rows, a conditional edge sends the question on to the doc agent, and the response records the handoff, since the filings' text holds much that the facts database doesn't.
 5. **synthesise** puts every result into one shape, the draft: the text, whether it answers, its citations and any SQL.
 6. **validate** will check the draft's claims against its sources (step 5.3); for now it passes the draft on.
 7. **respond** writes the reply and appends the turn to the history.
@@ -82,9 +83,11 @@ The run's last event is the response. Every event carries the time, a run id, th
 
 - **Tests with fakes** (`tests/test_graph.py`): each of the six routes runs its own path through every shared node, with a start and an end for each; doc, data and hybrid answers carry their citations and SQL; a second turn starts clean while the history grows; the trace file holds every event with its run and turn; usage events report a node's tokens; a spent quota becomes a reply, or, when strict, stops the run with an error event in the trace.
 - **Postgres** (an integration test): a conversation started by one `Copilot` continues in another, as it would in a later process.
-- **End to end:** FinanceBench dev through the graph is step 5.6's run, with steps per task, tool success rate and cost per task.
+- **End to end:** FinanceBench dev through the graph is step 5.6's run, with steps per task, tool success rate and cost per task: version 1 answered 0.49 correctly, against 0.65 for the doc agent alone ([report](../eval/copilot-dev.md)), and version 2, with the handoff, router r2 and the validator's version 2, answers 0.65 ([report](../eval/copilot-v2.md)).
 
 ## Pitfalls we hit
+
+- **A decline was a dead end.** In version 1 a question the data agent declined, such as one about a segment the database doesn't break out, ended there, although the doc agent alone had answered such questions from the filings' text. 7 of version 1's losses were declines or empty queries on the data route; the handoff edge recovered 4 of them in version 2, and router r2 kept the rest off the data route.
 
 - **A checkpointer remembers too much.** In a two-node prototype with a checkpointer, the first node of the second turn still saw the first turn's answer in the state. Resetting the per-turn keys in the first node prevents that, and a test checks that a small-talk turn after a doc answer has no citations.
 - **The trace needs a checkpointer.** Reading a thread's history with `get_state` fails on a graph compiled without one, and LangGraph's documentation says the `tasks` stream mode needs one too, so `Copilot` always has one, in memory unless Postgres is given.

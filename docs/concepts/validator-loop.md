@@ -33,6 +33,8 @@ flowchart LR
 - **The check** reuses the faithfulness judge from Phase 3 (`copilot.eval.faithfulness.check`): one call that splits the answer into sentences and asks whether each is supported by the sources it cites, with the calculator's expressions, so a computed figure counts when its inputs are on the cited pages. A sentence that cites nothing fails.
 - **Who checks.** The `small` role, gpt-oss-20b: a different model from the answer's writer (gpt-oss-120b, the `strong` role), and a different model from the evaluation's judge (Qwen3.8 27B). Checking with the evaluation's own judge would tune the copilot to its grader, and every gain it measured would be suspect.
 - **The revision** goes to the writer with its original rules (the doc agent's prompt, or the hybrid prompt for a split hybrid answer), the same numbered sources, its answer, and the failing sentences listed: correct each one from the sources or leave it out, and keep the rest.
+- **A labelled assessment** (version 2). A question that asks for a judgement needs one, and the pages seldom state it, so a revision may give it as one last sentence that begins "Assessment:" and cites the facts it rests on. The check doesn't fail the answer for that sentence, and trimming keeps it beside at least one verified sentence, never alone. The evaluation's faithfulness judge still grades it like any other sentence.
+- **A revision that refuses** is set aside (version 2): the answer stays as it was, and the next check trims it to its verified sentences.
 - **At most twice.** After two revisions that still fail, `trim` keeps the supported sentences. With none left, the answer becomes a refusal whose `missing` names what couldn't be verified. The response reports the check: whether it ran, whether the final answer passed, the number of revisions and any sentences cut.
 
 ## Where it lives in the code
@@ -41,7 +43,8 @@ flowchart LR
 |---|---|
 | `copilot.agents.validator.check_answer` | The faithfulness check of one answer, on the `small` role |
 | `copilot.agents.validator.revise`, `revise_messages` | The writer's second try, with the failing sentences listed |
-| `copilot.agents.validator.trim` | The supported sentences only, or a refusal |
+| `copilot.agents.validator.trim` | The supported sentences and any labelled assessment, or a refusal |
+| `copilot.agents.validator.labelled`, `failing`, `passes` | Which sentences are the answer's own assessment; which fail; whether the answer passes |
 | `copilot.agents.validator.to_answer`, `verdict_record` | Answers and verdicts to and from the graph's JSON state |
 | `copilot.agents.graph` `validate`, `revise`, `after_validation` | The loop: a conditional edge to `revise` or `respond`, and back |
 | `scripts/validate_answers.py` (`poe validate-answers`) | The loop over a run's stored answers, kept as a new run for the judges |
@@ -63,12 +66,13 @@ On the doc agent's 100 stored answers to FinanceBench dev questions, each run th
 - **Faithfulness** rose by 21 points on the 92 answers given both times (p = 0.0001), and no answer went from faithful to unfaithful.
 - **Correctness** fell by 4 points overall, which a paired test can't tell from noise (p = 0.28), and all five answers it lost answer domain-relevant questions (p = 0.063 on those): the loop drops judgements that rest on a general benchmark or an industry norm rather than on the cited pages.
 - **The checker and the judge** mostly agree: the checker revised 25 of the 35 answers the evaluation's judge found unfaithful, and 3 of the 59 it found faithful.
+- **Version 2, inside the copilot** ([report](../eval/copilot-v2.md)): the validator's cost to correctness fell from 6 right drafts lost in version 1 to 2, and the doc and hybrid answers ended 0.82 faithful, against 0.49 for the doc agent alone on the same questions. 18 answers kept a labelled assessment, and the evaluation's judge found 3 of those went beyond their pages.
 
 ## Pitfalls we hit
 
 - **The grader in the loop.** The obvious checker was the faithfulness judge's own model, Qwen, already wired up for Phase 3. It would have raised measured faithfulness by construction, since the loop would rewrite answers until the grader approved them, so the checker is a third model and the evaluation stays independent. It is also the cheapest: about a tenth of Qwen's price per token.
-- **Judgement isn't in the sources.** Domain-relevant questions ask for an analyst's judgement, and the first answers often reached it through a usual benchmark, such as a ratio's customary threshold, or an industry norm. The checker fails such sentences, the revision drops them, and the conclusion the question asked for goes with them: correctness on those questions fell from 0.59 to 0.44. The copilot's rules already forbid outside knowledge; an assessment labelled as the answer's own is a question for a later phase ([ADR-0019](../decisions/0019-validator-loop.md)).
-- **A revision can trade a right sentence for a wrong one.** In one answer the model had worked out a margin itself, correctly, beside the calculator's result written as a fraction of one per cent; the revision dropped the unsupported sentence and kept the misformatted one.
+- **Judgement isn't in the sources.** Domain-relevant questions ask for an analyst's judgement, and the first answers often reached it through a usual benchmark, such as a ratio's customary threshold, or an industry norm. The checker fails such sentences, the revision drops them, and the conclusion the question asked for goes with them: correctness on those questions fell from 0.59 to 0.44. The copilot's rules already forbid outside knowledge, so version 2 lets the answer keep its assessment as a labelled sentence of its own instead ([ADR-0026](../decisions/0026-copilot-v2.md)).
+- **A revision can trade a right sentence for a wrong one.** In one answer the model had worked out a margin itself, correctly, beside the calculator's result written as a fraction of one per cent; the revision dropped the unsupported sentence and kept the misformatted one. In the copilot's first end-to-end run, two revisions wrote margins of 33% and 39% as "0.33%" and "0.39%": a revision sees the answer's text, not how its first calculations were scaled, and wrote the placeholder without the factor of 100. The revision prompt now asks for every figure to be computed again, a percentage's expression multiplying by 100, and both came back right.
 - **Revisions need every source.** The graph's state first kept only the cited sources' text, which is all the check needs. A revision may need a page the first answer didn't cite, so answer records now keep every source with its text.
 
 ## Review questions

@@ -55,7 +55,7 @@ flowchart LR
 One call to a model in JSON mode at temperature 0, with a system prompt that holds:
 
 - the six route definitions;
-- the labelling rules for close calls (a figure without an explanation is `data`; add a "why" and it is `hybrid`; and so on);
+- the labelling rules for close calls (a figure without an explanation is `data`; add a "why" and it is `hybrid`; and so on), and since prompt r2 two rules on the database's grain (`GRAIN_RULES`): a question about a quarter, a segment, a product line or a region, or a figure that isn't one of the database's measures, is `doc` (or `hybrid`), and an assessment of reported figures is `hybrid`, not investment advice ([ADR-0026](../decisions/0026-copilot-v2.md));
 - the 28 measures the facts database holds, so "how many restaurants" goes to the doc agent while "free cash flow" goes to the data agent;
 - 13 example questions written for the prompt.
 
