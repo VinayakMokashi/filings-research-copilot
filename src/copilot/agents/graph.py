@@ -2,8 +2,9 @@
 
 Each question runs through the same nodes:
 
-    rewrite -> understand -> route -> doc | data | hybrid | brief | smalltalk | decline
-            -> synthesise -> validate (-> revise -> validate, at most twice) -> respond
+    rewrite -> understand -> route -> doc | data (-> doc) | hybrid | brief | smalltalk
+            | decline -> synthesise -> validate (-> revise -> validate, at most twice)
+            -> respond
 
 - **rewrite** makes a follow-up standalone from the last turns and the notes kept about
   the user (step 5.5, `copilot.agents.memory`), and clears what the previous turn left
@@ -11,11 +12,15 @@ Each question runs through the same nodes:
 - **understand** reads the companies, periods and forms the question names.
 - **route** asks the router (ADR-0017) and branches on its route.
 - The specialists answer: the doc agent, the data agent, the hybrid of the two, a brief
-  (Phase 7; a short note until then), a reply to small talk, or a polite decline.
+  (Phase 7; a short note until then), a reply to small talk, or a polite decline. When
+  the data agent finds nothing to answer with (it declines, fails, or its query returns
+  no rows), the question goes on to the doc agent (step 7.7), since the filings' text
+  holds much the facts database doesn't.
 - **synthesise** puts every specialist's result into one shape, the draft.
 - **validate** checks a cited answer's sentences against their sources (step 5.3,
   `copilot.agents.validator`). An answer that fails goes to **revise** and back, at most
-  twice; after that, only its verified sentences are kept.
+  twice; after that, only its verified sentences are kept. A revision that would turn an
+  answer into a refusal is set aside, and the answer is cut to its verified sentences.
 - **respond** writes the reply and adds the turn to the conversation's history.
 - **remember** updates the notes kept about the user from the turn, when a store is set.
 
@@ -49,7 +54,14 @@ from copilot.agents.memory import (
     rewrite_followup,
 )
 from copilot.agents.router import ROUTES, Route, RouteDecision
-from copilot.agents.validator import MAX_REVISIONS, check_answer, to_answer, trim, verdict_record
+from copilot.agents.validator import (
+    MAX_REVISIONS,
+    check_answer,
+    passes,
+    to_answer,
+    trim,
+    verdict_record,
+)
 from copilot.agents.validator import revise as revise_answer
 from copilot.answer.agent import AgentAnswer
 from copilot.answer.generate import SYSTEM_PROMPT as DOC_PROMPT
@@ -96,7 +108,8 @@ class CopilotState(TypedDict, total=False):
     cues: dict[str, Any]  # the companies, periods and forms the question names
     decision: dict[str, Any]  # the router's RouteDecision
     route: str
-    result: dict[str, Any]  # the specialist's output
+    result: dict[str, Any]  # the specialist's output (with `handoff` when the doc agent
+    # answered a question the data agent couldn't)
     draft: dict[str, Any]  # every specialist's output in one shape
     response: dict[str, Any]  # what the user gets
     validation: dict[str, Any]  # the latest check of the draft's sentences
@@ -343,6 +356,20 @@ def _refusal(missing: str) -> str:
 # ---------------------------------------------------------------------------------------
 
 
+def data_declined(result: dict[str, Any]) -> bool:
+    """Whether the data agent found nothing to answer with: it declined, it failed, or its
+    query returned no rows. A spent quota isn't a decline; the quota's own reply stands."""
+    data = result.get("data") if result.get("kind") == "data" else None
+    if not data or data.get("rate_limited"):
+        return False
+    return data["status"] != "ok" or not data.get("rows")
+
+
+def after_data(state: CopilotState) -> str:
+    """`doc` when the data agent found nothing to answer with, else `synthesise`."""
+    return "doc" if data_declined(state.get("result", {})) else "synthesise"
+
+
 def branch(state: CopilotState) -> Route:
     """The node after `route`: the route's own, or the doc agent for anything unknown."""
     route = state.get("route", "")
@@ -426,6 +453,12 @@ def build_graph(
         return {"decision": asdict(decision), "route": decision.route}
 
     def doc(state: CopilotState) -> dict[str, Any]:
+        before = state.get("result", {})
+        handoff = None
+        if data_declined(before):  # the data agent found nothing to answer with
+            data = before["data"]
+            handoff = {"from": "data", "status": data["status"], "reason": data["answer"][:300]}
+            emit("doc", "handed on", **handoff)
         try:
             agent_answer = parts.doc.answer(state["standalone"])
         except LLMError as exc:
@@ -441,6 +474,8 @@ def build_graph(
             filings=filings,
         )
         result = {"kind": "doc", "answer": record, "retried": agent_answer.retried}
+        if handoff is not None:
+            result["handoff"] = handoff
         return {"result": result | {"filings": filings}}
 
     def data(state: CopilotState) -> dict[str, Any]:
@@ -531,12 +566,12 @@ def build_graph(
         emit(
             "validate",
             "verdict",
-            faithful=verdict.faithful,
+            faithful=passes(verdict),
             sentences=len(verdict.checks),
             supported=verdict.supported_sentences,
             revisions=revisions,
         )
-        if verdict.faithful:
+        if passes(verdict):
             return {"validation": checked}
         if revisions < MAX_REVISIONS:
             return {"validation": checked | {"next": "revise"}}
@@ -564,6 +599,11 @@ def build_graph(
                 raise
             emit("revise", "quota", error=str(exc)[:200])
             return {"revisions": MAX_REVISIONS}  # stop revising; the next check trims
+        if answer.answerable and not revised.answerable:
+            # A refusal would lose what the sources do support: keep the answer, and let the
+            # next check cut it to its supported sentences.
+            emit("revise", "refusal set aside", revision=revisions, missing=revised.missing[:200])
+            return {"revisions": MAX_REVISIONS}
         emit("revise", "revised", answered=revised.answerable, revision=revisions)
         rewritten = result | {"answer": answer_record(revised)}
         return {"result": rewritten, "draft": to_draft(rewritten), "revisions": revisions}
@@ -584,6 +624,7 @@ def build_graph(
             "sql": draft.get("sql"),
             "table": draft.get("table"),
             "chart": draft.get("chart"),
+            "handoff": state.get("result", {}).get("handoff"),
             "validation": {
                 key: value
                 for key, value in state.get("validation", {}).items()
@@ -643,7 +684,12 @@ def build_graph(
     builder.add_edge("understand", "route")
     builder.add_conditional_edges("route", branch, {name: name for name in ROUTES})
     for name in ROUTES:
-        builder.add_edge(name, "synthesise")
+        if name == "data":
+            builder.add_conditional_edges(
+                "data", after_data, {"doc": "doc", "synthesise": "synthesise"}
+            )
+        else:
+            builder.add_edge(name, "synthesise")
     builder.add_edge("synthesise", "validate")
     builder.add_conditional_edges(
         "validate", after_validation, {"revise": "revise", "respond": "respond"}

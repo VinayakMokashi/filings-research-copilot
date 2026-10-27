@@ -464,16 +464,86 @@ def test_data_answers_and_refusals_are_not_checked() -> None:
     assert checker.calls == []
 
 
-def test_a_revision_that_declines_is_reported() -> None:
-    checker = FakeLLM([FAIL])
+TWO = "Netflix names intense competition as a risk [1]. It expects to lead the market [1]."
+HALF = json.dumps(
+    {
+        "sentences": [
+            {"n": 1, "supported": True, "supporting": [1]},
+            {"n": 2, "supported": False, "supporting": []},
+        ]
+    }
+)
+
+
+def test_a_revision_that_declines_is_set_aside_for_what_was_verified() -> None:
+    checker = FakeLLM([HALF, HALF])
     refusal = {"answerable": False, "answer": "", "calculations": [], "missing": "the risks"}
-    pilot = copilot(["doc"], checker=checker, writer=FakeLLM([json.dumps(refusal)]))
+    doc = FakeDoc(answer(TWO))
+    pilot = copilot(["doc"], doc=doc, checker=checker, writer=FakeLLM([json.dumps(refusal)]))
 
-    response = pilot.ask("What risks does Netflix name?", thread_id="t")
+    events = list(pilot.stream("What risks does Netflix name?", thread_id="t"))
 
-    assert response["answered"] is False
-    assert response["validation"] == {"checked": True, "refused": True, "revisions": 1}
-    assert len(checker.calls) == 1
+    custom = [event["event"] for event in events if event["type"] == "event"]
+    assert "refusal set aside" in custom
+    response = events[-1]
+    assert response["answered"] is True
+    assert response["text"] == "Netflix names intense competition as a risk [1]."
+    assert response["validation"]["unverified"] == ["It expects to lead the market [1]."]
+    assert len(checker.calls) == 2
+
+
+def test_a_labelled_assessment_passes_the_check_unrevised() -> None:
+    text = "Netflix names intense competition as a risk [1]. Assessment: it is exposed [1]."
+    checker, writer = FakeLLM([HALF]), FakeLLM([])
+    pilot = copilot(["doc"], doc=FakeDoc(answer(text)), checker=checker, writer=writer)
+
+    response = pilot.ask("Is Netflix exposed to competition?", thread_id="t")
+
+    assert response["text"] == text
+    assert response["validation"] == {"checked": True, "faithful": True, "revisions": 0}
+    assert writer.calls == []
+
+
+@pytest.mark.parametrize(
+    "found",
+    [
+        data_answer("unanswerable"),
+        data_answer("error"),
+        data_answer().model_copy(update={"rows": [], "answer": "No matching data was found."}),
+    ],
+    ids=["declined", "failed", "no rows"],
+)
+def test_a_question_the_data_agent_can_t_answer_goes_on_to_the_doc_agent(
+    found: DataAnswer,
+) -> None:
+    doc = FakeDoc(answer("Netflix names intense competition as a risk [1]."))
+    pilot = copilot(["data"], doc=doc, data=FakeData(found))
+
+    events = list(pilot.stream("What share of Netflix's revenue is from Asia?", thread_id="t"))
+
+    assert nodes_run(events, "start")[2:5] == ["route", "data", "doc"]
+    response = events[-1]
+    assert response["route"] == "data"
+    assert response["answered"] is True
+    assert response["citations"][0]["doc_name"] == PAGE.doc_name
+    assert response["sql"] is None
+    assert response["handoff"]["from"] == "data"
+    assert response["handoff"]["status"] == found.status
+    assert doc.questions == ["What share of Netflix's revenue is from Asia?"]
+
+
+def test_a_data_answer_and_a_spent_quota_stay_on_the_data_route() -> None:
+    doc = FakeDoc(answer("unused [1]."))
+    answered = copilot(["data"], doc=doc).ask("What was Netflix's revenue?", thread_id="t")
+    spent = copilot(["data"], doc=doc, data=FakeData(data_answer("error", rate_limited=True)))
+
+    limited = spent.ask("What was Netflix's revenue?", thread_id="t")
+
+    assert answered["handoff"] is None
+    assert answered["sql"] == SQL
+    assert "try again later" in limited["text"]
+    assert limited["handoff"] is None
+    assert doc.questions == []
 
 
 def test_a_follow_up_reaches_the_router_as_a_standalone_question() -> None:
