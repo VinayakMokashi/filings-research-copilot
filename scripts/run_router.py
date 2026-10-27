@@ -28,6 +28,7 @@ Usage:
   uv run poe run-router --router semantic --mask entities --method centroid --run NAME
   uv run poe run-router --router llm --run llm-qwen3.8-27b                (needs GROQ_API_KEY)
   uv run poe run-router --router cascade --threshold 1.0 --run cascade-k5-qwen3.8-27b
+  uv run poe run-router --router classifier --model-dir models/router --run classifier-v1
   uv run poe run-router ... --split test --allow-test                 # milestone evaluations only
 
 Set FRC_LLM_FAST_MODEL (to groq/openai/gpt-oss-20b, say) to run the LLM router on another
@@ -37,6 +38,7 @@ model, under a run name of its own.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import statistics
@@ -47,6 +49,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from copilot.agents.classifier import ClassifierRouter
 from copilot.agents.router import (
     PROMPT_VERSION,
     CascadeRouter,
@@ -107,6 +110,9 @@ def configuration(args: argparse.Namespace, settings: Settings) -> dict[str, Any
         config |= {"model": role_models(settings)[args.role], "prompt_version": PROMPT_VERSION}
     if args.router == "cascade":
         config["threshold"] = args.threshold
+    if args.router == "classifier":
+        onnx = (args.model_dir / "router.onnx").read_bytes()
+        config |= {"model": args.model_dir.name, "sha256": hashlib.sha256(onnx).hexdigest()}
     return config
 
 
@@ -116,6 +122,9 @@ def build(
     if args.router == "llm":
         llm = LLMRouter(llm_client(settings), role=args.role)
         return lambda query, _exclude: llm.route(query.query)
+    if args.router == "classifier":
+        classifier = ClassifierRouter.load(args.model_dir)
+        return lambda query, _exclude: classifier.route(query.query)
     mask = None
     if args.mask == "entities":
         companies = read_companies()
@@ -163,7 +172,10 @@ def percentile(values: Sequence[float], share: float) -> float:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
-    parser.add_argument("--router", choices=("semantic", "llm", "cascade"), required=True)
+    parser.add_argument(
+        "--router", choices=("semantic", "llm", "cascade", "classifier"), required=True
+    )
+    parser.add_argument("--model-dir", type=Path, help="the classifier's model directory")
     parser.add_argument("--run", required=True, help="run name")
     parser.add_argument("--method", choices=("vote", "centroid"), default="vote")
     parser.add_argument("--k", type=int, default=K, help="examples that vote (semantic)")
