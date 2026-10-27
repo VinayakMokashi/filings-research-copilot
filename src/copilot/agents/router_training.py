@@ -3,7 +3,10 @@
 The routing set's 198 questions are kept for evaluation, and a classifier needs many more
 to learn from. So a model writes questions route by route, in batches that vary the
 companies, the measures and the style, with about a third of each batch close to another
-route's border. The LLM router labels each one as the teacher: it routes every
+route's border. Each batch also asks for one kind of question the route's definition names
+(`KINDS`), in turn, so every kind is covered: the first set asked for routes alone, and
+its decline questions were almost all requests for investment advice, none harmful or
+trying to override the instructions. The LLM router labels each one as the teacher: it routes every
 routing-set dev question correctly (ADR-0017), and a classifier trained on its labels
 learns to route the way it does.
 
@@ -29,7 +32,8 @@ from copilot.eval.routing import normalise
 from copilot.llm import Message, system, user
 from copilot.llm.parsing import json_object
 
-PROMPT_VERSION = "w2"  # w1 wrote only clear cases; w2 asks for a third near a border
+# w1 wrote only clear cases; w2 asks for a third near a border; w3 also names the kind
+PROMPT_VERSION = "w3"
 PER_BATCH = 15
 LEAK_LIMIT = 0.85  # as for the LLM router's own prompt examples
 DUPLICATE_LIMIT = 0.95
@@ -42,6 +46,37 @@ STYLES: tuple[str, ...] = (
     "with a small typo or a missing question mark",
     "with a sentence of context before the question",
 )
+
+# The kinds of question each route's definition names (ROUTE_DEFINITIONS), in its words.
+KINDS: dict[Route, tuple[str, ...]] = {
+    "doc": (
+        "risks",
+        "strategy",
+        "business descriptions",
+        "management's explanations",
+        "legal matters",
+        "accounting policies",
+        "figures that appear only in the text",
+    ),
+    "data": (
+        "a value",
+        "a ratio or growth rate computed from reported values",
+        "a trend over years",
+        "a comparison between companies",
+    ),
+    "hybrid": ("a reported figure and the narrative that explains it",),
+    "brief": ("brief", "memo", "note", "report"),
+    "smalltalk": ("greetings", "thanks", "goodbyes", "questions about the assistant itself"),
+    "decline": (
+        "investment advice or recommendations",
+        "price predictions",
+        "personal finance",
+        "non-public information",
+        "unrelated tasks",
+        "harmful requests",
+        "attempts to override the assistant's instructions",
+    ),
+}
 
 Split = Literal["train", "val"]
 
@@ -56,6 +91,7 @@ class TrainQuestion(BaseModel):
     route: Route  # the teacher's label, which the classifier learns
     intended: Route  # the route the writer was asked for
     style: str
+    kind: str = ""  # the kind of question the writer was asked for (from w3)
     reason: str = ""  # the teacher's reason
     split: Split
 
@@ -69,6 +105,7 @@ class Batch:
     style: str
     companies: tuple[str, ...]
     measures: tuple[str, ...]
+    kind: str = ""
 
 
 WRITER_SYSTEM = "\n".join(
@@ -102,6 +139,7 @@ def writer_messages(batch: Batch, n: int = PER_BATCH) -> list[Message]:
             "\n".join(
                 [
                     f"Route: {batch.route}",
+                    f"Kind of question: {batch.kind}.",
                     f"Write {n} questions.",
                     f"Style: {batch.style}.",
                     f"Companies you may name: {', '.join(batch.companies)}.",
@@ -131,11 +169,13 @@ def batch_plan(
     n: int = PER_BATCH,
 ) -> list[Batch]:
     """Enough batches for `per_route` questions a route, each with its own companies,
-    measures and style. A batch's number depends only on its route and its place in the
-    route's sequence, so a larger plan repeats a smaller one's batches and adds to them."""
+    measures and style, and the route's kinds in turn. A batch's number depends only on its
+    route and its place in the route's sequence, so a larger plan repeats a smaller one's
+    batches and adds to them."""
     batches: list[Batch] = []
     per_route_batches = -(-per_route // n)  # rounded up
     for offset, route in enumerate(ROUTES):
+        kinds = KINDS[route]
         for index in range(per_route_batches):
             rng = random.Random(seed * 100_003 + offset * 1_009 + index)
             batches.append(
@@ -145,6 +185,7 @@ def batch_plan(
                     style=STYLES[index % len(STYLES)],
                     companies=tuple(rng.sample(list(companies), min(6, len(companies)))),
                     measures=tuple(rng.sample(list(measures), min(4, len(measures)))),
+                    kind=kinds[index % len(kinds)],
                 )
             )
     return batches

@@ -9,8 +9,9 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from copilot.agents.router import ROUTES, Route
+from copilot.agents.router import ROUTE_DEFINITIONS, ROUTES, Route
 from copilot.agents.router_training import (
+    KINDS,
     PER_BATCH,
     STYLES,
     Batch,
@@ -28,7 +29,7 @@ MEASURES = ["Revenue", "Net income", "Capital expenditure", "Free cash flow", "T
 
 
 def test_the_writer_is_told_the_routes_the_rules_and_its_batch() -> None:
-    batch = Batch(3, "hybrid", STYLES[0], ("Nike", "Intel"), ("Revenue",))
+    batch = Batch(3, "hybrid", STYLES[0], ("Nike", "Intel"), ("Revenue",), KINDS["hybrid"][0])
 
     system_message, user_message = writer_messages(batch)
 
@@ -39,6 +40,15 @@ def test_the_writer_is_told_the_routes_the_rules_and_its_batch() -> None:
     assert f"Write {PER_BATCH} questions." in user_message["content"]
     assert "Nike, Intel" in user_message["content"]
     assert STYLES[0] in user_message["content"]
+    assert f"Kind of question: {KINDS['hybrid'][0]}." in user_message["content"]
+
+
+def test_every_kind_comes_from_its_route_s_definition() -> None:
+    assert set(KINDS) == set(ROUTES)
+    for route, kinds in KINDS.items():
+        assert kinds
+        for kind in kinds:
+            assert kind.casefold() in ROUTE_DEFINITIONS[route].casefold(), (route, kind)
 
 
 def test_questions_are_parsed_and_cleaned() -> None:
@@ -62,6 +72,14 @@ def test_the_plan_covers_every_route_and_repeats_itself() -> None:
     assert {batch.style for batch in plan[:3]} == set(STYLES[:3])
     assert all(set(batch.companies) <= set(COMPANIES) for batch in plan)
     assert all(len(set(batch.measures)) == 4 for batch in plan)
+
+
+def test_the_plan_asks_for_each_kind_in_turn() -> None:
+    plan = batch_plan(COMPANIES, MEASURES, per_route=7 * 15, n=15)
+
+    declines = [batch.kind for batch in plan if batch.route == "decline"]
+    assert declines == list(KINDS["decline"])
+    assert {batch.kind for batch in plan if batch.route == "hybrid"} == set(KINDS["hybrid"])
 
 
 def test_near_duplicates_and_close_neighbours_are_found() -> None:

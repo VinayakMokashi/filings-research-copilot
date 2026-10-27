@@ -4,22 +4,22 @@ Three stages, each resumable:
 
 1. **Write.** The strong model writes questions batch by batch, route by route
    (`copilot.agents.router_training`), at temperature 0.9 with each batch's number as its
-   seed. Replies go to data/processed/routing-train/batches.jsonl as they arrive; a rerun
-   skips the batches already there.
+   seed. Replies go to data/processed/routing-train/batches-<prompt version>.jsonl as they
+   arrive; a rerun skips the batches already there.
 2. **Filter.** Exact repeats and near-duplicates go, and so does every question within
    LEAK_LIMIT of a routing-set question, dev or test, by bge-small similarity. The test
    split is read for this check only: no question's text is printed, and nothing is scored
    on it.
-3. **Label.** The LLM router as deployed (prompt r1 on the strong role) routes each kept
+3. **Label.** The LLM router as deployed (its current prompt, on the strong role) routes each kept
    question, with a cache file of its own (data/cache/router-teacher.jsonl), so a rerun
    costs nothing. A reply that isn't a routing decision drops the question. The teacher
    also routes the routing set's dev questions, to show it still routes them as ADR-0017
    measured on the provider it runs on now.
 
 Writes data/reference/routing_train.jsonl (committed: the project's own questions, one
-line each with the teacher's route, the intended one, the style, the teacher's reason and
-the split) and data/reference/routing_train_manifest.json (counts, agreement, the leak
-check's numbers, tokens and cost, and a checksum).
+line each with the teacher's route, the intended one, the style, the kind of question, the
+teacher's reason and the split) and data/reference/routing_train_manifest.json (counts,
+agreement, the leak check's numbers, tokens and cost, and a checksum).
 
 Usage: uv run poe generate-routing-train --per-route 400
 """
@@ -37,6 +37,7 @@ from typing import Any
 
 import numpy as np
 
+from copilot.agents.router import PROMPT_VERSION as ROUTER_PROMPT_VERSION
 from copilot.agents.router import ROUTES, LLMRouter, Route
 from copilot.agents.router_training import (
     DUPLICATE_LIMIT,
@@ -98,6 +99,7 @@ def write_stage(llm: PacedLLM, plan: list[Batch], path: Path) -> dict[int, dict[
                 "batch": batch.number,
                 "route": batch.route,
                 "style": batch.style,
+                "kind": batch.kind,
                 "questions": questions,
                 "model": response.model,
                 "prompt_version": PROMPT_VERSION,
@@ -106,7 +108,7 @@ def write_stage(llm: PacedLLM, plan: list[Batch], path: Path) -> dict[int, dict[
             out.write(json.dumps(record, ensure_ascii=False) + "\n")
             out.flush()
             done[batch.number] = record
-            print(f"  batch {batch.number} {batch.route:9} {len(questions)} questions")
+            print(f"  batch {batch.number} {batch.route:9} {len(questions)} questions", flush=True)
     return done
 
 
@@ -142,27 +144,30 @@ def main(argv: list[str] | None = None) -> int:
 
     # 1. Write.
     try:
-        batches = write_stage(writer, plan, work / "batches.jsonl")
+        batches = write_stage(writer, plan, work / f"batches-{PROMPT_VERSION}.jsonl")
     except LLMError as exc:
         print(f"Stopped while writing: {exc}", file=sys.stderr)
         return 1
 
     # 2. Filter.
-    written: list[tuple[str, Route, str]] = []
+    written: list[tuple[str, Route, str, str]] = []
     seen: set[str] = set()
     for batch in sorted(batches.values(), key=lambda record: record["batch"]):
         for question in batch["questions"]:
             key = question.casefold()
             if key not in seen:
                 seen.add(key)
-                written.append((question, batch["route"], batch["style"]))
+                written.append((question, batch["route"], batch["style"], batch.get("kind", "")))
     embedder = FastEmbedDense()
-    vectors = normalise(embedder.embed_documents([q for q, _, _ in written]))
+    vectors = normalise(embedder.embed_documents([q for q, _, _, _ in written]))
     distinct = keep_distinct(vectors, DUPLICATE_LIMIT)
     routing = load_queries("dev") + load_queries("test", allow_test=True)
     routing_vectors = normalise(embedder.embed_documents([q.query for q in routing]))
     nearest = nearest_similarity(vectors[distinct], routing_vectors)
     kept = [i for i, score in zip(distinct, nearest, strict=True) if score < LEAK_LIMIT]
+    leaked_by_route = Counter(
+        written[i][1] for i, score in zip(distinct, nearest, strict=True) if score >= LEAK_LIMIT
+    )
     kept_nearest = nearest[nearest < LEAK_LIMIT]
     print(
         f"filter: {sum(len(b['questions']) for b in batches.values())} written, "
@@ -201,6 +206,7 @@ def main(argv: list[str] | None = None) -> int:
             route=route,
             intended=written[index][1],
             style=written[index][2],
+            kind=written[index][3],
             reason=reason,
             split=split,
         )
@@ -220,6 +226,10 @@ def main(argv: list[str] | None = None) -> int:
         "rows": len(rows),
         "by_route": {route: sum(row.route == route for row in rows) for route in ROUTES},
         "by_split": dict(Counter(row.split for row in rows)),
+        "by_kind": {
+            route: dict(Counter(row.kind for row in rows if row.intended == route))
+            for route in ROUTES
+        },
         "intended_agrees_with_teacher": {
             route: f"{agree[route]}/{intended[route]}" for route in ROUTES
         },
@@ -228,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
         "unique": len(written),
         "distinct": len(distinct),
         "leaked": len(distinct) - len(kept),
+        "leaked_by_route": {route: leaked_by_route[route] for route in ROUTES},
         "leak_limit": LEAK_LIMIT,
         "duplicate_limit": DUPLICATE_LIMIT,
         "nearest_routing_similarity": {
@@ -245,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
         "teacher": {
             "model": models["strong"],
             "router": "llm",
-            "prompt_version": "r1",
+            "prompt_version": ROUTER_PROMPT_VERSION,
             "tokens": teacher_tokens,
             "cost_usd": token_cost(models["strong"], *teacher_tokens),
             "routing_dev_right": f"{dev_right}/{len(dev)}",
