@@ -39,7 +39,7 @@ packages = ["src/copilot"]
 
 [dependency-groups]
 dev = [
-    "dspy>=3.0.0",
+    "dspy[optuna]>=3.0.0",
     "mypy>=2.4.0",
     "pandas-stubs>=3.0.5.260914",
     "poethepoet>=0.48.0",

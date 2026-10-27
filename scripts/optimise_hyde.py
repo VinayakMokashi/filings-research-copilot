@@ -7,8 +7,9 @@
 3. The hand-written prompt (version 1) scored on both sets: each passage's reciprocal rank,
    to ten, of the chunk that answers its question, among its filing's chunks.
 4. MIPROv2 searches instructions only (no worked examples: they would carry the pairs'
-   questions, which are never committed), with gpt-oss-120b proposing and the fast model
-   writing the passages; DSPy's own cache sits in data/cache/dspy.
+   questions, which are never committed, and its proposer doesn't read them either), with
+   gpt-oss-120b proposing and the fast model writing the passages; DSPy's own cache sits in
+   data/cache/dspy.
 5. The best instruction, exported as a `HydePrompt` (data/processed/dspy/hyde-<version>.json),
    scored again in this project's own message format on both sets.
 
@@ -141,7 +142,12 @@ def optimise(
         verbose=False,
     )
     compiled = optimiser.compile(
-        program, trainset=dataset(train), valset=dataset(val), requires_permission_to_run=False
+        program,
+        trainset=dataset(train),
+        valset=dataset(val),
+        requires_permission_to_run=False,
+        # The proposer would read training questions and could quote them; it doesn't.
+        data_aware_proposer=False,
     )
     return str(compiled.signature.instructions)
 
