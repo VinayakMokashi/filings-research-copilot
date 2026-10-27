@@ -56,7 +56,7 @@ from copilot.llm.cache import CachedLLM
 from copilot.llm.gateway import role_models, token_cost
 from copilot.llm.pacing import PacedLLM
 from copilot.logs import configure_logging
-from copilot.sql.agent import batch_client, build_pipeline, facts_db_path
+from copilot.sql.agent import batch_client, facts_db_path
 from copilot.sql.tool import DataAgent
 
 METRICS = [
@@ -135,7 +135,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     doc = build_agent(settings)
     sql_client = batch_client(settings)
-    data_agent = DataAgent(build_pipeline(settings, sql_client))
+    data_agent = DataAgent.build(settings, sql_client)
     hybrid = (
         HybridAgentV2(doc, data_agent)
         if args.agent == "hybrid-v2"

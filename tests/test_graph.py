@@ -358,6 +358,19 @@ def test_a_strict_run_stops_on_a_spent_quota_and_traces_the_error(tmp_path: Path
     assert [line["error"] is not None for line in lines if line["type"] == "end"][-1]
 
 
+def test_rows_without_their_analysis_are_shown_unless_the_run_is_strict() -> None:
+    """The data agent answered with rows but its written analysis met a spent quota."""
+    partial = FakeData(data_answer(rate_limited=True))
+    question = "What was Netflix's revenue?"
+
+    response = copilot(["data"], data=partial).ask(question, thread_id="t")
+
+    assert response["answered"] is True
+    assert response["sql"] == SQL
+    with pytest.raises(LLMError):
+        copilot(["data"], data=partial, strict=True).ask(question, thread_id="t")
+
+
 def test_to_draft_handles_every_kind_of_result() -> None:
     assert to_draft({})["kind"] == ""
     assert to_draft({"kind": "decline", "text": "No.", "answered": False})["text"] == "No."

@@ -50,7 +50,6 @@ from copilot.llm.cache import CachedLLM
 from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.retrieval.query import CompanyMatcher
-from copilot.sql.agent import build_pipeline
 from copilot.sql.tool import DataAgent
 
 
@@ -77,7 +76,7 @@ def build_components(
     )
     doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes = (client(name) for name in names)
     doc = build_agent(settings, llm=doc_llm)
-    data = DataAgent(build_pipeline(settings, sql_llm, analysis_model="strong"))
+    data = DataAgent.build(settings, sql_llm, analysis_model="strong")
     companies = read_companies()
     matcher = CompanyMatcher(
         [company.name for company in companies],
