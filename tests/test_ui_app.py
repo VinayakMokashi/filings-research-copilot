@@ -65,3 +65,15 @@ def test_a_question_shows_its_answer_figure_and_query(monkeypatch: pytest.Monkey
     assert app.metric[0].value == "1,577,000,000"
     sql = str(RESPONSE["sql"])
     assert any(sql in code.value for code in app.code)
+
+
+def test_a_handed_on_answer_and_an_assessment_are_noted() -> None:
+    from copilot.ui.app import assessed, handed_on
+
+    doc = {"text": "Margins fell [1]. Assessment: they are under pressure [1].", "handoff": None}
+    handed = {"text": "Sales in Asia rose [1].", "handoff": {"from": "data"}}
+
+    assert handed_on(doc) == ""
+    assert "the filings' text answered it" in handed_on(handed)
+    assert "reading of the cited facts" in assessed(doc)
+    assert assessed(handed) == ""

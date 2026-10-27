@@ -167,7 +167,9 @@ def show(number: int, turn: dict[str, Any]) -> None:
             "Served from the cache: this question was asked before."
             if response.get("cached")
             else "",
+            handed_on(response),
             checked(response.get("validation") or {}),
+            assessed(response),
         ]
         for note in filter(None, notes):
             st.caption(note)
@@ -187,6 +189,18 @@ def show(number: int, turn: dict[str, Any]) -> None:
             )
             turn["rated"] = True
             st.toast("Thanks: your feedback is kept." if kept else "The feedback couldn't be kept.")
+
+
+def handed_on(response: dict[str, Any]) -> str:
+    if (response.get("handoff") or {}).get("from") != "data":
+        return ""
+    return "The facts database had nothing to answer this with; the filings' text answered it."
+
+
+def assessed(response: dict[str, Any]) -> str:
+    if "Assessment:" not in (response.get("text") or ""):
+        return ""
+    return "The assessment is the copilot's reading of the cited facts, not a statement in them."
 
 
 def checked(validation: dict[str, Any]) -> str:
