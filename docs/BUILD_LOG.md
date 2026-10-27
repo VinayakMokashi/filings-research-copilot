@@ -15,6 +15,20 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 7 · DSPy on the HyDE prompt, which stays as written
+
+- **Goal:** step 7.3: let DSPy search for a HyDE instruction that ranks the evidence higher, on questions about training filings, and adopt it only on a significant gain on FinanceBench dev.
+- **Done:**
+  - `copilot.training.hyde`: examples from the synthetic pairs (the 20 filings step 7.1 held out to validate, 100 pairs from other filings to train), the 40 filings' chunks embedded once, and the metric, the answering chunk's reciprocal rank within its filing when the passage is the search.
+  - `poe optimise-hyde` runs MIPROv2's light mode over the instruction alone (no worked examples, and a proposer kept from the training questions, since both would carry questions derived from FinanceBench's filings), with gpt-oss-120b proposing and Qwen writing passages on Cerebras.
+  - `HydePrompt` and `--hyde-prompt` swap in another HyDE prompt anywhere HyDE runs; `CachedLLM(also_read=...)` lets a run replay another cache without appending to it, so two jobs never write one file.
+  - DSPy (with optuna) joins the development tools, outside the service images. The [report](eval/dspy-hyde.md), [ADR-0028](decisions/0028-dspy-hyde.md), the [guide](concepts/dspy.md), the runbook, the plan's step 7.3.
+- **Commands:** `FRC_LLM_STRONG_MODEL=cerebras/gpt-oss-120b FRC_LLM_FAST_MODEL=cerebras/qwen-3.8-27b FRC_LLM_TOKENS_PER_MINUTE=100000 uv run poe optimise-hyde`.
+- **Results:** over nine trials and four instructions, no candidate beat the hand-written one on the 104 validation questions (0.498 against 0.497 for the best proposal), and MIPROv2 returned it. Two of the three proposals misread the task as retrieving a passage instead of writing one. Minibatch scores ranged from 0.40 to 0.55 on 35 questions. In the project's own format the hand-written prompt scores 0.484 on validation and 0.528 on training; the same instruction in the system message alone writes shorter passages and scores 0.497 and 0.459 (−0.069 on training, p = 0.040).
+- **Problems and fixes:** MIPROv2 needs optuna, which `dspy` alone doesn't bring: the first run stopped at its first trial; the tools now pin `dspy[optuna]`. Its default proposer read the training questions and quoted their figures and lenders; it is turned off.
+- **Decisions:** [ADR-0028](decisions/0028-dspy-hyde.md): the HyDE prompt stays; the means to search and test another stay in the code.
+- **Next:** step 7.5's answer bandit.
+
 ### 2026-10-28 · Phase 7 · A domain embedder, measured and not adopted
 
 - **Goal:** step 7.1: fine-tune bge-small on the synthetic questions about training filings, with hard negatives, and see whether the doc agent's search ranks FinanceBench's evidence pages higher; publish the model if it earns its place.
