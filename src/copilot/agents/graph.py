@@ -445,7 +445,8 @@ def build_graph(
 
     def data(state: CopilotState) -> dict[str, Any]:
         answer = parts.data.ask(state["standalone"])
-        if answer.rate_limited:
+        # Rows without their written analysis still help a person; a batch run must stop.
+        if answer.rate_limited and (parts.strict or not answer.ok):
             return quota("data", LLMError(answer.answer, rate_limited=True))
         emit("data", "answer", status=answer.status, sql=answer.sql, rows=len(answer.rows))
         return {"result": {"kind": "data", "data": data_record(answer)}}

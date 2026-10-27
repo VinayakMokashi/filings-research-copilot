@@ -10,6 +10,12 @@ the library's internal classes.
 Statistics are computed here, from the rows, for every measure column: the count, total,
 mean, smallest and largest value, and the row labels of the extremes. They are exact, so
 the orchestrator can quote them without a model doing arithmetic.
+
+A spent quota is always reported. When the written analysis fails, text2sql-analyst still
+returns the rows, with "Here are the results" and a caveat, and reports no rate limit:
+right for someone looking at a table, but a batch evaluation would grade that stand-in as
+the agent's answer. So the data agent sends its model calls through `QuotaWatch`, and a
+refusal for quota reasons sets `rate_limited` even when the pipeline worked around it.
 """
 
 from __future__ import annotations
@@ -24,8 +30,8 @@ from text2sql.analysis.columns import is_id_column, measure_columns
 from text2sql.pipeline import Pipeline, PipelineResult
 
 from copilot.config import Settings
-from copilot.llm import LLMClient
-from copilot.sql.agent import build_pipeline
+from copilot.llm import LLMClient, LLMError, LLMResponse, Message, ModelRole
+from copilot.sql.agent import batch_client, build_pipeline
 
 Status = Literal["ok", "unanswerable", "error"]
 KEYS = {"cik"}  # the facts database's company key: a number, never a measure
@@ -75,7 +81,7 @@ class DataAnswer(BaseModel):
     tables: list[str] = Field(default_factory=list)
     hints: list[str] = Field(default_factory=list)
     attempts: int = 0
-    rate_limited: bool = False
+    rate_limited: bool = False  # a model call was refused for quota reasons, worked around or not
     timings: dict[str, float] = Field(default_factory=dict)
 
     @property
@@ -166,16 +172,77 @@ def to_answer(result: PipelineResult) -> DataAnswer:
     )
 
 
+class QuotaWatch:
+    """An `LLMClient` that notes whether a call was refused for quota reasons.
+
+    Every call goes to the wrapped client unchanged, and every error is raised again; the
+    watch only remembers a rate-limited refusal, so the data agent can report it even when
+    text2sql-analyst's pipeline carried on without the call (see the module docstring).
+    """
+
+    def __init__(self, client: LLMClient) -> None:
+        self._client = client
+        self.refused = False
+
+    def complete(
+        self,
+        messages: Sequence[Message],
+        *,
+        role: ModelRole = "fast",
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        **extra: Any,
+    ) -> LLMResponse:
+        try:
+            return self._client.complete(
+                messages, role=role, temperature=temperature, max_tokens=max_tokens, **extra
+            )
+        except LLMError as exc:
+            self.refused = self.refused or exc.rate_limited
+            raise
+
+    async def acomplete(
+        self,
+        messages: Sequence[Message],
+        *,
+        role: ModelRole = "fast",
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        **extra: Any,
+    ) -> LLMResponse:
+        try:
+            return await self._client.acomplete(
+                messages, role=role, temperature=temperature, max_tokens=max_tokens, **extra
+            )
+        except LLMError as exc:
+            self.refused = self.refused or exc.rate_limited
+            raise
+
+
 class DataAgent:
     """The data agent: questions about reported figures, answered with read-only SQL."""
 
-    def __init__(self, pipeline: Pipeline) -> None:
+    def __init__(self, pipeline: Pipeline, watch: QuotaWatch | None = None) -> None:
         self.pipeline = pipeline
+        self._watch = watch
 
     @classmethod
-    def build(cls, settings: Settings, client: LLMClient | None = None) -> DataAgent:
-        return cls(build_pipeline(settings, client))
+    def build(
+        cls, settings: Settings, client: LLMClient | None = None, **options: Any
+    ) -> DataAgent:
+        """The agent over `build_pipeline(settings, ..., **options)`, its calls watched."""
+        watch = QuotaWatch(client or batch_client(settings))
+        return cls(build_pipeline(settings, watch, **options), watch)
 
     def ask(self, question: str, *, analyze: bool = True, hints: Sequence[str] = ()) -> DataAnswer:
-        """Answer one question; failures come back as a status, never as an exception."""
-        return to_answer(self.pipeline.ask(question, analyze=analyze, hints=hints))
+        """Answer one question; failures come back as a status, never as an exception.
+
+        `rate_limited` is set when any model call was refused for quota reasons, including
+        one the pipeline worked around, such as the written analysis.
+        """
+        if self._watch is not None:
+            self._watch.refused = False
+        answer = to_answer(self.pipeline.ask(question, analyze=analyze, hints=hints))
+        if self._watch is not None and self._watch.refused and not answer.rate_limited:
+            answer = answer.model_copy(update={"rate_limited": True})
+        return answer

@@ -47,7 +47,7 @@ from copilot.eval.splits import load_split
 from copilot.llm import ModelRole
 from copilot.llm.gateway import token_cost
 from copilot.logs import configure_logging
-from copilot.sql.agent import batch_client, build_pipeline
+from copilot.sql.agent import batch_client
 from copilot.sql.tool import DataAgent, DataAnswer
 
 METRICS = ["answered", "declined", "failed", "repaired"]
@@ -153,7 +153,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     done = read_answers(path)
 
     client = batch_client(settings)
-    agent = DataAgent(build_pipeline(settings, client, analysis_model=analysis_model))
+    agent = DataAgent.build(settings, client, analysis_model=analysis_model)
     todo = [q for q in questions if q.id not in done]
     print(f"{len(questions)} questions, {len(done)} already answered, {len(todo)} to go")
     with path.open("a", encoding="utf-8", newline="\n") as out:

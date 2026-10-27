@@ -11,8 +11,7 @@ from typing import Any
 import pytest
 
 from copilot.config import Settings
-from copilot.llm import FakeLLM, Message, ModelRole
-from copilot.sql.agent import build_pipeline
+from copilot.llm import FakeLLM, LLMError, Message, ModelRole
 from copilot.sql.tool import DataAgent, DataAnswer, column_statistics
 
 SCHEMA = """
@@ -49,7 +48,7 @@ def _agent(facts_db: Path, selection: str) -> DataAgent:
             {"answer": "3M spent the most.", "insights": ["Close race."], "caveats": []}
         )
 
-    return DataAgent(build_pipeline(Settings(), FakeLLM(reply), db_path=facts_db))
+    return DataAgent.build(Settings(), FakeLLM(reply), db_path=facts_db)
 
 
 def test_statistics_are_exact_and_name_the_extremes() -> None:
@@ -104,3 +103,24 @@ def test_a_decline_is_a_status_with_the_reason(facts_db: Path) -> None:
     assert answer.status == "unanswerable"
     assert answer.answer == "No prices."
     assert (answer.rows, answer.statistics, answer.chart, answer.sql) == ([], [], None, None)
+
+
+def test_a_spent_quota_on_the_analysis_is_reported(facts_db: Path) -> None:
+    """The pipeline shows the rows when the written analysis fails; the agent says why."""
+
+    def reply(messages: Sequence[Message], role: ModelRole) -> str:
+        if role == "strong":
+            return f"```sql\n{BY_COMPANY}\n```"
+        if "which tables are needed" in messages[0]["content"]:
+            return '{"tables": ["annual_values", "companies"], "answerable": true}'
+        raise LLMError("The fast model call failed: quota", rate_limited=True)
+
+    agent = DataAgent.build(Settings(), FakeLLM(reply), db_path=facts_db)
+
+    answer = agent.ask("Who spent more on capex in 2018, 3M or Coke?")
+    again = agent.ask("Who spent more on capex in 2018, 3M or Coke?", analyze=False)
+
+    assert answer.ok
+    assert answer.rows == [["3M", 1577.0], ["Coca-Cola", 1548.0]]
+    assert answer.rate_limited
+    assert not again.rate_limited  # each question starts with a clean watch
