@@ -219,6 +219,21 @@ uv run poe run-memory --run memory-v1 --rescore    # check a finished run's note
 
 The run writes a row per turn (the standalone question, `resolved`, `rewritten`, and `unchanged` for questions that already stood alone) and `notes.json` with each user's final notes and the checks from `eval/memory/notes.jsonl`. Calls are cached in `data/cache/rewrite.jsonl` and `data/cache/notes.jsonl`; a stopped run starts again from the first turn and replays what it paid for.
 
+## Run the copilot end to end
+
+`poe run-copilot` sends each FinanceBench dev question through the whole graph, in batch mode, on a thread of its own ([report](../eval/copilot-dev.md)):
+
+```bash
+uv run poe run-copilot --run copilot-smoke --limit 2   # a smoke run
+uv run poe run-copilot --run copilot-v1
+uv run poe judge-answers --run copilot-v1             # then the drafts, before the validator
+uv run poe judge-answers --run copilot-v1-drafts
+uv run poe check-faithfulness --run copilot-v1
+uv run poe latency-report data/traces/copilot-v1.jsonl
+```
+
+It needs Qdrant, the facts database and the model keys; the validator's checks run on the `small` role. Every event goes to `data/traces/<run>.jsonl`, each answer to `data/processed/answers/<run>/dev/answers.jsonl` with its route, steps, tokens, cost and the validator's verdict, and each specialist's first answer to `<run>-drafts`, so judging both measures the validator. A spent quota stops the run, which resumes where it stopped. When every question is done, `eval/results/copilot/<run>/dev/` gets the agent metrics by route and question type. To run it on Cerebras, set `FRC_LLM_STRONG_MODEL=cerebras/gpt-oss-120b` and `FRC_LLM_FAST_MODEL=cerebras/qwen-3.8-27b` for the run ([ADR-0024](../decisions/0024-second-provider.md)).
+
 ## Judge answers and check the judge
 
 The judge ([guide](../concepts/llm-as-judge.md)) grades a run's answers against FinanceBench's reference answers; a sample of reference labels checks the judge:
