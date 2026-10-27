@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     # Hugging Face, for publishing the models trained in Phase 7
     hf_token: SecretStr | None = Field(default=None, validation_alias="HF_TOKEN")
 
+    # The Qdrant collection the doc agent searches (ADR-0011); its index card names the
+    # model its vectors came from, which then embeds the queries too (ADR-0027)
+    collection: str = "fb_page_bge-small"
+
     # Model roles, as LiteLLM model ids ("<provider>/<model>")
     llm_strong_model: str = "groq/openai/gpt-oss-120b"
     llm_fast_model: str = "groq/qwen/qwen3.8-27b"
