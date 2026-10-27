@@ -13,16 +13,22 @@ it is reported. Each rewrite is one model call, made through the cache:
 `expand` returns the searches to run: the original question first, then the rewrites. The
 caller searches each within the same filings and fuses the rankings with reciprocal rank
 fusion.
+
+A `HydePrompt` replaces the HyDE prompt with another: an instruction and worked examples
+shown before the question, such as the one step 7.3 searches for with DSPy. Without one,
+every call uses the prompts above, whose replies the cache holds.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
-from copilot.llm import LLMClient, Message, system, user
+from copilot.llm import LLMClient, Message, assistant, system, user
 
 Rewrite = Literal["multi", "hyde", "decompose"]
 REWRITES: tuple[Rewrite, ...] = ("multi", "hyde", "decompose")
@@ -62,7 +68,28 @@ class Search:
     source: str = "question"
 
 
-def rewrite_messages(kind: Rewrite, question: str) -> list[Message]:
+@dataclass(frozen=True, slots=True)
+class HydePrompt:
+    """Another HyDE prompt: its version, its instruction and worked examples."""
+
+    version: str
+    instruction: str
+    examples: tuple[tuple[str, str], ...] = ()  # (question, passage), shown in order
+
+
+def load_hyde_prompt(path: Path) -> HydePrompt:
+    """A HyDE prompt from JSON: `version`, `instruction` and `examples` (pairs)."""
+    record = json.loads(path.read_text(encoding="utf-8"))
+    examples = tuple((str(q), str(p)) for q, p in record.get("examples", []))
+    return HydePrompt(str(record["version"]), str(record["instruction"]), examples)
+
+
+def rewrite_messages(kind: Rewrite, question: str, hyde: HydePrompt | None = None) -> list[Message]:
+    if kind == "hyde" and hyde is not None:
+        messages = [system(hyde.instruction)]
+        for example, passage in hyde.examples:
+            messages += [user(f"Question: {example}"), assistant(passage)]
+        return [*messages, user(f"Question: {question}")]
     return [system(_SYSTEM[kind]), user(f"Question: {question}\n\n{_TASK[kind]}")]
 
 
@@ -83,30 +110,38 @@ def _searches(kind: Rewrite, text: str) -> list[Search]:
     return [Search(query, source=kind) for query in parse_queries(text, LIMITS[kind])]
 
 
-def rewrite(llm: LLMClient, kind: Rewrite, question: str) -> list[Search]:
+def rewrite(
+    llm: LLMClient, kind: Rewrite, question: str, hyde: HydePrompt | None = None
+) -> list[Search]:
     """The searches one rewrite produces for a question."""
     response = llm.complete(
-        rewrite_messages(kind, question), role="fast", temperature=0.0, max_tokens=1024
+        rewrite_messages(kind, question, hyde), role="fast", temperature=0.0, max_tokens=1024
     )
     return _searches(kind, response.text)
 
 
-async def arewrite(llm: LLMClient, kind: Rewrite, question: str) -> list[Search]:
+async def arewrite(
+    llm: LLMClient, kind: Rewrite, question: str, hyde: HydePrompt | None = None
+) -> list[Search]:
     response = await llm.acomplete(
-        rewrite_messages(kind, question), role="fast", temperature=0.0, max_tokens=1024
+        rewrite_messages(kind, question, hyde), role="fast", temperature=0.0, max_tokens=1024
     )
     return _searches(kind, response.text)
 
 
-def expand(llm: LLMClient, question: str, kinds: tuple[Rewrite, ...]) -> list[Search]:
+def expand(
+    llm: LLMClient, question: str, kinds: tuple[Rewrite, ...], hyde: HydePrompt | None = None
+) -> list[Search]:
     """The original question, then each rewrite's searches."""
     searches = [Search(question)]
     for kind in kinds:
-        searches += rewrite(llm, kind, question)
+        searches += rewrite(llm, kind, question, hyde)
     return searches
 
 
-async def aexpand(llm: LLMClient, question: str, kinds: tuple[Rewrite, ...]) -> list[Search]:
+async def aexpand(
+    llm: LLMClient, question: str, kinds: tuple[Rewrite, ...], hyde: HydePrompt | None = None
+) -> list[Search]:
     """`expand` with the rewrites requested at the same time, as the doc agent runs them."""
-    groups = await asyncio.gather(*(arewrite(llm, kind, question) for kind in kinds))
+    groups = await asyncio.gather(*(arewrite(llm, kind, question, hyde) for kind in kinds))
     return [Search(question), *(search for group in groups for search in group)]

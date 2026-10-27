@@ -17,7 +17,9 @@ Usage:
 
 Rewrites (`multi`, `hyde`, `decompose`, or `all`) call the fast model through a disk cache
 (data/cache/llm.jsonl), so a rerun spends no quota; uncached calls are paced for the free
-tier.
+tier. `--hyde-prompt FILE` writes HyDE's passages with another prompt (`HydePrompt`), and
+`--cache NAME` keeps the run's new calls in data/cache/NAME while still replaying
+llm.jsonl, so it never appends to a file another run is writing.
 """
 
 from __future__ import annotations
@@ -57,7 +59,14 @@ from copilot.logs import configure_logging
 from copilot.retrieval.query import CompanyMatcher, filings_from, resolve, understand
 from copilot.retrieval.rerank import RERANKERS, FastEmbedReranker, rerank
 from copilot.retrieval.rewrite import PROMPT_VERSION as REWRITE_PROMPT_VERSION
-from copilot.retrieval.rewrite import REWRITES, Rewrite, Search, expand
+from copilot.retrieval.rewrite import (
+    REWRITES,
+    HydePrompt,
+    Rewrite,
+    Search,
+    expand,
+    load_hyde_prompt,
+)
 from copilot.retrieval.search import (
     MODES,
     RRF_K,
@@ -100,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--rewrite", help="rewrites to search too: multi, hyde, decompose (comma-separated) or all"
     )
+    parser.add_argument("--hyde-prompt", type=Path, help="another HyDE prompt, as JSON")
+    parser.add_argument("--cache", default="llm.jsonl", help="the cache file for new calls")
     parser.add_argument("--run", help="run name (derived from the configuration by default)")
     parser.add_argument("--split", choices=("dev", "test"), default="dev")
     parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
@@ -139,9 +150,12 @@ def main(argv: list[str] | None = None) -> int:
             parser.error(f"--rewrite takes {', '.join(REWRITES)} or all")
     llm: PacedLLM | None = None
     cache: CachedLLM | None = None
+    hyde: HydePrompt | None = load_hyde_prompt(args.hyde_prompt) if args.hyde_prompt else None
     if kinds:
         models = role_models(settings)
-        cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / "llm.jsonl", models)
+        caches = settings.data_dir / "cache"
+        shared = [caches / "llm.jsonl"] if args.cache != "llm.jsonl" else []
+        cache = CachedLLM(LLMGateway(settings), caches / args.cache, models, also_read=shared)
         llm = PacedLLM(cache, pause_s=REWRITE_PAUSE_S)
 
     corpus = {q.doc_name for q in fb.load_questions(root)}
@@ -159,7 +173,7 @@ def main(argv: list[str] | None = None) -> int:
         searches = [Search(question.question)]
         if llm is not None:
             llm.reset()
-            searches = expand(llm, question.question, kinds)
+            searches = expand(llm, question.question, kinds, hyde)
             rewrite_ms[question.id] = llm.latency_s * 1000
             tokens += llm.prompt_tokens + llm.completion_tokens
         sources[question.id] = dict(Counter(search.source for search in searches))
@@ -229,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
             "rewrite": {
                 "kinds": list(kinds),
                 "prompt_version": REWRITE_PROMPT_VERSION,
+                "hyde_prompt": hyde.version if hyde else REWRITE_PROMPT_VERSION,
                 "model": settings.llm_fast_model,
                 "fusion": f"RRF, k = {RRF_K}, over the question and every rewrite",
                 "tokens": tokens,
@@ -259,6 +274,7 @@ def main(argv: list[str] | None = None) -> int:
             "rq" if args.rerank and args.rerank_query == "rewrite" else "",
             f"nb{args.neighbours}" if args.neighbours else "",
             f"rw-{'-'.join(kinds)}" if kinds else "",
+            f"hyde{hyde.version}" if hyde and "hyde" in kinds else "",
             args.setting,
         )
         if part

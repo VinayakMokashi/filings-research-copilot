@@ -36,7 +36,7 @@ from copilot.llm.cache import CachedLLM
 from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.retrieval.query import CompanyMatcher, Filing, filings_from, resolve, understand
-from copilot.retrieval.rewrite import REWRITES, Rewrite, Search, expand
+from copilot.retrieval.rewrite import REWRITES, HydePrompt, Rewrite, Search, expand
 from copilot.retrieval.search import Hit, Searcher, reciprocal_rank_fusion
 
 FETCH = 60
@@ -65,6 +65,7 @@ class DocAgent:
         budget: int = BUDGET_TOKENS,
         retry_budget: int | None = None,
         siblings: bool = False,
+        hyde: HydePrompt | None = None,
     ) -> None:
         self.searcher = searcher
         self.matcher = matcher
@@ -75,6 +76,7 @@ class DocAgent:
         self.budget = budget
         self.retry_budget = retry_budget or budget * 3 // 2
         self.siblings = siblings
+        self.hyde = hyde
 
     def retrieve(
         self,
@@ -89,7 +91,9 @@ class DocAgent:
         if documents == "auto":
             documents = resolve(understand(question, self.matcher), self.filings)
         searches = (
-            expand(self.llm, question, self.rewrites) if self.rewrites else [Search(question)]
+            expand(self.llm, question, self.rewrites, self.hyde)
+            if self.rewrites
+            else [Search(question)]
         )
         weights = [1.0] * len(searches)
         if missing.strip():
