@@ -69,9 +69,11 @@ def test_pair_records_split_by_filing_and_keep_the_chunk_place() -> None:
         "question",
         "chunk_id",
         "doc_name",
+        "company",
         "chunk_index",
         "split",
     }
+    assert embedder.chunk_record(chunks[0])["company"] == "Acme"
 
 
 def test_pair_records_name_a_chunk_that_is_missing() -> None:
