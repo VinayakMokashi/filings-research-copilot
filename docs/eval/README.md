@@ -12,6 +12,7 @@
 | [The copilot end to end: dev evaluation](copilot-dev.md) | 5 | Whether the whole copilot, routing each question to the doc, data or hybrid agent and checking what they write, answers FinanceBench's dev questions better than the doc agent alone, and at what cost in steps, money and time |
 | [A LoRA classifier as the router](lora-router.md) | 7 | Whether a small encoder fine-tuned with LoRA on the LLM router's labels routes nearly as well as it, on the CPU and at no cost, alone, in a cascade or as the fallback |
 | [The copilot's version 2: dev evaluation](copilot-v2.md) | 7 | Whether handing declined questions on to the doc agent, routing by the database's grain and letting a checked answer keep a labelled assessment win back the questions the first version lost to the doc agent alone |
+| [A domain embedder, fine-tuned on filings](domain-embedder.md) | 7 | Whether bge-small fine-tuned with hard negatives on synthetic questions about training filings ranks FinanceBench's evidence pages higher in the doc agent's search |
 | [Routing: semantic and LLM routers](routing.md) | 5 | Which router should choose each question's route, by embedding similarity, by asking a model, or both, and at what latency and cost |
 
 One report per experiment, with these sections:
