@@ -14,7 +14,9 @@
   of revisions (step 5.3);
 - memory (step 5.5): a rewriter for follow-ups on the `strong` role, and notes about the
   user on the `small` role, kept in `store` (in memory unless one is given). Batch runs
-  answer independent questions, so they keep no notes.
+  answer independent questions, so they keep no notes;
+- the brief crew (step 7.6): its planner and editor on the `strong` role, the doc agent
+  and the hybrid as its writers, and the validator's checker as its critic.
 
 Every component's model calls go through a disk cache of its own under data/cache/, so a
 repeated question costs nothing. `batch=True` paces the calls for the free tier's
@@ -38,6 +40,7 @@ from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 from langgraph.store.postgres import PostgresStore
 
+from copilot.agents.brief import BriefCrew
 from copilot.agents.classifier import ClassifierRouter
 from copilot.agents.graph import Components
 from copilot.agents.router import (
@@ -81,8 +84,11 @@ def build_components(
         "validator.jsonl",
         "rewrite.jsonl",
         "notes.jsonl",
+        "brief.jsonl",
     )
-    doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes = (client(name) for name in names)
+    doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes, briefs = (
+        client(name) for name in names
+    )
     doc = build_agent(settings, llm=doc_llm)
     data = DataAgent.build(settings, sql_llm, analysis_model="strong")
     companies = read_companies()
@@ -106,21 +112,23 @@ def build_components(
         threshold=math.inf,  # the LLM router always decides; see ADR-0017
         fallback_on_error=not batch,
     )
+    hybrid = HybridAgentV2(doc, data)
     return Components(
         router=router,
         doc=doc,
         data=data,
-        hybrid=HybridAgentV2(doc, data),
+        hybrid=hybrid,
         matcher=matcher,
         chat=chat,
         companies=[company.name for company in companies],
-        meters=[doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes],
+        meters=[doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes, briefs],
         strict=batch,
         checker=checker,
         writer=doc_llm,
         rewriter=rewriter,
         notes=None if batch else notes,
         store=None if batch else (store if store is not None else InMemoryStore()),
+        brief=BriefCrew(doc, hybrid, briefs, briefs, checker, strict=batch),
     )
 
 

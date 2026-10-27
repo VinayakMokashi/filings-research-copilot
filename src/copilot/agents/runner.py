@@ -31,6 +31,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import StreamMode
 
 from copilot.agents.graph import Components, CopilotState, Turn, build_graph
+from copilot.agents.router import Route
 
 STREAM_MODES: list[StreamMode] = ["tasks", "custom"]
 
@@ -92,9 +93,17 @@ class Copilot:
         self.graph.update_state(_config(thread_id), {"history": [turn]}, as_node="remember")
 
     def stream(
-        self, question: str, *, thread_id: str, user_id: str = "default"
+        self,
+        question: str,
+        *,
+        thread_id: str,
+        user_id: str = "default",
+        route: Route | None = None,
     ) -> Generator[dict[str, Any]]:
-        """The run's events as they happen; the last one is the response."""
+        """The run's events as they happen; the last one is the response.
+
+        `route` takes that route without asking the router, as a request for a brief does.
+        """
         config = _config(thread_id, user_id)
         base = {
             "run": uuid.uuid4().hex[:12],
@@ -110,7 +119,8 @@ class Copilot:
                 self.trace.write(record)
             return record
 
-        inputs: CopilotState = {"question": question}
+        # Set on every turn, so a route asked for once doesn't carry over to the next turn.
+        inputs: CopilotState = {"question": question, "requested_route": route or ""}
         parts = self.graph.stream(inputs, config, stream_mode=STREAM_MODES, version="v2")
         try:
             for part in parts:
@@ -134,10 +144,17 @@ class Copilot:
         response = self.graph.get_state(config).values.get("response", {})
         yield event("response", **response)
 
-    def ask(self, question: str, *, thread_id: str, user_id: str = "default") -> dict[str, Any]:
+    def ask(
+        self,
+        question: str,
+        *,
+        thread_id: str,
+        user_id: str = "default",
+        route: Route | None = None,
+    ) -> dict[str, Any]:
         """The response to one question, once the whole run is done."""
         response: dict[str, Any] = {}
-        for item in self.stream(question, thread_id=thread_id, user_id=user_id):
+        for item in self.stream(question, thread_id=thread_id, user_id=user_id, route=route):
             if item["type"] == "response":
                 response = item
         return response
