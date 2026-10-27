@@ -8,6 +8,7 @@ merges the adapters into the weights, and exports the model to ONNX. Writes to
 /kaggle/working:
 
 - model/: the merged model and its tokenizer (safetensors and tokenizer.json);
+- adapter/: the LoRA adapters and the classification head, before merging;
 - router.onnx: the same model for onnxruntime, with logits as its output;
 - metrics.json: the configuration, each epoch's validation accuracy, and a check that
   onnxruntime and PyTorch give the same logits.
@@ -26,11 +27,15 @@ import time
 import urllib.request
 from pathlib import Path
 
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "peft", "onnxruntime"], check=True)
+subprocess.run(
+    [sys.executable, "-m", "pip", "install", "-q", "peft", "onnx", "onnxruntime"], check=True
+)
 
 import numpy as np  # noqa: E402
 import onnxruntime as ort  # noqa: E402
+import peft  # noqa: E402
 import torch  # noqa: E402
+import transformers  # noqa: E402
 from peft import LoraConfig, TaskType, get_peft_model  # noqa: E402
 from transformers import AutoModelForSequenceClassification, AutoTokenizer  # noqa: E402
 
@@ -150,6 +155,7 @@ def main() -> None:
             best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
     seconds = time.time() - started
     model.load_state_dict(best_state)
+    model.save_pretrained(OUT / "adapter")  # the LoRA adapters and the head on their own
 
     merged = model.merge_and_unload().to("cpu").eval()
     merged.save_pretrained(OUT / "model", safe_serialization=True)
@@ -157,15 +163,18 @@ def main() -> None:
 
     sample = tokenizer([row["question"] for row in val[:8]], padding=True, return_tensors="pt")
     names = ["input_ids", "attention_mask", "token_type_ids"]
-    torch.onnx.export(
-        merged,
-        tuple(sample[name] for name in names),
-        OUT / "router.onnx",
-        input_names=names,
-        output_names=["logits"],
-        dynamic_axes={name: {0: "batch", 1: "tokens"} for name in names} | {"logits": {0: "batch"}},
-        opset_version=17,
-    )
+    export = {
+        "input_names": names,
+        "output_names": ["logits"],
+        "dynamic_axes": {name: {0: "batch", 1: "tokens"} for name in names}
+        | {"logits": {0: "batch"}},
+        "opset_version": 17,
+    }
+    inputs = tuple(sample[name] for name in names)
+    try:  # the TorchScript exporter, which reads dynamic_axes; newer torch defaults to dynamo
+        torch.onnx.export(merged, inputs, OUT / "router.onnx", dynamo=False, **export)
+    except TypeError:  # a torch without the dynamo switch
+        torch.onnx.export(merged, inputs, OUT / "router.onnx", **export)
     with torch.no_grad():
         expected = merged(**sample).logits.numpy()
     session = ort.InferenceSession(str(OUT / "router.onnx"))
@@ -184,6 +193,13 @@ def main() -> None:
         "best_val_accuracy": round(best, 4),
         "onnx_max_abs_diff": float(np.max(np.abs(expected - actual))),
         "labels": ROUTES,
+        "versions": {
+            "python": sys.version.split()[0],
+            "torch": torch.__version__,
+            "transformers": transformers.__version__,
+            "peft": peft.__version__,
+            "onnxruntime": ort.__version__,
+        },
     }
     (OUT / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     print(json.dumps(metrics, indent=2))
