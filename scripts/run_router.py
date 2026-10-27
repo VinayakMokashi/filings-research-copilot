@@ -244,7 +244,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "scores": made["scores"],
             "reason": made["reason"],
             "model": made["model"],
-            "llm_used": float(made["model"] is not None),
+            # A cascade decided without a model when it names none; a classifier names its own.
+            "llm_used": float(made["model"] is not None and made.get("router") != "classifier"),
             "latency_s": round(made["latency_s"], 4),
             "prompt_tokens": made["prompt_tokens"],
             "completion_tokens": made["completion_tokens"],
