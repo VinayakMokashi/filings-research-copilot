@@ -15,6 +15,20 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 7 · Bandit routing between answer models, replayed and not adopted
+
+- **Goal:** step 7.5: see whether a bandit learning from each answer's reward (right or wrong, less a price for its cost) picks the doc agent's answer model better than a fixed choice, offline first, then behind a flag.
+- **Done:**
+  - `poe run-answer-arm`: three arms on Cerebras, gpt-oss-120b at its default and at low reasoning effort and Qwen3.8 27B, each answering every dev question from the sources `doc-agent-v4-cerebras`'s final answer used, one call a question; `generate()` takes a role and model settings. The `strong` arm replayed all 100 calls from the cache and matches that run's judgements on 100 of 100.
+  - Judged by the same judge (`poe judge-answers`), priced from their tokens, and replayed with ε-greedy (decaying ε) and UCB1 over 2,000 orders for three cost penalties (`poe replay-bandit`, `copilot.eval.bandit`).
+  - Online: `ArmChooser` keeps an ε-greedy's counts and averages in a JSON file; with `FRC_ANSWER_POLICY=epsilon-greedy` the doc agent asks it for each answer's arm, and the answer and the graph's doc event name the arm, ready for Phase 9's feedback.
+  - The [report](eval/bandit-routing.md), [ADR-0029](decisions/0029-bandit-routing.md), the [guide](concepts/bandit-routing.md), the plan's step 7.5.
+- **Commands:** `uv run poe run-answer-arm --arm strong-low --run arm-strong-low` (and `strong`, `fast`), `uv run poe judge-answers --run arm-...`, `uv run poe replay-bandit --arms ... --lambdas 0,100,300`.
+- **Results:** correct 0.65, 0.63 and 0.61 (low effort −0.02, Qwen −0.04, Holm p = 0.86 both), at $0.00195, $0.00166 and $0.00507 a question. ε-greedy and UCB1 earned less than the best fixed arm at every λ (0.630 and 0.629 against 0.650 at λ = 0; 0.425 and 0.408 against 0.464 at λ = 100), with the oracle at 0.710: the arms differ question by question, but too little on average for 100 rewards to tell them apart.
+- **Problems and fixes:** Cerebras serves this key only gpt-oss-120b and Qwen, and gpt-oss-20b runs only on Groq's free tier, which a 100-question arm would take days of quota to answer, so the arms are settings on one provider. Qwen is the dearest model there, not the cheapest.
+- **Decisions:** [ADR-0029](decisions/0029-bandit-routing.md): the doc agent keeps one fixed answer model; the bandit stays behind `FRC_ANSWER_POLICY` (default `fixed`).
+- **Next:** step 7.6's brief crew, whose baselines wait on the critic's daily quota.
+
 ### 2026-10-28 · Phase 7 · DSPy on the HyDE prompt, which stays as written
 
 - **Goal:** step 7.3: let DSPy search for a HyDE instruction that ranks the evidence higher, on questions about training filings, and adopt it only on a significant gain on FinanceBench dev.
