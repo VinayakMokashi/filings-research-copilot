@@ -2,16 +2,16 @@
 
 Step 7.2. Runs as a Kaggle kernel (`scripts/kaggle_router.py` pushes it): it downloads the
 training set from the repository on GitHub at the commit written into REF below, fine-tunes
-BAAI/bge-small-en-v1.5 with a classification head and LoRA adapters on the attention
-layers, keeps the epoch with the best accuracy on the training set's validation split,
+BAAI/bge-small-en-v1.5 with a classification head and LoRA adapters on the attention and
+feed-forward layers, keeps the epoch with the best accuracy on the training set's validation split,
 merges the adapters into the weights, and exports the model to ONNX. Writes to
 /kaggle/working:
 
 - model/: the merged model and its tokenizer (safetensors and tokenizer.json);
 - adapter/: the LoRA adapters and the classification head, before merging;
 - router.onnx: the same model for onnxruntime, with logits as its output;
-- metrics.json: the configuration, each epoch's validation accuracy, and a check that
-  onnxruntime and PyTorch give the same logits.
+- metrics.json: the configuration, each epoch's validation accuracy, the library versions,
+  the exporter used, and a check that onnxruntime and PyTorch give the same logits.
 
 The routing set itself is never read here: the classifier is evaluated on it afterwards,
 on the machine that serves it.
@@ -27,9 +27,11 @@ import time
 import urllib.request
 from pathlib import Path
 
-subprocess.run(
-    [sys.executable, "-m", "pip", "install", "-q", "peft", "onnx", "onnxruntime"], check=True
-)
+PIP = [sys.executable, "-m", "pip", "-q"]
+subprocess.run([*PIP, "install", "peft", "onnx", "onnxscript", "onnxruntime"], check=True)
+# PEFT refuses a torchao older than it supports, even for LoRA, which doesn't use it; the
+# Kaggle image ships an old one.
+subprocess.run([*PIP, "uninstall", "-y", "torchao"], check=False)
 
 import numpy as np  # noqa: E402
 import onnxruntime as ort  # noqa: E402
@@ -85,10 +87,7 @@ def main() -> None:
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
     model = AutoModelForSequenceClassification.from_pretrained(
-        BASE_MODEL,
-        num_labels=len(ROUTES),
-        id2label=dict(enumerate(ROUTES)),
-        label2id=label,
+        BASE_MODEL, id2label=dict(enumerate(ROUTES)), label2id=label
     )
     lora = LoraConfig(
         task_type=TaskType.SEQ_CLS,
@@ -158,27 +157,8 @@ def main() -> None:
     model.save_pretrained(OUT / "adapter")  # the LoRA adapters and the head on their own
 
     merged = model.merge_and_unload().to("cpu").eval()
-    merged.save_pretrained(OUT / "model", safe_serialization=True)
+    merged.save_pretrained(OUT / "model")
     tokenizer.save_pretrained(OUT / "model")
-
-    sample = tokenizer([row["question"] for row in val[:8]], padding=True, return_tensors="pt")
-    names = ["input_ids", "attention_mask", "token_type_ids"]
-    export = {
-        "input_names": names,
-        "output_names": ["logits"],
-        "dynamic_axes": {name: {0: "batch", 1: "tokens"} for name in names}
-        | {"logits": {0: "batch"}},
-        "opset_version": 17,
-    }
-    inputs = tuple(sample[name] for name in names)
-    try:  # the TorchScript exporter, which reads dynamic_axes; newer torch defaults to dynamo
-        torch.onnx.export(merged, inputs, OUT / "router.onnx", dynamo=False, **export)
-    except TypeError:  # a torch without the dynamo switch
-        torch.onnx.export(merged, inputs, OUT / "router.onnx", **export)
-    with torch.no_grad():
-        expected = merged(**sample).logits.numpy()
-    session = ort.InferenceSession(str(OUT / "router.onnx"))
-    actual = session.run(["logits"], {name: sample[name].numpy() for name in names})[0]
 
     metrics = {
         "config": CONFIG,
@@ -191,7 +171,6 @@ def main() -> None:
         "train_seconds": round(seconds, 1),
         "history": history,
         "best_val_accuracy": round(best, 4),
-        "onnx_max_abs_diff": float(np.max(np.abs(expected - actual))),
         "labels": ROUTES,
         "versions": {
             "python": sys.version.split()[0],
@@ -201,8 +180,61 @@ def main() -> None:
             "onnxruntime": ort.__version__,
         },
     }
+    # Written before the export too, so a failed export still leaves the training's record.
+    (OUT / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+
+    exporter = export_onnx(tokenizer, [row["question"] for row in val[:8]], OUT / "router.onnx")
+    # PyTorch and onnxruntime on a padded batch and on one question alone, as served.
+    session = ort.InferenceSession(str(OUT / "router.onnx"))
+    inputs = {item.name for item in session.get_inputs()}
+    differences = []
+    for questions in ([row["question"] for row in val[8:24]], [val[0]["question"]]):
+        encoded = tokenizer(questions, padding=True, return_tensors="pt")
+        with torch.no_grad():
+            expected = merged(**encoded).logits.numpy()
+        feeds = {name: tensor.numpy() for name, tensor in encoded.items() if name in inputs}
+        actual = session.run(["logits"], feeds)[0]
+        differences.append(float(np.max(np.abs(expected - actual))))
+    metrics |= {"onnx_exporter": exporter, "onnx_max_abs_diff": max(differences)}
     (OUT / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     print(json.dumps(metrics, indent=2))
+
+
+def export_onnx(tokenizer, questions: list[str], path: Path) -> str:
+    """Export the saved model to ONNX, with eager attention, and name the exporter that worked.
+
+    The TorchScript exporter reads dynamic_axes directly; the dynamo exporter, newer torch's
+    default, is the second try.
+    """
+    model = AutoModelForSequenceClassification.from_pretrained(
+        OUT / "model", attn_implementation="eager"
+    ).eval()
+    sample = tokenizer(questions, padding=True, return_tensors="pt")
+    names = ["input_ids", "attention_mask", "token_type_ids"]
+    options = {
+        "input_names": names,
+        "output_names": ["logits"],
+        "dynamic_axes": {name: {0: "batch", 1: "tokens"} for name in names}
+        | {"logits": {0: "batch"}},
+        "opset_version": 17,
+    }
+    errors = []
+    for exporter in ("torchscript", "dynamo"):
+        # The dynamo exporter would put the weights in a file of their own by default.
+        extra = {"dynamo": True, "external_data": False} if exporter == "dynamo" else {}
+        try:
+            torch.onnx.export(
+                model,
+                tuple(sample[name] for name in names),
+                path,
+                **({"dynamo": False} | extra),
+                **options,
+            )
+            return exporter
+        except Exception as exc:  # try the next exporter, and report both if both fail
+            errors.append(f"{exporter}: {exc!r}"[:1000])
+            print(f"The {exporter} exporter failed: {exc!r}", flush=True)
+    raise RuntimeError("Both ONNX exporters failed: " + " | ".join(errors))
 
 
 if __name__ == "__main__":
