@@ -9,9 +9,9 @@ dataset instead of GitHub. Three gzipped JSON Lines files:
   filing) and its split. Every pair of about a tenth of the training filings is `val`, whole
   filings at a time, so validation asks about filings the model never trained on, as the
   FinanceBench dev questions do; the rest are `train`.
-- `chunks.jsonl.gz`: every 480-token chunk of the training filings. Hard negatives are mined
-  from a pair's own filing, and validation ranks a question's chunk among all of its
-  filing's chunks.
+- `chunks.jsonl.gz`: every 480-token chunk of the training filings, with its company. Hard
+  negatives are mined from a pair's own filing and from other companies' filings, and
+  validation ranks a question's chunk among its filing's chunks and among all of them.
 - `pages.jsonl.gz`: the page chunks of the 84 filings behind FinanceBench's questions, which
   the kernel embeds with each model for the retrieval evaluation.
 
@@ -61,6 +61,7 @@ def pair_records(
                 "question": pair.question,
                 "chunk_id": pair.chunk_id,
                 "doc_name": pair.doc_name,
+                "company": pair.company,
                 "chunk_index": chunk.chunk_index,
                 "split": "val" if pair.doc_name in val_filings else "train",
             }
@@ -72,6 +73,7 @@ def chunk_record(chunk: Chunk) -> dict[str, Any]:
     return {
         "chunk_id": chunk.chunk_id,
         "doc_name": chunk.doc_name,
+        "company": chunk.company,
         "chunk_index": chunk.chunk_index,
         "text": chunk.text,
     }
