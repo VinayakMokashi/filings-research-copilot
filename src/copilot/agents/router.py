@@ -76,6 +76,18 @@ LABELLING_RULES: tuple[str, ...] = (
     "a buy or sell opinion is decline.",
 )
 
+# Added in prompt r2 (step 7.7), after the end-to-end run sent questions the database
+# can't answer to the data agent, and read an assessment as investment advice.
+GRAIN_RULES: tuple[str, ...] = (
+    "The database holds annual figures for whole companies. A question about a quarter, a "
+    "segment, a product line or a region, or about a figure that is neither one of the "
+    "database's measures nor computed from them, is doc, or hybrid if it also asks why.",
+    "A question that asks for an assessment of a company's reported figures, such as "
+    "whether a margin is healthy or consistent, a trend stable or improving, growth high, or "
+    "a business capital-intensive, is hybrid: it needs the figures and what the filing says "
+    "about them. Such an assessment is not investment advice.",
+)
+
 
 @dataclass(frozen=True, slots=True)
 class RouteDecision:
@@ -273,7 +285,7 @@ class SemanticRouter:
 # LLM router
 # ---------------------------------------------------------------------------------------
 
-PROMPT_VERSION = "r1"
+PROMPT_VERSION = "r2"  # r2 adds GRAIN_RULES
 MAX_TOKENS = 1024  # room for a reasoning model's thinking before the short JSON reply
 
 # Written for the prompt, not taken from the routing set (a test checks). Each was checked
@@ -315,7 +327,7 @@ def router_prompt(examples: Sequence[tuple[str, Route]] = PROMPT_EXAMPLES) -> st
                 "Other figures, such as employee or store counts, appear only in the text."
             )
         routes.append(line)
-    rules = [f"- {rule}" for rule in LABELLING_RULES]
+    rules = [f"- {rule}" for rule in (*LABELLING_RULES, *GRAIN_RULES)]
     shots = [f'- "{question}" -> {route}' for question, route in examples]
     return "\n".join(
         [

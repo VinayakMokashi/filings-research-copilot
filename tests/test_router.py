@@ -288,3 +288,15 @@ def test_prompt_examples_are_not_routing_set_questions() -> None:
         assert question.casefold() not in questions
         assert route in router.ROUTES
     assert {route for _, route in router.PROMPT_EXAMPLES} == set(router.ROUTES)
+
+
+def test_the_prompt_states_the_database_s_grain_and_that_assessments_are_hybrid() -> None:
+    from copilot.agents.router import GRAIN_RULES, PROMPT_VERSION, router_prompt
+
+    prompt = router_prompt()
+
+    assert PROMPT_VERSION == "r2"
+    for rule in GRAIN_RULES:
+        assert f"- {rule}" in prompt
+    assert "annual figures for whole companies" in prompt
+    assert "is not investment advice" in prompt
