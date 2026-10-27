@@ -27,15 +27,22 @@ class FakeCopilot:
         self.fail = fail
         self.answered = answered
         self.calls: list[tuple[str, str, str]] = []
+        self.routes: list[str | None] = []
         self.recorded: list[tuple[str, dict[str, Any]]] = []
 
     def record(self, thread_id: str, turn: Any) -> None:
         self.recorded.append((thread_id, dict(turn)))
 
     def stream(
-        self, question: str, *, thread_id: str, user_id: str = "default"
+        self,
+        question: str,
+        *,
+        thread_id: str,
+        user_id: str = "default",
+        route: str | None = None,
     ) -> Iterator[dict[str, Any]]:
         self.calls.append((question, thread_id, user_id))
+        self.routes.append(route)
         base = {"thread": thread_id, "turn": 1}
         yield base | {"type": "start", "node": "route"}
         yield base | {"type": "event", "event": "route", "route": "doc"}
@@ -58,7 +65,12 @@ class BrokenCopilot:
         raise AssertionError("nothing to record")
 
     def stream(
-        self, question: str, *, thread_id: str, user_id: str = "default"
+        self,
+        question: str,
+        *,
+        thread_id: str,
+        user_id: str = "default",
+        route: str | None = None,
     ) -> Iterator[dict[str, Any]]:
         raise ConnectionError("the checkpointer's database is down")
         yield {}  # pragma: no cover - makes this a generator
@@ -236,6 +248,7 @@ def test_the_openapi_document_lists_every_endpoint(tmp_path: Path) -> None:
         "/healthz",
         "/readyz",
         "/v1/ask",
+        "/v1/brief",
         "/v1/feedback",
         "/v1/sources/{doc_name}/{page}",
     } <= paths
@@ -353,3 +366,30 @@ def test_a_cached_answer_costs_no_quota(tmp_path: Path) -> None:
         new = client.post("/v1/ask", json={"question": "What was 3M's revenue?"}, headers=headers)
 
     assert (first.status_code, repeat.status_code, new.status_code) == (200, 200, 429)
+
+
+def test_a_brief_asks_for_the_brief_route(tmp_path: Path) -> None:
+    services = make_services(tmp_path)
+    copilot = services.copilot
+    assert isinstance(copilot, FakeCopilot)
+    with TestClient(api.create_app(services)) as client:
+        events = sse(client.post("/v1/brief", json={"question": "Brief on 3M's 2022."}).text)
+        client.post("/v1/ask", json={"question": QUESTION})
+
+    kinds = [kind for kind, _ in events]
+    assert (kinds[0], kinds[-1]) == ("meta", "done")
+    assert copilot.routes == ["brief", None]
+
+
+def test_a_brief_and_an_answer_to_the_same_words_are_stored_apart(tmp_path: Path) -> None:
+    services = with_cache(tmp_path)
+    copilot = services.copilot
+    assert isinstance(copilot, FakeCopilot)
+    with TestClient(api.create_app(services)) as client:
+        client.post("/v1/ask", json={"question": QUESTION})
+        brief = sse(client.post("/v1/brief", json={"question": QUESTION}).text)
+        again = sse(client.post("/v1/brief", json={"question": QUESTION}).text)
+
+    assert copilot.routes == [None, "brief"]
+    assert all(data.get("event") != "cache" for _, data in brief)
+    assert again[1][1]["event"] == "cache"

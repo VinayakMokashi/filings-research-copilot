@@ -5,6 +5,9 @@
   (`start` and `end` for every node, `event` for what a node reports, `error` if the run
   failed, `response` with the reply), and `done` last. Give the `thread_id` again to ask
   a follow-up.
+- `POST /v1/brief` writes a research brief (step 7.6) for the request in `question`,
+  streamed the same way: the brief crew's plan, sections and edit arrive as `event`s, and
+  the `response` holds the brief as Markdown, its citations and its sections.
 - `POST /v1/feedback` keeps a thumbs up or down, and an optional comment, on one answer.
 - `GET /v1/sources/{doc_name}/{page}` returns a cited filing page: its label, section and
   text.
@@ -19,8 +22,10 @@ Guardrails (step 6.2): a question counts against daily quotas, per visitor and i
 and one over either gets a 429 with `Retry-After` before any model call
 (`copilot.api.quotas`), unless it repeats a question an anonymous caller asked in a
 new conversation, which gets the stored answer with no run and no quota
-(`copilot.api.cache`). A caller who gives no `user_id` is anonymous: nothing is noted
-about them, so one visitor's notes never shape another's answers.
+(`copilot.api.cache`); briefs are stored apart from answers, so the same words asked as a
+question and as a brief never share a reply. A caller who gives no `user_id` is
+anonymous: nothing is noted about them, so one visitor's notes never shape another's
+answers.
 """
 
 from __future__ import annotations
@@ -42,6 +47,7 @@ from fastapi.sse import EventSourceResponse, ServerSentEvent
 from copilot import __version__
 from copilot.agents.graph import Turn
 from copilot.agents.memory import ANONYMOUS
+from copilot.agents.router import Route
 from copilot.api.cache import Cached, age_seconds, reusable
 from copilot.api.quotas import seconds_until_reset, visitor_key
 from copilot.api.schemas import (
@@ -59,6 +65,7 @@ from copilot.logs import configure_logging
 log = structlog.get_logger(__name__)
 
 BUSY_WAIT_S = 120.0
+BRIEF_KEY = "[brief] "  # what a brief's request is stored under in the answer cache
 DOC_NAME = r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
@@ -128,30 +135,21 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
         body: AskRequest, request: Request, cached: Annotated[Cached | None, Depends(admit)]
     ) -> Iterator[ServerSentEvent]:
         """Answer one question, streaming the graph's events as server-sent events."""
-        services = _services(request)
-        request_id: str = request.state.request_id
-        thread_id = body.thread_id or uuid.uuid4().hex[:12]
-        user_id = body.user_id or f"{ANONYMOUS}{thread_id}"
-        ids = {"request_id": request_id, "thread_id": thread_id}
-        yield ServerSentEvent(event="meta", data=ids)
-        if cached is not None:
-            yield from _replay(services, body.question, cached, thread_id)
-            yield ServerSentEvent(event="done", data=ids)
-            return
-        if not services.lock.acquire(timeout=BUSY_WAIT_S):
-            busy = "The copilot is busy with another question; try again shortly."
-            yield ServerSentEvent(event="error", data={"error": busy})
-            yield ServerSentEvent(event="done", data=ids)
-            return
-        seen: dict[str, Any] = {}
-        try:
-            yield from _events(services, body.question, thread_id, user_id, request_id, seen)
-        finally:
-            services.lock.release()
-        response = seen.get("response")
-        if services.cache is not None and cacheable(body) and response and reusable(response):
-            services.cache.put(body.question, response, datetime.now(UTC))
-        yield ServerSentEvent(event="done", data=ids)
+        yield from _run(body, request, cached, key=body.question)
+
+    @app.post(
+        "/v1/brief",
+        response_class=EventSourceResponse,
+        tags=["copilot"],
+        responses={429: {"description": "A daily quota is used up; see Retry-After."}},
+    )
+    def brief(
+        body: AskRequest,
+        request: Request,
+        cached: Annotated[Cached | None, Depends(admit_brief)],
+    ) -> Iterator[ServerSentEvent]:
+        """Write a research brief for the request in `question`, streaming the crew's steps."""
+        yield from _run(body, request, cached, key=BRIEF_KEY + body.question, route="brief")
 
     @app.post("/v1/feedback", status_code=201, tags=["copilot"])
     def feedback(body: FeedbackRequest, request: Request) -> FeedbackReceipt:
@@ -193,14 +191,58 @@ def admit(request: Request, body: AskRequest) -> Cached | None:
     It takes the validated body, so a malformed request is refused first and counts for
     nothing.
     """
+    return _admit(request, body, body.question)
+
+
+def admit_brief(request: Request, body: AskRequest) -> Cached | None:
+    """As `admit`, for a brief: its stored reply is kept apart from answers."""
+    return _admit(request, body, BRIEF_KEY + body.question)
+
+
+def _admit(request: Request, body: AskRequest, key: str) -> Cached | None:
     services = _services(request)
     now = datetime.now(UTC)
     if services.cache is not None and cacheable(body):
-        stored = services.cache.get(body.question, now)
+        stored = services.cache.get(key, now)
         if stored is not None:
             return stored
     take_quota(services, request, now)
     return None
+
+
+def _run(
+    body: AskRequest,
+    request: Request,
+    cached: Cached | None,
+    *,
+    key: str,
+    route: Route | None = None,
+) -> Iterator[ServerSentEvent]:
+    """One run's stream: `meta`, a stored reply or the graph's events, then `done`."""
+    services = _services(request)
+    request_id: str = request.state.request_id
+    thread_id = body.thread_id or uuid.uuid4().hex[:12]
+    user_id = body.user_id or f"{ANONYMOUS}{thread_id}"
+    ids = {"request_id": request_id, "thread_id": thread_id}
+    yield ServerSentEvent(event="meta", data=ids)
+    if cached is not None:
+        yield from _replay(services, body.question, cached, thread_id)
+        yield ServerSentEvent(event="done", data=ids)
+        return
+    if not services.lock.acquire(timeout=BUSY_WAIT_S):
+        busy = "The copilot is busy with another question; try again shortly."
+        yield ServerSentEvent(event="error", data={"error": busy})
+        yield ServerSentEvent(event="done", data=ids)
+        return
+    seen: dict[str, Any] = {}
+    try:
+        yield from _events(services, body.question, thread_id, user_id, request_id, seen, route)
+    finally:
+        services.lock.release()
+    response = seen.get("response")
+    if services.cache is not None and cacheable(body) and response and reusable(response):
+        services.cache.put(key, response, datetime.now(UTC))
+    yield ServerSentEvent(event="done", data=ids)
 
 
 def cacheable(body: AskRequest) -> bool:
@@ -251,6 +293,7 @@ def _events(
     user_id: str,
     request_id: str,
     seen: dict[str, Any],
+    route: Route | None = None,
 ) -> Iterator[ServerSentEvent]:
     """The run's events as server-sent events; a failure ends the stream with an error.
 
@@ -258,7 +301,9 @@ def _events(
     """
     sent_error = False
     try:
-        events = services.copilot.stream(question, thread_id=thread_id, user_id=user_id)
+        events = services.copilot.stream(
+            question, thread_id=thread_id, user_id=user_id, route=route
+        )
         for number, item in enumerate(events, start=1):
             sent_error = sent_error or item.get("type") == "error"
             if item.get("type") == "response":
