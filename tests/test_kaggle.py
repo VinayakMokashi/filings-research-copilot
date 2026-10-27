@@ -55,10 +55,10 @@ def test_wait_for_dataset_returns_when_ready_and_raises_on_an_error() -> None:
 
 
 def test_wait_for_dataset_waits_out_a_new_dataset_that_isnt_visible_yet() -> None:
-    answers = iter([RuntimeError("403 Client Error: Forbidden"), "ready"])
+    answers: list[str | Exception] = [RuntimeError("403 Client Error: Forbidden"), "ready"]
 
     def status() -> str:
-        answer = next(answers)
+        answer = answers.pop(0)
         if isinstance(answer, Exception):
             raise answer
         return answer
