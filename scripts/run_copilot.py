@@ -11,6 +11,7 @@ answer run. Each record also keeps what the copilot did:
 
 - `route`, the router that decided and its model, and `steps`, the nodes it ran;
 - `tool_ok`: the specialist answered or declined on purpose, rather than failing;
+- `handoff`: set when the doc agent answered a question the data agent couldn't;
 - `tokens_by_model` and `cost_usd` from the nodes' usage events, and `seconds`;
 - `validation`, and `revisions`.
 
@@ -51,7 +52,7 @@ from copilot.llm.gateway import token_cost
 from copilot.logs import configure_logging
 from copilot.sql.tool import DataAnswer
 
-METRICS = ["answered", "tool_ok", "revised", "steps", "cost_usd", "seconds"]
+METRICS = ["answered", "tool_ok", "handed_on", "revised", "steps", "cost_usd", "seconds"]
 
 
 def read_records(path: Path) -> dict[str, dict[str, Any]]:
@@ -204,6 +205,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "path": result.get("path"),
                     "steps": [e["node"] for e in events if e["type"] == "start"],
                     "tool_ok": tool_ok(result),
+                    "handoff": result.get("handoff"),
                     "validation": state.get("validation", {}),
                     "revisions": state.get("revisions", 0),
                     "tokens_by_model": tokens,
@@ -232,6 +234,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "route": record["route"],
                 "answered": float(record["answerable"]),
                 "tool_ok": float(record["tool_ok"]),
+                "handed_on": float(record.get("handoff") is not None),
                 "revised": float(record["revisions"] > 0),
                 "steps": float(len(record["steps"])),
                 "cost_usd": record["cost_usd"] or 0.0,
@@ -247,7 +250,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         test_split_opened=False,
         system={
             "graph": (
-                "rewrite, understand, route, specialist, synthesise, validate, respond, remember"
+                "rewrite, understand, route, specialist (data on to doc when it finds nothing), "
+                "synthesise, validate, respond, remember"
             ),
             "routes": dict(Counter(row["route"] for row in rows)),
             "router_fallbacks": sum(1 for q in questions if done[q.id].get("router_error")),
