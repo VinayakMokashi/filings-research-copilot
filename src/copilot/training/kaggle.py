@@ -115,13 +115,24 @@ def wait_for_dataset(
     poll_s: float = 15.0,
     sleep: Callable[[float], None] = time.sleep,
     status: Callable[[], str] | None = None,
+    attempts: int = 40,
 ) -> str:
-    """Poll a dataset's status until Kaggle has processed it ("ready")."""
+    """Poll a dataset's status until Kaggle has processed it ("ready").
+
+    A dataset just created can answer 403 for a while before it shows up, so an error from
+    the CLI counts as not ready yet, for up to `attempts` polls.
+    """
     check = status or (lambda: cli("datasets", "status", dataset))
-    current = check().strip()
-    while "ready" not in current.lower():
-        if "error" in current.lower() or "fail" in current.lower():
-            raise RuntimeError(f"The dataset {dataset} failed: {current}")
+    current = ""
+    for _ in range(attempts):
+        try:
+            current = check().strip()
+        except RuntimeError as error:
+            current = f"not visible yet: {str(error)[:120]}"
+        else:
+            if "ready" in current.lower():
+                return current
+            if "error" in current.lower() or "fail" in current.lower():
+                raise RuntimeError(f"The dataset {dataset} failed: {current}")
         sleep(poll_s)
-        current = check().strip()
-    return current
+    raise TimeoutError(f"The dataset {dataset} wasn't ready after {attempts} polls: {current}")

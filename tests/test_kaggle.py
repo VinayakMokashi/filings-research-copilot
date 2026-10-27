@@ -54,6 +54,20 @@ def test_wait_for_dataset_returns_when_ready_and_raises_on_an_error() -> None:
         kaggle.wait_for_dataset("a/b", sleep=lambda _: None, status=lambda: "error")
 
 
+def test_wait_for_dataset_waits_out_a_new_dataset_that_isnt_visible_yet() -> None:
+    answers = iter([RuntimeError("403 Client Error: Forbidden"), "ready"])
+
+    def status() -> str:
+        answer = next(answers)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    assert kaggle.wait_for_dataset("a/b", sleep=lambda _: None, status=status) == "ready"
+    with pytest.raises(TimeoutError, match="after 2 polls"):
+        kaggle.wait_for_dataset("a/b", sleep=lambda _: None, status=lambda: "pending", attempts=2)
+
+
 def test_publish_dataset_creates_a_new_one_and_versions_an_old_one(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
