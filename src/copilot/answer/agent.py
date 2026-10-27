@@ -28,7 +28,8 @@ from copilot.answer.context import BUDGET_TOKENS, Source, pack
 from copilot.answer.generate import Answer, generate
 from copilot.config import Settings
 from copilot.eval import financebench as fb
-from copilot.ingest.embed import FastEmbedBM25, FastEmbedDense
+from copilot.ingest.embed import FastEmbedBM25, FastEmbedDense, dense_for_card
+from copilot.ingest.index import read_card
 from copilot.ingest.universe import read_companies
 from copilot.llm import LLMClient, LLMGateway
 from copilot.llm.cache import CachedLLM
@@ -39,7 +40,6 @@ from copilot.retrieval.rewrite import REWRITES, Rewrite, Search, expand
 from copilot.retrieval.search import Hit, Searcher, reciprocal_rank_fusion
 
 FETCH = 60
-COLLECTION = "fb_page_bge-small"  # page chunks, bge-small vectors (ADR-0011)
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,19 +162,25 @@ def company_matcher() -> CompanyMatcher:
     )
 
 
-def build_searcher(settings: Settings, collection: str = COLLECTION) -> Searcher:
-    """Search over `collection` with the models it was built with; loading them takes seconds."""
+def build_searcher(settings: Settings, collection: str | None = None) -> Searcher:
+    """Search over `collection` (the settings' by default) with the models it was built with.
+
+    The collection's index card names its dense model; without a card, it is bge-small.
+    Loading the models takes seconds.
+    """
+    name = collection or settings.collection
     cache_dir = settings.data_dir / "models"
+    card = read_card(settings.data_dir, name)
     return Searcher(
         QdrantClient(url=settings.qdrant_url, timeout=120),
-        collection,
-        FastEmbedDense(cache_dir=cache_dir),
+        name,
+        dense_for_card(card, settings.data_dir) if card else FastEmbedDense(cache_dir=cache_dir),
         FastEmbedBM25(cache_dir=cache_dir),
     )
 
 
 def build_agent(
-    settings: Settings, collection: str = COLLECTION, llm: LLMClient | None = None
+    settings: Settings, collection: str | None = None, llm: LLMClient | None = None
 ) -> DocAgent:
     """The doc agent over the evaluation corpus.
 
