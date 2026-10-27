@@ -139,8 +139,8 @@ def main(argv: list[str] | None = None) -> int:
     metrics = json.loads((target / "metrics.json").read_text(encoding="utf-8"))
     chosen = metrics["chosen"]
     print(
-        f"Wrote {target}: base val MRR@10 {metrics['base_val']['mrr@10']}, chosen lr "
-        f"{chosen['lr']:g} epoch {chosen['epoch']} val MRR@10 {chosen['val']['mrr@10']}; "
+        f"Wrote {target}: base model on validation {metrics['base_val']}; chosen lr "
+        f"{chosen['lr']:g} epoch {chosen['epoch']}: {chosen['val']}; "
         f"ONNX differences {metrics['onnx']}"
     )
     return 0

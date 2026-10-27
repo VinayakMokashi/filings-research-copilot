@@ -6,18 +6,25 @@ commits (FinanceBench's filings, CC BY-NC 4.0); `copilot.training.embedder` writ
 
 - pairs.jsonl.gz: the synthetic questions, each with the chunk that answers it and a split
   (validation holds every pair of about a tenth of the training filings);
-- chunks.jsonl.gz: every 480-token chunk of the training filings;
+- chunks.jsonl.gz: every 480-token chunk of the training filings, with its company;
 - pages.jsonl.gz: the page chunks of the 84 filings behind FinanceBench's questions.
 
-1. Mine hard negatives with the base model: for each pair, the chunks of its own filing that
-   rank highest for its question, leaving out the positive, its neighbours (chunks overlap by
-   64 tokens) and any chunk scoring at least 95% of the positive's score, which may well
-   answer the question too (positive-aware mining, as in NV-Retriever).
+1. Mine hard negatives with the base model: for each pair, the two chunks of its own filing
+   that rank highest for its question, leaving out the positive, its neighbours (chunks
+   overlap by 64 tokens) and any chunk scoring at least 95% of the positive's score, which
+   may well answer the question too (positive-aware mining, as in NV-Retriever); and the
+   chunk of another company's filings that ranks highest, under the same margin. Version 1
+   mined all three in the question's own filing, where the company never tells chunks apart,
+   and its model lost the company signal: searching every filing, half its top pages came
+   from other companies.
 2. Train the whole model with MultipleNegativesRankingLoss: each question against its
    positive, its hard negatives and every other passage in the batch, where a passage that is
    the question's positive or a neighbour of it doesn't count as a negative. A small grid of
-   learning rates, up to three epochs each; the epoch with the best MRR@10 on validation,
-   where a question's chunk is ranked among all the chunks of its filing, is kept.
+   learning rates, up to three epochs each. Validation ranks each held-out question's chunk
+   within its filing, as the doc agent searches, and across filings: among the held-out
+   filings' chunks and 10,000 from other training filings. The epoch with the best mean of
+   the two MRR@10s is kept (version 1 kept the best within the filing alone, which can't see
+   a model mixing up companies).
 3. Export the trained model and, as a control, the base model to ONNX with the same exporter
    (the last hidden state as output; CLS pooling and unit length happen outside), and check
    onnxruntime against PyTorch.
@@ -62,7 +69,8 @@ CONFIG = {
     "loss": "MultipleNegativesRankingLoss",
     "scale": 20.0,
     "batch_size": 32,
-    "hard_negatives": 3,
+    "same_filing_negatives": 2,
+    "other_company_negatives": 1,
     "negative_margin": 0.95,
     "neighbour_window": 1,
     "learning_rates": [1e-5, 2e-5, 5e-5],
@@ -74,6 +82,8 @@ CONFIG = {
     "passage_max_tokens": 512,
     "pooling": "cls",
     "query_instruction": QUERY_INSTRUCTION,
+    "across_sample": 10000,
+    "selection": "mean of MRR@10 within the filing and across filings",
     "seed": 0,
 }
 SENTENCE_TRANSFORMERS_FILES = [
@@ -134,14 +144,16 @@ def query_texts(pairs: list[dict]) -> list[str]:
 
 
 class Corpus:
-    """The training filings' chunks, by filing and by id."""
+    """The training filings' chunks, by filing, by company and by id."""
 
     def __init__(self, chunks: list[dict]) -> None:
         self.chunks = chunks
         self.row = {chunk["chunk_id"]: row for row, chunk in enumerate(chunks)}
         self.by_doc: dict[str, list[int]] = {}
+        self.by_company: dict[str, list[int]] = {}
         for row, chunk in enumerate(chunks):
             self.by_doc.setdefault(chunk["doc_name"], []).append(row)
+            self.by_company.setdefault(chunk["company"], []).append(row)
 
     def neighbours(self, pair: dict, window: int) -> set[str]:
         """The pair's chunk and those within `window` places of it in its filing."""
@@ -152,48 +164,60 @@ class Corpus:
         }
 
 
-def ranks(vectors: torch.Tensor, corpus: Corpus, pairs: list[dict], queries: torch.Tensor):
-    """Each pair's chunks of its filing by score, and the 0-based rank of its own chunk."""
-    for pair, query in zip(pairs, queries, strict=True):
-        rows = corpus.by_doc[pair["doc_name"]]
-        scores = vectors[rows] @ query
-        order = [rows[i] for i in torch.argsort(scores, descending=True).tolist()]
-        by_row = dict(zip(rows, scores.tolist(), strict=True))
-        yield pair, order, by_row, order.index(corpus.row[pair["chunk_id"]])
+def pick(order: list[int], scores, threshold: float, excluded: set[str], corpus, k: int):
+    """The first `k` chunk ids in `order` that aren't excluded or over the margin; how many
+    were over it."""
+    picked: list[str] = []
+    over = 0
+    for row in order:
+        chunk_id = corpus.chunks[row]["chunk_id"]
+        if chunk_id in excluded:
+            continue
+        if scores[row] >= threshold:
+            over += 1
+            continue
+        picked.append(chunk_id)
+        if len(picked) == k:
+            break
+    return picked, over
 
 
 def mine(corpus: Corpus, vectors: torch.Tensor, pairs: list[dict], queries: torch.Tensor):
     """Hard negatives for each pair (chunk ids), and what mining found."""
-    k, margin = CONFIG["hard_negatives"], CONFIG["negative_margin"]
+    same_k, other_k = CONFIG["same_filing_negatives"], CONFIG["other_company_negatives"]
+    margin = CONFIG["negative_margin"]
     rng = random.Random(CONFIG["seed"])
+    every = (queries.to(DEVICE) @ vectors.to(DEVICE).T).cpu()  # pairs x chunks
     negatives: dict[int, list[str]] = {}
-    skipped_margin = filled = 0
+    over_same = over_other = filled = 0
     positive_ranks = []
-    for pair, order, scores, rank in ranks(vectors, corpus, pairs, queries):
-        positive_ranks.append(rank)
+    for index, pair in enumerate(pairs):
+        scores = every[index]
+        own = corpus.row[pair["chunk_id"]]
+        threshold = margin * float(scores[own])
+        rows = corpus.by_doc[pair["doc_name"]]
+        order = [rows[i] for i in torch.argsort(scores[rows], descending=True).tolist()]
+        positive_ranks.append(order.index(own))
         excluded = corpus.neighbours(pair, CONFIG["neighbour_window"])
-        threshold = margin * scores[corpus.row[pair["chunk_id"]]]
-        picked: list[str] = []
-        for row in order:
-            chunk_id = corpus.chunks[row]["chunk_id"]
-            if chunk_id in excluded:
-                continue
-            if scores[row] >= threshold:
-                skipped_margin += 1
-                continue
-            picked.append(chunk_id)
-            if len(picked) == k:
-                break
-        while len(picked) < k:  # a short filing: easy negatives from another filing
+        same, over = pick(order, scores, threshold, excluded, corpus, same_k)
+        over_same += over
+        while len(same) < same_k:  # a short filing: easy negatives from another filing
             other = rng.choice(corpus.chunks)
             if other["doc_name"] != pair["doc_name"]:
-                picked.append(other["chunk_id"])
+                same.append(other["chunk_id"])
                 filled += 1
-        negatives[pair["pair_id"]] = picked
+        others = scores.clone()
+        others[corpus.by_company[pair["company"]]] = -math.inf
+        top = torch.topk(others, k=other_k + 200).indices.tolist()
+        different, over = pick(top, scores, threshold, set(), corpus, other_k)
+        over_other += over
+        negatives[pair["pair_id"]] = same + different
     stats = {
         "pairs": len(pairs),
-        "negatives_per_pair": k,
-        "skipped_over_margin": skipped_margin,
+        "same_filing_negatives": same_k,
+        "other_company_negatives": other_k,
+        "same_filing_over_margin": over_same,
+        "other_company_over_margin": over_other,
         "filled_from_other_filings": filled,
         "base_positive_rank_median": float(np.median(positive_ranks)) + 1,
         "base_positive_top1_share": round(sum(r == 0 for r in positive_ranks) / len(pairs), 4),
@@ -201,23 +225,46 @@ def mine(corpus: Corpus, vectors: torch.Tensor, pairs: list[dict], queries: torc
     return negatives, stats
 
 
-def validate(model, tokenizer, corpus: Corpus, pairs: list[dict]) -> dict[str, float]:
-    """MRR@10 and recall@10 of each validation question's chunk among its filing's chunks."""
-    docs = sorted({pair["doc_name"] for pair in pairs})
-    rows = [row for doc in docs for row in corpus.by_doc[doc]]
+def summary(found: list[int]) -> dict[str, float]:
+    """MRR@10 and recall@10 from 0-based ranks."""
+    return {
+        "mrr@10": round(sum(1 / (r + 1) for r in found if r < 10) / len(found), 4),
+        "recall@10": round(sum(r < 10 for r in found) / len(found), 4),
+    }
+
+
+def validation_rows(corpus: Corpus, pairs: list[dict]) -> list[int]:
+    """The held-out filings' chunks and a fixed sample of the other training filings' chunks."""
+    docs = {pair["doc_name"] for pair in pairs}
+    held_out = [row for doc in sorted(docs) for row in corpus.by_doc[doc]]
+    rest = [row for row, chunk in enumerate(corpus.chunks) if chunk["doc_name"] not in docs]
+    sample = random.Random(CONFIG["seed"]).sample(rest, min(CONFIG["across_sample"], len(rest)))
+    return held_out + sorted(sample)
+
+
+def validate(model, tokenizer, corpus: Corpus, pairs: list[dict], rows: list[int]) -> dict:
+    """Each held-out question's chunk ranked within its filing and across filings (`rows`).
+
+    A rank counts the chunks scoring higher than the question's own; `selection` is the mean
+    of the two MRR@10s.
+    """
     vectors = torch.zeros(len(corpus.chunks), model.config.hidden_size)
     texts = [corpus.chunks[row]["text"] for row in rows]
     vectors[rows] = embed(model, tokenizer, texts, CONFIG["passage_max_tokens"])
     queries = embed(model, tokenizer, query_texts(pairs), CONFIG["query_max_tokens"])
-    found = [rank for *_, rank in ranks(vectors, corpus, pairs, queries)]
-    return {
-        "mrr@10": round(sum(1 / (r + 1) for r in found if r < 10) / len(found), 4),
-        "recall@10": round(sum(r < 10 for r in found) / len(found), 4),
-        "pairs": len(found),
-    }
+    pool = torch.tensor(rows)
+    within, across = [], []
+    for pair, query in zip(pairs, queries, strict=True):
+        own = float(vectors[corpus.row[pair["chunk_id"]]] @ query)
+        filing = vectors[corpus.by_doc[pair["doc_name"]]] @ query
+        within.append(int((filing > own).sum()))
+        across.append(int((vectors[pool] @ query > own).sum()))
+    result = {"within": summary(within), "across": summary(across), "pairs": len(pairs)}
+    result["selection"] = round((result["within"]["mrr@10"] + result["across"]["mrr@10"]) / 2, 4)
+    return result
 
 
-def train(lr, tokenizer, corpus, train_pairs, val_pairs, negatives):
+def train(lr, tokenizer, corpus, train_pairs, val_pairs, negatives, val_rows):
     """One learning rate: the best epoch's weights, its score and every epoch's record."""
     torch.manual_seed(CONFIG["seed"])
     rng = random.Random(CONFIG["seed"])
@@ -279,13 +326,13 @@ def train(lr, tokenizer, corpus, train_pairs, val_pairs, negatives):
             schedule.step()
             optimiser.zero_grad(set_to_none=True)
             losses.append(loss.item())
-        score = validate(model, tokenizer, corpus, val_pairs)
+        score = validate(model, tokenizer, corpus, val_pairs, val_rows)
         history.append(
             {"lr": lr, "epoch": epoch, "train_loss": round(float(np.mean(losses)), 4), **score}
         )
         log(f"lr {lr:g} epoch {epoch}: loss {np.mean(losses):.4f}, val {score}")
-        if score["mrr@10"] > best:
-            best = score["mrr@10"]
+        if score["selection"] > best:
+            best = score["selection"]
             best_state = {k: v.detach().to("cpu").clone() for k, v in model.state_dict().items()}
     del model
     torch.cuda.empty_cache()
@@ -388,7 +435,8 @@ def main() -> None:
     queries = embed(base, tokenizer, query_texts(pairs), CONFIG["query_max_tokens"])
     negatives, mining = mine(corpus, vectors, pairs, queries)
     log(f"mined: {mining}")
-    base_val = validate(base, tokenizer, corpus, val_pairs)
+    val_rows = validation_rows(corpus, val_pairs)
+    base_val = validate(base, tokenizer, corpus, val_pairs, val_rows)
     log(f"base model on val: {base_val}")
     del base, vectors
     torch.cuda.empty_cache()
@@ -396,12 +444,14 @@ def main() -> None:
     history, best, best_state, best_lr = [], -1.0, None, None
     train_started = time.time()
     for lr in CONFIG["learning_rates"]:
-        state, score, records = train(lr, tokenizer, corpus, train_pairs, val_pairs, negatives)
+        state, score, records = train(
+            lr, tokenizer, corpus, train_pairs, val_pairs, negatives, val_rows
+        )
         history += records
         if score > best:
             best, best_state, best_lr = score, state, lr
     train_seconds = time.time() - train_started
-    chosen = max(history, key=lambda record: record["mrr@10"])
+    chosen = max(history, key=lambda record: record["selection"])
 
     model = AutoModel.from_pretrained(BASE_MODEL)
     model.load_state_dict(best_state)
@@ -424,6 +474,7 @@ def main() -> None:
             "pages": {"rows": len(pages), "sha256": pages_sha},
             "train_pairs": len(train_pairs),
             "val_pairs": len(val_pairs),
+            "val_across_chunks": len(val_rows),
         },
         "device": torch.cuda.get_device_name(0) if DEVICE == "cuda" else "cpu",
         "parameters": sum(p.numel() for p in model.parameters()),
