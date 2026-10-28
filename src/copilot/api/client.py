@@ -9,8 +9,12 @@ watching it.
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
-from collections.abc import Iterable, Iterator
+import threading
+import time
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -63,14 +67,99 @@ def parse_sse(lines: Iterable[str]) -> Iterator[Event]:
         yield Event(kind, json.loads("\n".join(data)))
 
 
-class CopilotClient:
-    """The API at `base_url`, as one visitor: the visitor's id goes with every question."""
+METADATA_IDENTITY = (
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity"
+)
+
+
+def metadata_id_token(audience: str) -> str:
+    """A Google ID token for `audience`, from the metadata server of the Cloud Run
+    instance this runs on, signed for the service's own account."""
+    response = httpx.get(
+        METADATA_IDENTITY,
+        params={"audience": audience},
+        headers={"Metadata-Flavor": "Google"},
+        timeout=5.0,
+    )
+    response.raise_for_status()
+    return response.text
+
+
+def _expiry(token: str) -> float | None:
+    """The `exp` claim of a JWT, or None if it can't be read."""
+    try:
+        payload = token.split(".")[1]
+        claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+        return float(claims["exp"])
+    except (IndexError, KeyError, ValueError, TypeError):
+        return None
+
+
+class GoogleIdToken(httpx.Auth):
+    """Signs each request with a Google ID token for `audience` (ADR-0031: only the UI's
+    and the MCP server's accounts may call the API). A token lasts an hour; a new one is
+    fetched five minutes before it expires."""
 
     def __init__(
-        self, base_url: str, visitor_id: str, transport: httpx.BaseTransport | None = None
+        self,
+        audience: str,
+        fetch: Callable[[str], str] = metadata_id_token,
+        clock: Callable[[], float] = time.time,
+    ) -> None:
+        self.audience = audience
+        self._fetch = fetch
+        self._clock = clock
+        self._token: str | None = None
+        self._expires = 0.0
+        self._lock = threading.Lock()
+
+    def token(self) -> str:
+        with self._lock:
+            if self._token is None or self._clock() >= self._expires - 300:
+                self._token = self._fetch(self.audience)
+                self._expires = _expiry(self._token) or self._clock() + 3600
+            return self._token
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+        request.headers["Authorization"] = f"Bearer {self.token()}"
+        yield request
+
+
+def visitor_from_forwarded(headers: Mapping[str, str], fallback: str) -> str:
+    """Who is asking, for the API's quotas: on Cloud Run, a hash of the client's address,
+    so a new browser session doesn't reset a visitor's quota; elsewhere, `fallback`, the
+    session's own id.
+
+    The address is the last entry of `X-Forwarded-For`, the one Google's front end adds;
+    entries a client sends come before it. Which entry the front end adds is checked on
+    the deployed service (step 8.7).
+    """
+    forwarded = next((v for k, v in headers.items() if k.lower() == "x-forwarded-for"), "")
+    address = forwarded.split(",")[-1].strip()
+    if not address:
+        return fallback
+    return hashlib.sha256(address.encode()).hexdigest()[:32]
+
+
+class CopilotClient:
+    """The API at `base_url`, as one visitor: the visitor's id goes with every question.
+
+    `id_token=True` signs every call with a Google ID token for `base_url`, as the
+    deployment's private API requires.
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        visitor_id: str,
+        transport: httpx.BaseTransport | None = None,
+        *,
+        id_token: bool = False,
+        auth: httpx.Auth | None = None,
     ) -> None:
         self.visitor_id = visitor_id
-        self._http = httpx.Client(base_url=base_url, transport=transport, timeout=30.0)
+        signer = auth or (GoogleIdToken(base_url.rstrip("/")) if id_token else None)
+        self._http = httpx.Client(base_url=base_url, transport=transport, timeout=30.0, auth=signer)
 
     def ask(
         self, question: str, thread_id: str | None = None, *, brief: bool = False
