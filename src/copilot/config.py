@@ -82,16 +82,20 @@ class Settings(BaseSettings):
     # Local data: downloads under data/raw, built databases under data/processed
     data_dir: Path = Path("data")
 
-    # Local services
+    # Local services, or their cloud counterparts in the deployment (ADR-0031)
     qdrant_url: str = "http://127.0.0.1:6333"
+    # Qdrant Cloud's database key; a local Qdrant needs none
+    qdrant_api_key: SecretStr | None = None
     database_url: str = "postgresql://copilot:copilot@127.0.0.1:5433/copilot"
     # Where the data agent's queries run (step 8.4): unset, on data/processed/facts.db; a
     # PostgreSQL URL (the read-only role on the facts database) runs them on the server,
     # with facts.db taking over while the server can't be reached
     facts_url: SecretStr | None = None
 
-    # The API's conversations, notes and feedback: in memory, or in Postgres to outlive it
-    api_state: Literal["memory", "postgres"] = "memory"
+    # The API's state: in memory; in Postgres (conversations, notes, feedback, quotas, the
+    # answer cache), to outlive the process; or in Firestore on Google Cloud (feedback,
+    # quotas, the answer cache; conversations in memory), shared by every instance
+    api_state: Literal["memory", "postgres", "firestore"] = "memory"
     # Questions a day before a 429: per visitor, and from everyone together (step 6.2)
     api_daily_questions: int = Field(default=20, ge=1)
     api_daily_total: int = Field(default=200, ge=1)
@@ -99,6 +103,18 @@ class Settings(BaseSettings):
     api_cache_days: int = Field(default=7, ge=0)
     # Where the web UI and the MCP server find the API
     api_url: str = "http://127.0.0.1:8000"
+    # Send a Google ID token for the API's address with each call (Cloud Run, where only
+    # the UI's and the MCP server's accounts may call the API)
+    api_id_token: bool = False
+    # Every run's events appended to data/traces/api.jsonl; off in the deployment, where
+    # the file system is the instance's memory and traces go to Langfuse
+    api_trace_file: bool = True
+    # Model calls cached on disk under data/cache (replayed by evaluations); off in the
+    # deployment, for the same reason
+    llm_disk_cache: bool = True
+    # Host names MCP clients may use for the HTTP transport, besides this machine's
+    # (comma-separated; the Cloud Run service's own address in the deployment)
+    mcp_allowed_hosts: str = ""
 
     # SEC EDGAR asks every client to identify itself as "Name contact@example.com".
     sec_user_agent: str | None = Field(default=None, validation_alias="SEC_USER_AGENT")
