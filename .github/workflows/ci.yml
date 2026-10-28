@@ -53,17 +53,43 @@ jobs:
       - name: Build
         run: |
           docker build --target api -t filings-copilot-api:ci .
+          docker build --target mcp -t filings-copilot-mcp:ci .
           docker build --target ui -t filings-copilot-ui:ci .
 
-      # The images hold no data, so check that they run as a non-root user and that the
-      # code imports; the Compose file must parse with the app profile on.
+      # Built without the data bundle, the images hold no data, so check that they run as
+      # a non-root user and that the code imports. The UI image must hold only the UI's
+      # dependency group, and the Compose file must parse with the app profile on.
       - name: Check
         run: |
-          test "$(docker run --rm filings-copilot-api:ci id -u)" != "0"
-          test "$(docker run --rm filings-copilot-ui:ci id -u)" != "0"
+          for image in api mcp ui; do
+            test "$(docker run --rm filings-copilot-$image:ci id -u)" != "0"
+          done
           docker run --rm filings-copilot-api:ci python -c "import copilot.api.app, copilot.mcp.server"
-          docker run --rm filings-copilot-ui:ci python -c "import streamlit, copilot.api.client"
+          docker run --rm filings-copilot-ui:ci python -c "import streamlit, copilot.ui, copilot.api.client"
+          docker run --rm filings-copilot-ui:ci python -c "import importlib.util as u, sys; sys.exit(any(u.find_spec(m) for m in ('litellm', 'fastembed', 'langgraph')))"
           docker compose --profile app config --quiet
+          docker images --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep filings-copilot
+
+      # Pinned and checksum-verified, like gitleaks. Fails on a critical vulnerability that
+      # has a fix; lists the high ones. Bump both values together when upgrading.
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: 0.75.0
+          TRIVY_SHA256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/trivy.tar.gz" \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          echo "${TRIVY_SHA256}  $RUNNER_TEMP/trivy.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/trivy.tar.gz" -C "$RUNNER_TEMP" trivy
+
+      - name: Scan the images
+        run: |
+          for image in api ui; do
+            "$RUNNER_TEMP/trivy" image --quiet --scanners vuln --ignore-unfixed \
+              --severity HIGH,CRITICAL --exit-code 0 "filings-copilot-$image:ci"
+            "$RUNNER_TEMP/trivy" image --quiet --scanners vuln --ignore-unfixed \
+              --severity CRITICAL --exit-code 1 "filings-copilot-$image:ci"
+          done
 
   terraform:
     name: Terraform
