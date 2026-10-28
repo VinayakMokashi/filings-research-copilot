@@ -73,6 +73,7 @@ class SourcePage(BaseModel):
 
 class Health(BaseModel):
     status: Literal["ok"] = "ok"
+    commit: str = "unknown"  # the commit the running image was built from
 
 
 class Readiness(BaseModel):

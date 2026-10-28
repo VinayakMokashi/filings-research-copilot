@@ -55,6 +55,9 @@ COPY eval/routing ./eval/routing
 # The data bundle, read-only for the services (owned by root); empty for Compose.
 COPY --from=data / /app/data/
 USER copilot
+# Last, so a new commit rebuilds nothing above it; /healthz reports it.
+ARG GIT_SHA=unknown
+ENV FRC_GIT_SHA=${GIT_SHA}
 EXPOSE 8000
 CMD ["sh", "-c", "exec uvicorn copilot.api.app:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"]
 
@@ -67,5 +70,7 @@ COPY --from=build-ui /app /app
 COPY eval/results ./eval/results
 ENV PYTHONPATH=/app/src
 USER copilot
+ARG GIT_SHA=unknown
+ENV FRC_GIT_SHA=${GIT_SHA}
 EXPOSE 8501
 CMD ["sh", "-c", "exec streamlit run src/copilot/ui/app.py --server.address 0.0.0.0 --server.port ${PORT:-8501} --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --client.toolbarMode minimal"]

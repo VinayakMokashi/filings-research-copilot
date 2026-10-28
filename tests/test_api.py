@@ -115,7 +115,7 @@ def sse(text: str) -> list[tuple[str, dict[str, Any]]]:
 
 def test_health_and_readiness(tmp_path: Path) -> None:
     with TestClient(api.create_app(make_services(tmp_path))) as client:
-        assert client.get("/healthz").json() == {"status": "ok"}
+        assert client.get("/healthz").json() == {"status": "ok", "commit": "unknown"}
         ready = client.get("/readyz")
         assert (ready.status_code, ready.json()["ready"]) == (200, True)
 
