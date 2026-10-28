@@ -56,7 +56,7 @@ from copilot.config import Settings
 from copilot.eval.routing import load_queries
 from copilot.ingest.embed import FastEmbedDense
 from copilot.ingest.universe import read_companies
-from copilot.llm import LLMGateway
+from copilot.llm import LLMClient, LLMGateway
 from copilot.llm.cache import CachedLLM
 from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
@@ -64,17 +64,31 @@ from copilot.retrieval.query import CompanyMatcher
 from copilot.sql.tool import DataAgent
 
 
+def model_client(settings: Settings, cache_file: str, *, batch: bool = False) -> PacedLLM:
+    """The gateway as one part of the copilot uses it: cached on disk in `cache_file`, and
+    paced for the free tier in a batch run, or only counting tokens in the API.
+
+    The deployment keeps no disk cache (`FRC_LLM_DISK_CACHE=false`): its file system is
+    the instance's memory, and the API's answer cache serves exact repeats.
+    """
+    gateway = LLMGateway(settings)
+    client: LLMClient = (
+        CachedLLM(gateway, settings.data_dir / "cache" / cache_file, role_models(settings))
+        if settings.llm_disk_cache
+        else gateway
+    )
+    if batch:
+        return PacedLLM(client, tokens_per_minute=settings.llm_tokens_per_minute)
+    return PacedLLM(client, pause_s=0.0, attempts=1)  # counts tokens; no pauses or retries
+
+
 def build_components(
     settings: Settings, *, batch: bool = False, store: BaseStore | None = None
 ) -> Components:
     """The copilot's parts over the evaluation corpus; see the module docstring."""
-    models = role_models(settings)
 
     def client(cache_file: str) -> PacedLLM:
-        cache = CachedLLM(LLMGateway(settings), settings.data_dir / "cache" / cache_file, models)
-        if batch:
-            return PacedLLM(cache, tokens_per_minute=settings.llm_tokens_per_minute)
-        return PacedLLM(cache, pause_s=0.0, attempts=1)  # counts tokens; no pauses or retries
+        return model_client(settings, cache_file, batch=batch)
 
     names = (
         "llm.jsonl",
