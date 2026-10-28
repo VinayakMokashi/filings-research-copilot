@@ -37,7 +37,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 31 | [bandit-routing.md](bandit-routing.md) | ε-greedy and UCB1 over answer models, offline replay, a cost penalty in the reward | Sutton and Barto, *Reinforcement Learning* (2018), ch. 2; Auer et al. (2002) | 7 | Written |
 | 32 | [research-briefs.md](research-briefs.md) | A crew of agents for briefs: a Self-Discover plan, parallel writers, a critic, an editor; rubric grading with a second judge | Zhou et al., Self-Discover (2024) | 7 | Written |
 | 33 | `cloud-run.md` | Containers, services, revisions, scaling to zero | Cloud Run docs | 8 | Planned |
-| 34 | `terraform-basics.md` | Infrastructure as code, state, plans | Terraform docs | 8 | Planned |
-| 35 | `workload-identity-federation.md` | Deploying without stored keys | Google Cloud docs, Workload Identity Federation with deployment pipelines | 8 | Planned |
+| 34 | [terraform-basics.md](terraform-basics.md) | Infrastructure as code, state, plans; two roots, and who owns which part of the deployment | Terraform docs | 8 | Written |
+| 35 | [workload-identity-federation.md](workload-identity-federation.md) | Deploying without stored keys: GitHub's OIDC token traded for an hour of the deployer's access | Google Cloud docs, Workload Identity Federation with deployment pipelines | 8 | Written |
 | 36 | `online-evaluation.md` | Nightly evals, interleaving, drift checks | Chapelle et al., interleaved evaluation (2012) | 9 | Planned |
 | 37 | `preference-data.md` | From thumbs-up/down to preference tuning | Rafailov et al., DPO (2023) | 9 | Planned |
