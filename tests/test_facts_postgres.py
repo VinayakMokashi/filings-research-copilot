@@ -58,6 +58,10 @@ def test_the_postgres_schema_keeps_eight_byte_floats() -> None:
     assert facts_pg.POSTGRES_SCHEMA.count("DOUBLE PRECISION") == SCHEMA.count(" REAL")
 
 
+def test_text_sorts_in_sqlite_byte_order() -> None:
+    assert facts_pg.POSTGRES_SCHEMA.count('TEXT COLLATE "C"') == SCHEMA.count(" TEXT")
+
+
 def test_tables_are_copied_parents_first() -> None:
     created = [line.split()[2] for line in SCHEMA.splitlines() if line.startswith("CREATE TABLE")]
     assert list(facts_pg.TABLES) == created
