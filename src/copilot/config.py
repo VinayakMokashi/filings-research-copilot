@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     # Local services
     qdrant_url: str = "http://127.0.0.1:6333"
     database_url: str = "postgresql://copilot:copilot@127.0.0.1:5433/copilot"
+    # Where the data agent's queries run (step 8.4): unset, on data/processed/facts.db; a
+    # PostgreSQL URL (the read-only role on the facts database) runs them on the server,
+    # with facts.db taking over while the server can't be reached
+    facts_url: SecretStr | None = None
 
     # The API's conversations, notes and feedback: in memory, or in Postgres to outlive it
     api_state: Literal["memory", "postgres"] = "memory"

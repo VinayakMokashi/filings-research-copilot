@@ -15,6 +15,9 @@ text2sql-analyst's pipeline, set up for this project:
   read-only connection; an SQLite authorizer that refuses anything else; caps on rows,
   value size and time. A query that fails goes back to the model with the error, at most
   twice.
+- **On PostgreSQL when `FRC_FACTS_URL` is set** (step 8.4): the model still writes SQLite
+  SQL against facts.db's schema, text2sql-analyst translates each query, and
+  `FactsExecutor` falls back to facts.db while the server is stopped.
 """
 
 from __future__ import annotations
@@ -36,6 +39,7 @@ from copilot.llm.cache import CachedLLM
 from copilot.llm.gateway import role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.sql.adapter import GatewayLLM
+from copilot.sql.executor import FactsExecutor
 from copilot.sql.linking import FactsLinker
 
 DESCRIPTIONS_FILE = Path("data/reference/facts_descriptions.json")
@@ -68,9 +72,17 @@ def build_pipeline(
     is the model that writes the answer from the rows.
     """
     path = db_path or facts_db_path(settings)
-    # The models come from the gateway, so text2sql-analyst's own provider is never used.
-    options = Text2SQLSettings(db_path=path, llm_provider="fake")
+    # The models come from the gateway, so text2sql-analyst's own provider is never used;
+    # db_url=None keeps its T2S_DB_URL out of it, since FRC_FACTS_URL decides below.
+    options = Text2SQLSettings(db_path=path, db_url=None, llm_provider="fake")
+    # The prompts describe facts.db's schema whichever database runs the queries, so they
+    # stay the ones that were evaluated (step 8.4).
     schemas = read_schema(path, options.sample_rows)
+    executor = (
+        FactsExecutor(settings.facts_url.get_secret_value(), path)
+        if settings.facts_url and db_path is None
+        else None
+    )
     if descriptions is None:
         descriptions = json.loads(DESCRIPTIONS_FILE.read_text(encoding="utf-8"))
     llm = client or batch_client(settings)
@@ -84,4 +96,5 @@ def build_pipeline(
         SQLGenerator(sql_llm, options.sql_dialect, options.sample_rows),
         Analyst(sql_llm if analysis_model == "strong" else helper, options.analysis_rows),
         linker=FactsLinker.read(path) if linking else None,
+        executor=executor,
     )

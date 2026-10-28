@@ -73,6 +73,8 @@ class DataAnswer(BaseModel):
     insights: list[str] = Field(default_factory=list)
     caveats: list[str] = Field(default_factory=list)
     sql: str | None = None
+    # The query PostgreSQL ran, translated from `sql`; None when facts.db answered
+    executed_sql: str | None = None
     columns: list[str] = Field(default_factory=list)
     rows: list[list[Any]] = Field(default_factory=list)
     truncated: bool = False
@@ -159,6 +161,7 @@ def to_answer(result: PipelineResult) -> DataAnswer:
         insights=list(analysis.insights) if analysis else [],
         caveats=list(analysis.caveats) if analysis else [],
         sql=result.sql,
+        executed_sql=query.executed_sql if query else None,
         columns=columns,
         rows=rows,
         truncated=bool(query and query.truncated),
