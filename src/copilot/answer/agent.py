@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 from qdrant_client import QdrantClient
@@ -157,13 +158,28 @@ class AgentAnswer:
         return self.first is not None
 
 
-def corpus_filings(settings: Settings) -> list[Filing]:
+# The corpus's metadata for an image that carries no FinanceBench files (`poe bundle-data`).
+CORPUS_FILE = Path("processed") / "corpus.jsonl"
+
+
+def corpus_documents(settings: Settings) -> list[fb.Document]:
     """The evaluation corpus, which the index holds: the 84 filings behind FinanceBench's
-    questions."""
+    questions, by name. Read from data/processed/corpus.jsonl when it exists, as in the
+    deployed image, and otherwise from FinanceBench's own files."""
+    manifest = settings.data_dir / CORPUS_FILE
+    if manifest.is_file():
+        lines = manifest.read_text(encoding="utf-8").splitlines()
+        documents = [fb.Document.model_validate_json(line) for line in lines if line.strip()]
+        return sorted(documents, key=lambda document: document.doc_name)
     root = settings.data_dir / "raw" / "financebench"
     corpus = {question.doc_name for question in fb.load_questions(root)}
-    documents = fb.load_documents(root)
-    return filings_from(documents[name] for name in sorted(corpus))
+    by_name = fb.load_documents(root)
+    return [by_name[name] for name in sorted(corpus)]
+
+
+def corpus_filings(settings: Settings) -> list[Filing]:
+    """The corpus's filings, as the resolver needs them."""
+    return filings_from(corpus_documents(settings))
 
 
 def company_matcher() -> CompanyMatcher:
@@ -185,7 +201,11 @@ def build_searcher(settings: Settings, collection: str | None = None) -> Searche
     cache_dir = settings.data_dir / "models"
     card = read_card(settings.data_dir, name)
     return Searcher(
-        QdrantClient(url=settings.qdrant_url, timeout=120),
+        QdrantClient(
+            url=settings.qdrant_url,
+            api_key=settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None,
+            timeout=120,
+        ),
         name,
         dense_for_card(card, settings.data_dir) if card else FastEmbedDense(cache_dir=cache_dir),
         FastEmbedBM25(cache_dir=cache_dir),
