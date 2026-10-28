@@ -28,6 +28,12 @@ from copilot.agents.runner import Copilot, Fanout, TraceWriter
 from copilot.agents.tracing import build_tracer
 from copilot.answer.context import describe
 from copilot.api.cache import AnswerCache, MemoryCache, PostgresCache
+from copilot.api.firestore import (
+    FirestoreCache,
+    FirestoreFeedback,
+    FirestoreQuotas,
+    firestore_client,
+)
 from copilot.api.quotas import MemoryQuotas, PostgresQuotas, QuotaStore
 from copilot.config import Settings
 from copilot.ingest.corpus import filing_pages
@@ -138,16 +144,33 @@ class Services:
 
 
 def readiness(settings: Settings) -> dict[str, bool]:
-    """Whether what the copilot needs is there; never reports a key's value."""
+    """Whether what the copilot needs is there; never reports a key's value.
+
+    Qdrant is asked for the collection itself, with the key: a real read, which also
+    keeps Qdrant Cloud's free cluster from being suspended when the scheduler calls this
+    every week (ADR-0031).
+    """
     checks = {
         "facts_database": facts_db_path(settings).is_file(),
         "pages": (settings.data_dir / "processed" / "pages").is_dir(),
         "llm_key": settings.groq_api_key is not None,
     }
+    key = settings.qdrant_api_key
+    headers = {"api-key": key.get_secret_value()} if key is not None else {}
     try:
-        checks["qdrant"] = httpx.get(f"{settings.qdrant_url}/readyz", timeout=2.0).is_success
+        checks["qdrant"] = httpx.get(
+            f"{settings.qdrant_url}/collections/{settings.collection}",
+            headers=headers,
+            timeout=5.0,
+        ).is_success
     except httpx.HTTPError:
         checks["qdrant"] = False
+    if settings.api_state == "firestore":
+        try:
+            firestore_client().collection("quotas").document("ready").get()
+            checks["firestore"] = True
+        except Exception:  # any failure means not ready
+            checks["firestore"] = False
     if settings.api_state == "postgres":
         try:
             with psycopg.connect(settings.database_url, connect_timeout=2):
@@ -169,19 +192,29 @@ def build_services(settings: Settings) -> Iterator[Services]:
             )
             feedback: FeedbackStore = PostgresFeedback(connection)
             quotas: QuotaStore = PostgresQuotas(connection)
+        elif settings.api_state == "firestore":
+            client = firestore_client()
+            checkpointer, store = None, None
+            feedback = FirestoreFeedback(client)
+            quotas = FirestoreQuotas(client)
         else:
             checkpointer, store, feedback = None, None, MemoryFeedback()
             quotas = MemoryQuotas()
         cache: AnswerCache | None = None
         if settings.api_cache_days > 0:
             ttl = timedelta(days=settings.api_cache_days)
-            postgres = settings.api_state == "postgres"
-            cache = PostgresCache(connection, ttl) if postgres else MemoryCache(ttl)
+            if settings.api_state == "postgres":
+                cache = PostgresCache(connection, ttl)
+            elif settings.api_state == "firestore":
+                cache = FirestoreCache(client, ttl)
+            else:
+                cache = MemoryCache(ttl)
         parts = build_components(settings, store=store)
         tracer = build_tracer(settings)
         if tracer is not None:
             stack.callback(tracer.close)
-        trace = Fanout(TraceWriter(settings.data_dir / "traces" / "api.jsonl"), tracer)
+        writer = TraceWriter(settings.data_dir / "traces" / "api.jsonl")
+        trace = Fanout(writer if settings.api_trace_file else None, tracer)
         doc = getattr(parts.doc, "by_name", {})
         yield Services(
             copilot=Copilot(parts, checkpointer, trace),
