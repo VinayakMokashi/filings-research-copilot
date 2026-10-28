@@ -47,6 +47,17 @@ flowchart LR
 
 text2sql-analyst does steps 2 to 5 and the analysis; this project adds the value linking, the model routing through its gateway, and the typed answer ([ADR-0015](../decisions/0015-reuse-text2sql-analyst.md)).
 
+### On PostgreSQL
+
+In the deployment the queries run on PostgreSQL (Cloud SQL) during demo windows, with facts.db as the fallback ([ADR-0031](../decisions/0031-google-cloud-topology.md)). The model's side doesn't change: it sees facts.db's schema and writes SQLite SQL, as it did when it was evaluated.
+
+1. **SQLite decides what is valid.** `FactsExecutor` compiles each query on facts.db with `EXPLAIN`, which runs nothing. A query SQLite rejects goes back to the model with SQLite's message, as before.
+2. **text2sql-analyst translates it** with sqlglot, plus rules for what SQLite and PostgreSQL do differently: `LIKE` becomes `ILIKE`, `REAL` becomes `DOUBLE PRECISION`, `ROUND` rounds a `NUMERIC`, and an alias named in `HAVING` becomes its expression. The result keeps SQLite's column names.
+3. **The server's guardrails replace the authorizer**: read-only transactions, a statement timeout, and a role that may only select.
+4. **While the server is stopped**, a failed connection sends queries to the file for a minute.
+
+On the SQL set and FinanceBench's figure questions, every answer was the same as on SQLite ([report](../eval/facts-postgres.md)).
+
 ## Where it lives in the code
 
 | Piece | What it does |
@@ -56,6 +67,9 @@ text2sql-analyst does steps 2 to 5 and the analysis; this project adds the value
 | `copilot.sql.linking.FactsLinker` | The value-linking hints |
 | `copilot.sql.tool.DataAgent`, `DataAnswer` | One question in, a typed and serialisable answer out |
 | `copilot.sql.tool.column_statistics` | Exact statistics for the measure columns |
+| `copilot.sql.executor.FactsExecutor` | With `FRC_FACTS_URL` set: each query compiled on facts.db, then run on PostgreSQL, or on facts.db while the server is down |
+| `copilot.facts.postgres` | facts.db's tables in PostgreSQL, and the read-only `facts_reader` role (`poe load-facts-postgres`) |
+| `scripts/check_facts_postgres.py` | `poe check-facts-postgres`: every evaluated query on both databases, compared |
 | `scripts/run_sql_agent.py` | `poe run-sql-agent`: the SQL set, answered and scored |
 | `scripts/ask_data.py` | `poe ask-data "..."`: one question, printed |
 
@@ -87,6 +101,7 @@ Neither dev score is a fair test any more. The combined-measure definitions were
 - **A dependency built as an app.** text2sql-analyst required Streamlit and ChromaDB, a second vector database, to index seven tables. Making both optional upstream kept the install small, and an all-tables retriever replaced the index.
 - **Years are not measures.** The first statistics added up the fiscal-year column ("total 10,100") and couldn't name the year of a peak. The tool now uses text2sql-analyst's rule for measure columns, under which a year labels the rows.
 - **The value list was one join away**, and empty results looked like answers: see the [value linking guide](value-linking.md).
+- **A forgiving parser.** On PostgreSQL, the first replay of the SQL set lost a question that SQLite had answered. The model had written a JOIN after WHERE; SQLite rejects that and the agent repaired it, but sqlglot moved the JOIN into place, so PostgreSQL ran the faulty query and no repair followed. Every query is now compiled on SQLite before PostgreSQL runs it.
 
 ## Review questions
 
@@ -96,6 +111,7 @@ Neither dev score is a fair test any more. The combined-measure definitions were
 4. When is a repair loop worth its extra model call, and when does it just repeat the mistake?
 5. Why does the typed answer carry statistics computed in code, when the model already wrote an answer?
 6. Why does the data agent answer calculations across years that the doc agent, with the same answer model, refuses?
+7. Why does the agent compile every query on SQLite before PostgreSQL runs it, when PostgreSQL could run it anyway?
 
 ## References
 
