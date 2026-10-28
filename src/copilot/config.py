@@ -118,6 +118,8 @@ class Settings(BaseSettings):
     # Host names MCP clients may use for the HTTP transport, besides this machine's
     # (comma-separated; the Cloud Run service's own address in the deployment)
     mcp_allowed_hosts: str = ""
+    # Where the ingestion worker keeps each filing it downloads (a Cloud Storage bucket)
+    filings_bucket: str | None = None
 
     # SEC EDGAR asks every client to identify itself as "Name contact@example.com".
     sec_user_agent: str | None = Field(default=None, validation_alias="SEC_USER_AGENT")
