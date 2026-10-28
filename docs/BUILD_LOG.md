@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · Slimmer images, and the data the API image carries
+
+- **Goal:** step 8.2: images that hold what each service needs and nothing more, with the API's data built in for Cloud Run (ADR-0031).
+- **Done:**
+  - **The web UI's image** installs only the `ui` dependency group: Streamlit, httpx and pydantic-settings. The copilot's code runs from `src/`. CI fails if LiteLLM, FastEmbed or LangGraph come back into it.
+  - **An `mcp` target,** started as the MCP server on `$PORT`, so Cloud Run needs no command overrides.
+  - **The data bundle** (`copilot.deploy.bundle`, `poe bundle-data`):
+    - what the API reads at start: facts.db, the 84 corpus filings' pages, the index card, the corpus's metadata, and FastEmbed's two models;
+    - written as a deterministic archive, recorded in `infra/data-bundle.json`.
+
+    The Dockerfile's empty `data` stage gives way to it when a build passes `--build-context data=...`. Docker Compose and CI's checks pass nothing, so their images still hold no data.
+  - **Trivy in CI,** pinned and checksum-verified like gitleaks. It lists fixable high and critical vulnerabilities, and fails the job on a critical one.
+- **Commands:** `uv run poe bundle-data`, twice; then, from the extracted bundle with `HF_HUB_OFFLINE=1`, the two FastEmbed models loaded, along with the manifest's filings and the index card.
+- **Results:**
+  - **The bundle:** 116 files, 103.9 MB compressed (about 366 MB unpacked). Both builds gave the same SHA-256, `3b6b647c…`. Offline, the dense model embedded a query (384 dimensions), BM25 loaded, the manifest gave 84 filings and the card was found.
+  - **The images,** as CI's Docker reports them, without data: `ui` 592 MB, `api` and `mcp` 801 MB each (the same layers). The laptop's Docker Desktop measured the earlier images at 1.5 GB and 1.14 GB (ADR-0022), on another storage driver, so the two pairs of numbers don't compare. What changed is that the UI image no longer carries the serving stack.
+  - **Trivy:** no fixable high or critical vulnerability in either image (Debian 13.7 and every Python package).
+- **Problems and fixes:**
+  - **Memory.** Building the archive in memory would have needed about 450 MB on a laptop with 0.24 GB free, so files are streamed into it and hashed in chunks.
+  - **Line endings.** Python on Windows writes CRLF to a pipe, which broke a patch that staged one hunk of `pyproject.toml`; the script now writes LF.
+- **Next:** copying the collection to Qdrant Cloud, loading the facts into Cloud SQL, `demo-up` and `demo-down`, the ingestion worker, and the deploy workflow.
+
 ### 2026-10-28 · Phase 8 · What the services need on Cloud Run
 
 - **Goal:** the code changes ADR-0031 calls for, so the services run on Cloud Run as the Terraform configures them.
