@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · The ingestion worker
+
+- **Goal:** the last service without code: a worker that Pub/Sub pushes ingestion requests to, one filing each, with retries and dead letters (ADR-0031).
+- **Done:**
+  - **`copilot.worker.ingest.Ingester`** runs the corpus's own steps for one filing:
+    1. download the PDF (with the SEC contact for sec.gov; at most 60 MB, and it must be a PDF);
+    2. keep a copy in the filings bucket, with a token from the metadata server;
+    3. parse it with pdfium, chunk it one page at a time, embed with bge-small and BM25, and upsert what the collection lacks.
+
+    The models load from the image. The tokenizer for page windows is the bundled bge-small model's, since the image may not download.
+  - **`copilot.worker.app`** reads Pub/Sub's push envelope and answers 204 (done), 400 (an unreadable request, retried then dead-lettered) or 500 (a failure on the way, retried). `/healthz` reports the commit.
+  - **The image and the rollout:** a `worker` Dockerfile target, built and import-checked in CI. The deploy workflow builds it, rolls it out after the MCP server, and checks that its `/healthz` reports the commit, with an ID token for its address.
+  - **Docs:** the ingestion runbook's section on the worker.
+- **Results:**
+  - **Tests** cover the envelope, the acknowledgements, and one filing indexed twice into an in-memory Qdrant (2 chunks, then 0 added).
+  - **The bundled tokenizer** gave the same token spans as the Hub's on 120 of 120 corpus pages, so re-indexing a corpus filing adds nothing.
+- **Problems and fixes:** none in the code. One limit, recorded: the doc agent's resolver knows filings from the corpus list, so a new filing is searchable at once but a question resolves to it only after the list, and the data bundle, include it.
+- **Next:** the cloud itself, once the owner approves; then the load test, the security pass and the cost measurements.
+
 ### 2026-10-28 · Phase 8 · Continuous deployment, without keys
 
 - **Goal:** step 8.6: releases that build and roll out themselves after CI's checks, prove that the new revision serves, and undo themselves when it doesn't.
