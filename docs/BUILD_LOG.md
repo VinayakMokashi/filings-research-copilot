@@ -15,6 +15,36 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · The facts tables on PostgreSQL
+
+- **Goal:** step 8.4's local part: the data agent's queries on PostgreSQL, giving the answers it gives on SQLite, so that the deployment can run them on Cloud SQL in demo windows.
+- **Done:**
+  - **text2sql-analyst upstream, v0.4.0** (its PRs #3 and #4, pinned at `d5420f1`):
+    - a PostgreSQL URL works wherever a SQLite path does;
+    - queries written in SQLite's dialect are translated with sqlglot plus rules of its own, and keep SQLite's column names;
+    - the server runs them in read-only transactions, with a statement timeout and a denylist of PostgreSQL functions;
+    - the executor can be injected;
+    - a `DatabaseUnavailableError` stops the pipeline without repairs.
+
+    Its CI now runs the tests against a PostgreSQL service.
+  - **`copilot.facts.postgres` and `poe load-facts-postgres`:** facts.db's tables copied to PostgreSQL with the same schema (REAL as DOUBLE PRECISION, the C collation), and a `facts_reader` role that can only select.
+  - **`copilot.sql.executor.FactsExecutor`, behind `FRC_FACTS_URL`:** each query is compiled on facts.db, then run on PostgreSQL, or on facts.db while the server is down. `DataAnswer.executed_sql` records what the server ran.
+  - **`poe check-facts-postgres`**, the [report](eval/facts-postgres.md), the data agent's guide and the facts runbook.
+- **Commands:**
+  - `uv run poe load-facts-postgres`;
+  - `FRC_FACTS_URL=... uv run poe check-facts-postgres`;
+  - with the same variable, `uv run poe run-sql-agent --run sql-agent-v2-postgres` and `uv run poe answer-with-data --run data-agent-v1-postgres`.
+- **Results:**
+  - **Query by query:** 119 distinct queries on both databases. 116 were identical; 3 gave the same rows in another order, and each of those leaves the order open.
+  - **End to end:** the SQL set's dev split gave 28 of 28 identical responses (accuracy 1.000). FinanceBench's 33 figure questions gave 33 identical answers. Every model call replayed from the cache.
+  - **Speed:** a query took 6.3 ms at the median on SQLite and 12.9 ms on PostgreSQL in Docker.
+- **Problems and fixes:**
+  - **The first query-by-query run** matched 113 of 119. PostgreSQL folded mixed-case aliases to lower case, named expressions after their function, and refused an alias named in HAVING. Upstream #4 fixed both.
+  - **The first end-to-end replay** lost s16. sqlglot moved a JOIN written after WHERE into place, so PostgreSQL ran a query SQLite rejects. Every query is now compiled on SQLite first.
+  - **A patch script upstream** re-inserted four README blocks, because its "already applied" test failed when the new text contained the old. #4 fixed the README.
+- **Decisions:** the model keeps writing SQLite SQL, and SQLite's parser stays the judge of what is valid. Where PostgreSQL runs in the deployment is decided in ADR-0031.
+- **Next:** ADR-0031 (the topology), slimmer images, the Terraform.
+
 ### 2026-10-28 · Phase 7 · Phase 7 complete
 
 - **Goal:** close Phase 7: every experiment with its report and ADR, adopted models behind settings, the project page and the README up to date.
