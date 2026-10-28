@@ -82,6 +82,24 @@ grep '^CLOUD_GROQ_API_KEY=' .env | cut -d= -f2- | tr -d '\r\n' \
 
 Each service may read only its own secrets (`envs/prod/services.tf`). After a rotation, disable the old version: `gcloud secrets versions disable <version> --secret=<name>`.
 
+## The data bundle
+
+The API image carries its data (ADR-0031), from a bundle in the data bucket. It holds:
+
+- facts.db;
+- the 84 corpus filings' pages;
+- the index card and the corpus's metadata;
+- FastEmbed's two model folders.
+
+Build it again whenever any of these changes:
+
+```bash
+uv run poe bundle-data                                   # dist/api-data.tar.gz, about 100 MB
+uv run poe bundle-data --upload filings-research-copilot-data   # once the bucket exists
+```
+
+The archive is deterministic: the same data gives the same SHA-256, and so the same object name (`api-data-<hash>.tar.gz`). `infra/data-bundle.json` records the bundle the images are built from; commit it with the change that needs it. The deploy workflow downloads that object and checks its hash. It then builds the `api` and `mcp` images with `--build-context data=<the extracted bundle>`. Without that context, as in CI's checks and Docker Compose, the images hold no data.
+
 ## 4. Apply the environment
 
 A revision can't start while a secret it reads has no version, and the `facts-url` secret needs the database's private address. So the database goes first:
