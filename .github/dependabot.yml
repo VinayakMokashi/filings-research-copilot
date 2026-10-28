@@ -1,6 +1,7 @@
 # Weekly update pull requests for the SHA-pinned GitHub Actions, uv.lock, the Dockerfile's
-# base images and the pre-commit hooks. The cooldown skips releases younger than a week. GitHub raises no alerts for actions
-# pinned to a SHA, so these pull requests are how action fixes arrive.
+# base images, the Terraform providers and the pre-commit hooks. The cooldown skips
+# releases younger than a week. GitHub raises no alerts for actions pinned to a SHA, so
+# these pull requests are how action fixes arrive.
 # The gitleaks CLI version in ci.yml is a plain download and is bumped by hand.
 version: 2
 updates:
@@ -31,6 +32,19 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "build"
+      include: "scope"
+
+  - package-ecosystem: "terraform"
+    directories:
+      - "/infra/terraform/bootstrap"
+      - "/infra/terraform/envs/prod"
+      - "/infra/terraform/modules/cloud-run-service"
     schedule:
       interval: "weekly"
     cooldown:
