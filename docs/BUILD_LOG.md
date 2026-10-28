@@ -15,6 +15,29 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · What the services need on Cloud Run
+
+- **Goal:** the code changes ADR-0031 calls for, so the services run on Cloud Run as the Terraform configures them.
+- **Done:**
+  - **`FRC_API_STATE=firestore`** (`copilot.api.firestore`):
+    - quotas as two counters a day, raised together in a batch;
+    - cached answers as JSON text, since Firestore can't hold a data answer's lists of rows;
+    - feedback, one document per rating.
+
+    Quota counters and cached answers carry an `expires_at` that a TTL policy enforces (two more Terraform fields).
+  - **ID tokens between services.** `GoogleIdToken` signs each call from the UI and the MCP server to the private API with a token from the instance's metadata server. It fetches a new one five minutes before expiry, with no new dependency.
+  - **Visitors behind Google's front end.** The UI hashes the last address in `X-Forwarded-For` into the visitor's id, so a new browser session doesn't reset a quota. Which entry the front end adds is checked on the deployed service.
+  - **Switches for the instance's in-memory file system:** `FRC_LLM_DISK_CACHE` and `FRC_API_TRACE_FILE`. The model-client factory, now `model_client`, is testable on its own.
+  - **Qdrant Cloud.** `FRC_QDRANT_API_KEY` reaches the client. The readiness check now reads the collection with the key, which also makes the weekly keep-alive a real request.
+  - **The MCP server** listens on `$PORT`, allows the hosts in `FRC_MCP_ALLOWED_HOSTS` with their HTTPS origins, and signs its calls to the API.
+  - **The corpus list** comes from `data/processed/corpus.jsonl` when it exists, so the image needs no FinanceBench files.
+  - **Docs:** `.env.example`, and the guide [cloud-run.md](concepts/cloud-run.md).
+- **Results:** `poe check` passes: 652 tests, 10 of them new. Firestore is replaced in the tests by an in-memory stand-in with the same calls.
+- **Problems and fixes:**
+  - **Nested lists.** Firestore rejects arrays inside arrays, so cached responses are stored as text.
+  - **An unproven claim, softened.** Cloud Run's documentation doesn't say which entry of `X-Forwarded-For` its front end adds, so the code and the guide no longer claim it; step 8.7 logs the header once on the deployed service.
+- **Next:** slimmer images, with the data bundle and per-service targets; the deploy workflow; `demo-up` and `demo-down`.
+
 ### 2026-10-28 · Phase 8 · The Terraform, checked before the cloud exists
 
 - **Goal:** have every Google Cloud resource of ADR-0031 written and validated before the project exists, so the first applies follow the owner's approval directly.
