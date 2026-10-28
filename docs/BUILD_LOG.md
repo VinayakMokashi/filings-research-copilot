@@ -15,6 +15,15 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 7 · Phase 7 complete
+
+- **Goal:** close Phase 7: every experiment with its report and ADR, adopted models behind settings, the project page and the README up to date.
+- **Done:** the project page gains a brief-coverage row in its results, the brief crew's measured description, Phase 7's results in its notes (the three experiments that didn't earn their place among them), the roadmap's Phase 7 as done, and the training tools as used; the README gains rows for the embedder, the DSPy search, the answer bandit and the brief crew, `POST /v1/brief` in the API row, and the status; the plan's tracker marks Phase 7 done, with step 7.4 not attempted.
+- **Results:** Phase 7 in seven steps, six done: the LoRA router (0.91 dev, 0.95 test; on Hugging Face), the copilot's version 2 (0.65 correct, 0.82 faithful text answers) and the brief crew (0.86 rubric coverage, 0.92 supported) adopted; the domain embedder (no significant gain in the pipeline, worse across filings), the DSPy HyDE search (the hand-written instruction kept) and bandit routing (a fixed model earns more on 100 questions) measured and not adopted. Seven ADRs, 0024 to 0030.
+- **Problems and fixes:** none new; the critic's free-tier quota, which paused the brief set's baselines for three hours, is the constraint to plan around in Phase 8.
+- **Decisions:** step 7.4 (a fine-tuned reranker or a distilled rewriter) not attempted, so that Phase 8 can deploy before the cloud credit expires.
+- **Next:** Phase 8, the deployment on Google Cloud.
+
 ### 2026-10-28 · Phase 7 · The brief crew, and `POST /v1/brief`
 
 - **Goal:** step 7.6: give the brief route an implementation: a crew that plans a brief, has the specialists write its sections, checks every sentence and edits a summary; measure it against answering the request in one shot.
