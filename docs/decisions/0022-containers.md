@@ -1,6 +1,6 @@
 # ADR-0022: Build two images from one Dockerfile, and mount the data rather than build it in
 
-- **Status:** Accepted
+- **Status:** Accepted; on Cloud Run the API image carries its data ([ADR-0031](0031-google-cloud-topology.md))
 - **Date:** 2026-10-26
 - **Phase:** 6
 
