@@ -15,6 +15,23 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · A load test that spends no model quota
+
+- **Goal:** step 8.7's load test, ready before the deployment exists, without spending the day's model quota.
+- **Done:**
+  - **`loadtest/locustfile.py`.** A warm-up asks six questions once, the web UI's examples and two of the SQL set's, so their answers are in the answer cache. Simulated visitors then:
+    - repeat them, served from the cache at no quota;
+    - read cited pages;
+    - check health.
+
+    Each request carries an ID token for the private API. Locust runs with `uvx`, so it is no project dependency.
+  - **The [load-test runbook](runbooks/load-test.md):** how to run it, what to watch on the dashboard, and what to record to size the services.
+- **Results:** run against a local stand-in of the three endpoints, the warm-up asked all six questions and 18 requests passed with no failures. The real run waits for the deployment.
+- **Problems and fixes:**
+  - **Locust's `HttpSession`** needs a `user` argument (`None` for a session outside any simulated user), or the warm-up would have failed.
+  - **A corpus filing.** A page fixture named a filing that isn't in the corpus, and so isn't in the image; it now names one that is.
+- **Next:** the cloud itself, once the owner approves.
+
 ### 2026-10-28 · Phase 8 · The ingestion worker
 
 - **Goal:** the last service without code: a worker that Pub/Sub pushes ingestion requests to, one filing each, with retries and dead letters (ADR-0031).
