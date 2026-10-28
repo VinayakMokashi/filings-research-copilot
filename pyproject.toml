@@ -128,6 +128,7 @@ ask-data = { cmd = "python scripts/ask_data.py", help = "Ask the data agent one 
 answer-with-data = { cmd = "python scripts/answer_with_data.py", help = "Answer FinanceBench dev questions with the data agent, resumably (needs GROQ_API_KEY)" }
 load-facts-postgres = { cmd = "python scripts/load_facts_postgres.py", help = "Copy facts.db into PostgreSQL (the Compose Postgres by default) and set up the read-only facts_reader role" }
 check-facts-postgres = { cmd = "python scripts/check_facts_postgres.py", help = "Run the data agent's evaluated queries on facts.db and on PostgreSQL (FRC_FACTS_URL) and compare the results" }
+bundle-data = { cmd = "python scripts/bundle_data.py", help = "Build the data bundle the API image carries on Cloud Run (dist/api-data.tar.gz, recorded in infra/data-bundle.json); --upload BUCKET copies it with gcloud" }
 run-hybrid = { cmd = "python scripts/run_hybrid.py", help = "Answer the hybrid questions with the hybrid or the doc agent and check them (needs Qdrant and GROQ_API_KEY)" }
 
 # ---------------------------------------------------------------------------
