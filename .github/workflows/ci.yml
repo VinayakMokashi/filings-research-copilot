@@ -65,6 +65,30 @@ jobs:
           docker run --rm filings-copilot-ui:ci python -c "import streamlit, copilot.api.client"
           docker compose --profile app config --quiet
 
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.17.0"
+          terraform_wrapper: false
+
+      - name: Format
+        run: terraform fmt -check -recursive infra/terraform
+
+      # Each root initialises without its backend, so the check needs no cloud access.
+      - name: Validate each root
+        run: |
+          for root in infra/terraform/bootstrap infra/terraform/envs/prod; do
+            terraform -chdir="$root" init -backend=false -input=false
+            terraform -chdir="$root" validate
+          done
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
