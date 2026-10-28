@@ -1,0 +1,11 @@
+{
+  "run": "doc-one-shot",
+  "first_judge": "cerebras/qwen-3.8-27b",
+  "second_judge": "cerebras/gpt-oss-120b",
+  "briefs": 12,
+  "items": 57,
+  "first_rubric": 0.6491,
+  "second_rubric": 0.6417,
+  "agreement": 0.9825,
+  "kappa": 0.9619
+}

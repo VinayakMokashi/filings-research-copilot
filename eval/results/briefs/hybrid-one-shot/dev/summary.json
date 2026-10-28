@@ -1,0 +1,61 @@
+{
+  "suite": "briefs",
+  "run": "hybrid-one-shot",
+  "split": "dev",
+  "created": "2026-10-28T01:11:17.364294Z",
+  "questions": 12,
+  "test_split_opened": false,
+  "system": {
+    "system": "hybrid",
+    "planner_and_editor": "cerebras/gpt-oss-120b",
+    "writers": {
+      "doc": "cerebras/gpt-oss-120b",
+      "hybrid": "cerebras/gpt-oss-120b"
+    },
+    "critic": "groq/openai/gpt-oss-20b",
+    "judge": "cerebras/qwen-3.8-27b",
+    "rubric_prompt_version": "1",
+    "briefs": 12,
+    "rubric_items": 57
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "rubric": {
+      "mean": 0.6583333333333333,
+      "low": 0.4416666666666667,
+      "high": 0.8541666666666666
+    },
+    "faithful_share": {
+      "mean": 0.7638916666666667,
+      "low": 0.5416666666666666,
+      "high": 0.9583333333333334
+    },
+    "faithful": {
+      "mean": 0.6666666666666666,
+      "low": 0.4166666666666667,
+      "high": 0.9166666666666666
+    },
+    "sources": {
+      "mean": 3.0,
+      "low": 2.0833333333333335,
+      "high": 3.75
+    },
+    "words": {
+      "mean": 97.0,
+      "low": 67.75,
+      "high": 123.2520833333333
+    },
+    "cost_usd": {
+      "mean": 0.00425925,
+      "low": 0.0035984083333333336,
+      "high": 0.005005
+    },
+    "seconds": {
+      "mean": 39.59166666666666,
+      "low": 19.983125,
+      "high": 64.63333333333334
+    }
+  },
+  "by": {}
+}
