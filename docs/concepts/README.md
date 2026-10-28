@@ -35,7 +35,7 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 29 | [lora-classifier.md](lora-classifier.md) | LoRA adapters and distillation for a fast router | Hu et al., LoRA (2021) | 7 | Written |
 | 30 | [dspy.md](dspy.md) | Optimising a prompt against a metric with MIPROv2; the HyDE prompt searched and kept | Khattab et al., DSPy (2023); Opsahl-Ong et al., MIPROv2 (2024) | 7 | Written |
 | 31 | [bandit-routing.md](bandit-routing.md) | ε-greedy and UCB1 over answer models, offline replay, a cost penalty in the reward | Sutton and Barto, *Reinforcement Learning* (2018), ch. 2; Auer et al. (2002) | 7 | Written |
-| 32 | `research-briefs.md` | Self-Discover plans and an agent crew | Zhou et al., Self-Discover (2024) | 7 | Planned |
+| 32 | [research-briefs.md](research-briefs.md) | A crew of agents for briefs: a Self-Discover plan, parallel writers, a critic, an editor; rubric grading with a second judge | Zhou et al., Self-Discover (2024) | 7 | Written |
 | 33 | `cloud-run.md` | Containers, services, revisions, scaling to zero | Cloud Run docs | 8 | Planned |
 | 34 | `terraform-basics.md` | Infrastructure as code, state, plans | Terraform docs | 8 | Planned |
 | 35 | `workload-identity-federation.md` | Deploying without stored keys | Google Cloud docs, Workload Identity Federation with deployment pipelines | 8 | Planned |
