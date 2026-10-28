@@ -22,6 +22,25 @@ resource "google_firestore_field" "answers_expire" {
   index_config {}
 }
 
+# Quota counters expire two days after their day (copilot.api.firestore).
+resource "google_firestore_field" "quota_days_expire" {
+  database   = google_firestore_database.default.name
+  collection = "quotas"
+  field      = "expires_at"
+
+  ttl_config {}
+  index_config {}
+}
+
+resource "google_firestore_field" "quota_visitors_expire" {
+  database   = google_firestore_database.default.name
+  collection = "visitors"
+  field      = "expires_at"
+
+  ttl_config {}
+  index_config {}
+}
+
 resource "google_storage_bucket" "filings" {
   name                        = "${var.project_id}-filings"
   location                    = upper(var.region)
