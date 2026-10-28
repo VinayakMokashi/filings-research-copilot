@@ -12,6 +12,7 @@
 | [The copilot end to end: dev evaluation](copilot-dev.md) | 5 | Whether the whole copilot, routing each question to the doc, data or hybrid agent and checking what they write, answers FinanceBench's dev questions better than the doc agent alone, and at what cost in steps, money and time |
 | [A LoRA classifier as the router](lora-router.md) | 7 | Whether a small encoder fine-tuned with LoRA on the LLM router's labels routes nearly as well as it, on the CPU and at no cost, alone, in a cascade or as the fallback |
 | [The copilot's version 2: dev evaluation](copilot-v2.md) | 7 | Whether handing declined questions on to the doc agent, routing by the database's grain and letting a checked answer keep a labelled assessment win back the questions the first version lost to the doc agent alone |
+| [The brief crew](brief-crew.md) | 7 | Whether a crew (a Self-Discover plan, the specialists writing sections in parallel, the validator's checker as critic, an editor) writes briefs that cover their requests better than the doc agent answering in one shot |
 | [Bandit routing between answer models](bandit-routing.md) | 7 | Whether an ε-greedy or UCB1 bandit, learning from each answer's reward less a cost penalty, chooses between answer models better than one fixed model |
 | [DSPy on the HyDE prompt](dspy-hyde.md) | 7 | Whether DSPy's MIPROv2 finds a HyDE instruction whose passages rank the evidence higher than the hand-written prompt's |
 | [A domain embedder, fine-tuned on filings](domain-embedder.md) | 7 | Whether bge-small fine-tuned with hard negatives on synthetic questions about training filings ranks FinanceBench's evidence pages higher in the doc agent's search |
@@ -37,6 +38,7 @@ One report per experiment, with these sections:
 | SQL dev | 28 questions (21 answerable) | [`eval/sql/questions.jsonl`](../../eval/sql/questions.jsonl) | Used for tuning the data agent ([data card](../data/sql-set.md)) |
 | SQL test | 14 questions (11 answerable) | Same file | Held out |
 | Memory set | 20 turns, 10 conversations, 6 users | [`eval/memory/`](../../eval/memory/) | Used for the memory checks ([data card](../data/memory-set.md)); no held-out side |
+| Brief set | 12 requests with rubrics, 12 dev companies | [`eval/briefs/briefs.jsonl`](../../eval/briefs/briefs.jsonl) | Used for the brief crew ([data card](../data/brief-set.md)); no held-out side |
 
 ## Runs
 
