@@ -12,7 +12,7 @@
 # stage below, so the image carries it (ADR-0031).
 
 # Python 3.12 on Debian trixie, and uv, pinned by digest; Dependabot moves the pins.
-FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
+FROM ghcr.io/astral-sh/uv:0.13.6@sha256:af22a52f5eafef3d78e551599d405c02df61919d18028f0cea8eda93bc9986d0 AS uv
 
 # Empty unless a build passes the bundle as `data`.
 FROM scratch AS data
