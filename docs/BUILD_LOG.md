@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · The Google Cloud topology
+
+- **Goal:** settle Phase 8's open questions before anything is created in the cloud: where the facts, the files the API reads at start, the vectors and the app's state live, and who may call what.
+- **Done:** [ADR-0031](decisions/0031-google-cloud-topology.md), and the plan brought up to date. The plan's prerequisites, technical choices, steps 8.2 to 8.4, change log and tracker now match the ADR; Phase 8 is in progress.
+- **Results:**
+  - **Cost facts, from Google's and Qdrant's pages (2026-10-28):**
+    - a stopped Cloud SQL instance still pays $0.01 an hour for a public IPv4 address;
+    - Artifact Registry's scanning costs $0.26 per new image;
+    - Qdrant's free cluster is suspended after a week without use and deleted after four.
+  - **What the services read at start** was surveyed from the code. That survey, and the equivalence of the facts on PostgreSQL ([report](eval/facts-postgres.md)), are the ADR's evidence.
+- **Decisions** ([ADR-0031](decisions/0031-google-cloud-topology.md)):
+  - **Facts:** built into the API image, and copied to Cloud SQL for demo windows.
+  - **Cloud SQL:** a private address only, stopped every night by a schedule.
+  - **State:** Firestore for quotas, the answer cache and feedback; conversations in memory on one API instance.
+  - **Exposure:** a public UI and MCP server in front of a private API.
+  - **Qdrant:** a weekly keep-alive, and a snapshot to restore from.
+  - **Scans:** Trivy on every build, and the registry scan once.
+- **Next:** slimmer images and the data bundle (8.2), then the Terraform, checked locally until the project is approved.
+
 ### 2026-10-28 · Phase 8 · The facts tables on PostgreSQL
 
 - **Goal:** step 8.4's local part: the data agent's queries on PostgreSQL, giving the answers it gives on SQLite, so that the deployment can run them on Cloud SQL in demo windows.
