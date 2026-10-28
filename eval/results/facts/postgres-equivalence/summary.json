@@ -1,0 +1,40 @@
+{
+  "queries": 119,
+  "uses": 122,
+  "outcomes_by_query": {
+    "identical": 116,
+    "same rows, another order": 3
+  },
+  "outcomes_by_use": {
+    "identical": 119,
+    "same rows, another order": 3
+  },
+  "by_source": {
+    "financebench/data-agent-smoke": {
+      "identical": 3
+    },
+    "financebench/data-agent-v1": {
+      "identical": 33
+    },
+    "sql-set/gold": {
+      "identical": 32
+    },
+    "sql-set/sql-agent-v1/dev": {
+      "identical": 21,
+      "same rows, another order": 1
+    },
+    "sql-set/sql-agent-v2/dev": {
+      "identical": 20,
+      "same rows, another order": 1
+    },
+    "sql-set/sql-agent-v2/test": {
+      "identical": 10,
+      "same rows, another order": 1
+    }
+  },
+  "median_ms": {
+    "sqlite": 6.27,
+    "postgres": 12.91
+  },
+  "postgres_url": "facts_reader@<host>/facts"
+}
