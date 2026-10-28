@@ -17,6 +17,7 @@
 | [DSPy on the HyDE prompt](dspy-hyde.md) | 7 | Whether DSPy's MIPROv2 finds a HyDE instruction whose passages rank the evidence higher than the hand-written prompt's |
 | [A domain embedder, fine-tuned on filings](domain-embedder.md) | 7 | Whether bge-small fine-tuned with hard negatives on synthetic questions about training filings ranks FinanceBench's evidence pages higher in the doc agent's search |
 | [Routing: semantic and LLM routers](routing.md) | 5 | Which router should choose each question's route, by embedding similarity, by asking a model, or both, and at what latency and cost |
+| [The facts tables on PostgreSQL](facts-postgres.md) | 8 | Whether the data agent's queries give the same results and the same answers on PostgreSQL as on the SQLite file it was built and evaluated on |
 
 One report per experiment, with these sections:
 
