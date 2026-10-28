@@ -68,10 +68,12 @@ module "api" {
     LANGFUSE_TRACING_ENVIRONMENT = "production"
   })
   secret_env = local.api_secrets
+  audiences  = ["https://${local.host.api}"]
   invokers = [
     "serviceAccount:${local.sa.ui}",
     "serviceAccount:${local.sa.mcp}",
     "serviceAccount:${local.sa.scheduler}",
+    "serviceAccount:${local.deployer}", # the deploy's smoke test
   ]
 
   depends_on = [google_secret_manager_secret_iam_member.readers]
@@ -130,7 +132,8 @@ module "worker" {
     FRC_FILINGS_BUCKET = google_storage_bucket.filings.name
   })
   secret_env = local.worker_secrets
-  invokers   = ["serviceAccount:${local.sa.pubsub}"]
+  audiences  = ["https://${local.host.worker}"]
+  invokers   = ["serviceAccount:${local.sa.pubsub}", "serviceAccount:${local.deployer}"]
 
   depends_on = [google_secret_manager_secret_iam_member.readers]
 }

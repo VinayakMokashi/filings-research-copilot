@@ -15,6 +15,9 @@ resource "google_cloud_run_v2_service" "this" {
   location            = var.region
   ingress             = "INGRESS_TRAFFIC_ALL"
   deletion_protection = var.deletion_protection
+  # ID tokens for these audiences are accepted too: the deterministic address, which
+  # callers know before the service exists.
+  custom_audiences = var.audiences
 
   template {
     service_account                  = var.service_account
