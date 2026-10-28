@@ -22,11 +22,12 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from copilot.api.client import STEPS, CopilotClient
+from copilot.api.client import STEPS, CopilotClient, visitor_from_forwarded
 from copilot.config import Settings
 from copilot.eval.stats import exact_interval
 
-API_URL = Settings().api_url
+SETTINGS = Settings()
+API_URL = SETTINGS.api_url
 RESULTS = Path(__file__).resolve().parents[3] / "eval" / "results"
 DATABASE = "facts-database"
 
@@ -87,10 +88,11 @@ def plain(text: str) -> str:
 
 
 def client() -> CopilotClient:
-    """The API, as this browser session's visitor."""
+    """The API, as this visitor: the client's address on Cloud Run, else this session."""
     if "visitor" not in st.session_state:
         st.session_state.visitor = uuid.uuid4().hex
-    return CopilotClient(API_URL, st.session_state.visitor)
+    visitor = visitor_from_forwarded(dict(st.context.headers), st.session_state.visitor)
+    return CopilotClient(API_URL, visitor, id_token=SETTINGS.api_id_token)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
