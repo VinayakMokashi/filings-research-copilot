@@ -120,6 +120,18 @@ def one_shot_record(crew: BriefCrew, system: str, request: str) -> dict[str, Any
     }
 
 
+def delta(
+    before: dict[str, tuple[int, int]], after: dict[str, tuple[int, int]]
+) -> dict[str, list[int]]:
+    """The prompt and completion tokens each model spent between two readings."""
+    spent_tokens = {}
+    for model, (prompt, completion) in after.items():
+        old_prompt, old_completion = before.get(model, (0, 0))
+        if (prompt, completion) != (old_prompt, old_completion):
+            spent_tokens[model] = [prompt - old_prompt, completion - old_completion]
+    return spent_tokens
+
+
 def spent(before: dict[str, tuple[int, int]], after: dict[str, tuple[int, int]]) -> float | None:
     costs = []
     for model, (prompt, completion) in after.items():
@@ -165,7 +177,7 @@ def write_briefs(
                 "request": case.request,
                 **record,
                 "seconds": round(seconds, 1),
-                "tokens_by_model": {m: list(t) for m, t in usage(parts.meters).items()},
+                "tokens_by_model": delta(before, usage(parts.meters)),
                 "cost_usd": spent(before, usage(parts.meters)),
             }
             out.write(json.dumps(record, ensure_ascii=False) + "\n")
