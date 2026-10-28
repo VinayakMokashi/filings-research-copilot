@@ -51,6 +51,13 @@ resource "google_sql_database_instance" "facts" {
   depends_on = [google_service_networking_connection.services]
 }
 
+# `gcloud sql import` reads the dumps as the instance's own service account.
+resource "google_storage_bucket_iam_member" "sql_reads_backups" {
+  bucket = google_storage_bucket.backups.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_sql_database_instance.facts.service_account_email_address}"
+}
+
 # The C collation is set on each text column by the loader's schema, so text sorts in
 # SQLite's byte order whatever the database's default (copilot.facts.postgres).
 resource "google_sql_database" "facts" {
