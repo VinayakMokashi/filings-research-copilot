@@ -128,6 +128,10 @@ ask-data = { cmd = "python scripts/ask_data.py", help = "Ask the data agent one 
 answer-with-data = { cmd = "python scripts/answer_with_data.py", help = "Answer FinanceBench dev questions with the data agent, resumably (needs GROQ_API_KEY)" }
 load-facts-postgres = { cmd = "python scripts/load_facts_postgres.py", help = "Copy facts.db into PostgreSQL (the Compose Postgres by default) and set up the read-only facts_reader role" }
 check-facts-postgres = { cmd = "python scripts/check_facts_postgres.py", help = "Run the data agent's evaluated queries on facts.db and on PostgreSQL (FRC_FACTS_URL) and compare the results" }
+demo-up = { cmd = "python scripts/demo_window.py up", help = "Start the demo database on Cloud SQL and wait until it runs (the copilot's gcloud configuration, frc)" }
+demo-down = { cmd = "python scripts/demo_window.py down", help = "Stop the demo database on Cloud SQL; it also stops every night at 23:30 IST" }
+load-facts-cloudsql = { cmd = "python scripts/load_facts_cloudsql.py", help = "Load the local facts copy into the demo database and put the reader's URL in the facts-url secret (after demo-up)" }
+copy-collection = { cmd = "python scripts/copy_collection.py", help = "Copy the doc agent's Qdrant collection to Qdrant Cloud (CLOUD_QDRANT_URL and CLOUD_QDRANT_API_KEY in .env); --snapshot-to BUCKET keeps a snapshot" }
 bundle-data = { cmd = "python scripts/bundle_data.py", help = "Build the data bundle the API image carries on Cloud Run (dist/api-data.tar.gz, recorded in infra/data-bundle.json); --upload BUCKET copies it with gcloud" }
 run-hybrid = { cmd = "python scripts/run_hybrid.py", help = "Answer the hybrid questions with the hybrid or the doc agent and check them (needs Qdrant and GROQ_API_KEY)" }
 
