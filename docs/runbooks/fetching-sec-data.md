@@ -36,6 +36,23 @@ uv run poe check-facts    # the 33 FinanceBench cross-checks
 
 `build-facts` prints row counts and, for each metric, the share of company-years from FY2015 to FY2023 that have a value. `check-facts` writes `eval/results/facts/financebench-dev-checks.md` and `.json`; after a refresh or a change to the normalisation rules, every check should still agree. If one doesn't, its row names the tags it used or the value it couldn't find.
 
+## Copy the facts into PostgreSQL
+
+The deployment's data agent queries the facts on PostgreSQL ([report](../eval/facts-postgres.md)). After every rebuild of facts.db, copy it into the Compose Postgres and check that both databases still give the same results:
+
+```bash
+uv run poe services-up            # Postgres on 127.0.0.1:5433
+uv run poe load-facts-postgres    # database facts (C collation) and role facts_reader, about a minute
+FRC_FACTS_URL='postgresql://facts_reader:facts_reader@127.0.0.1:5433/facts?connect_timeout=2' \
+  uv run poe check-facts-postgres # eval/results/facts/postgres-equivalence/
+```
+
+In PowerShell, set the URL first with `$env:FRC_FACTS_URL = '...'`. The loader replaces the tables in one transaction, so a reader sees either the old ones or the new ones.
+
+- **Passwords.** The reader's password is its own name only on this machine; for any other server, the loader reads it from `FRC_FACTS_READER_PASSWORD`.
+- **Where to set the URL.** Set `FRC_FACTS_URL` in a run's environment, never in `.env`: with it set, every data question goes to the server.
+- **Check results.** `check-facts-postgres` exits with an error if any query gives different rows. The same rows in another order is allowed, but only for a query that leaves the order open.
+
 ## Troubleshooting
 
 | Message | Cause and fix |
