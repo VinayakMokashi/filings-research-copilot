@@ -53,7 +53,7 @@ The Deploy workflow can also run by hand. The job is skipped until the deploymen
 - **What may deploy.** Only `main`, after every check, through a GitHub environment named `production`, can deploy. Forks and branches are refused at the token exchange.
 - **What isn't redeployed.** A push that changes only docs or Terraform doesn't redeploy. A failed release stays rolled back until the next change, or a manual run.
 - **What CI needs.** Seven repository variables, none of them secret: `GCP_PROJECT_ID`, `GCP_PROJECT_NUMBER`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOYER_SA`, `GCP_REGISTRY` and `GCP_DATA_BUCKET`. The deployer account may also call the API and the worker, for the smoke tests.
-- **The worker** joins the rollout once its image exists.
+- **The worker** is part of the rollout: its image is the API's, started as the worker, and its `/healthz` must report the commit too.
 
 ## References
 
