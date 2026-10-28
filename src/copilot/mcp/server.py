@@ -20,6 +20,7 @@ serves it over HTTP at /mcp. Logs go to stderr, since stdio's stdout carries the
 from __future__ import annotations
 
 import argparse
+import os
 from collections.abc import Callable, Mapping, Sequence
 from functools import cache, partial
 from typing import Annotated, Any
@@ -269,30 +270,43 @@ def transport_security(hosts: Sequence[str] = ()) -> TransportSecuritySettings:
         allowed_origins=[
             *(f"http://{name}" for name in names),
             *(f"http://{name}:*" for name in names),
+            *(f"https://{name}" for name in hosts),  # a deployed server's own address
         ],
     )
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """The command line; the port defaults to `$PORT` when it is set, as on Cloud Run."""
     parser = argparse.ArgumentParser(
         prog="python -m copilot.mcp", description="Serve the copilot over MCP."
     )
     parser.add_argument("--transport", choices=("stdio", "streamable-http"), default="stdio")
     parser.add_argument("--host", default="127.0.0.1", help="for streamable-http")
-    parser.add_argument("--port", type=int, default=8001, help="for streamable-http")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("PORT", "8001")),
+        help="for streamable-http ($PORT when set, as on Cloud Run)",
+    )
     parser.add_argument(
         "--allowed-host",
         action="append",
         default=[],
         help="a host name clients may use besides this machine's, for streamable-http",
     )
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    args = build_parser().parse_args(argv)
     settings = Settings()
     configure_logging(settings.log_level, settings.log_format)
     library = cache(partial(build_library, settings))
-    server = create_server(library, CopilotClient(settings.api_url, VISITOR))
+    api = CopilotClient(settings.api_url, VISITOR, id_token=settings.api_id_token)
+    server = create_server(library, api)
     if args.transport == "stdio":
         server.run("stdio")
     else:
-        security = transport_security(args.allowed_host)
+        configured = [h.strip() for h in settings.mcp_allowed_hosts.split(",") if h.strip()]
+        security = transport_security([*args.allowed_host, *configured])
         server.run("streamable-http", host=args.host, port=args.port, transport_security=security)
