@@ -3,6 +3,11 @@ output "workload_identity_provider" {
   value       = google_iam_workload_identity_pool_provider.github.name
 }
 
+output "project_number" {
+  description = "Repository variable GCP_PROJECT_NUMBER: the deploy builds the services' deterministic addresses from it."
+  value       = data.google_project.this.number
+}
+
 output "deployer_service_account" {
   description = "Repository variable GCP_DEPLOYER_SA."
   value       = google_service_account.deployer.email

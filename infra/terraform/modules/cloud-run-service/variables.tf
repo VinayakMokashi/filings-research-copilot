@@ -82,6 +82,12 @@ variable "invokers" {
   default     = []
 }
 
+variable "audiences" {
+  description = "Extra audiences a caller's ID token may name, such as the service's deterministic address."
+  type        = list(string)
+  default     = []
+}
+
 variable "deletion_protection" {
   description = "Refuse terraform destroy."
   type        = bool
