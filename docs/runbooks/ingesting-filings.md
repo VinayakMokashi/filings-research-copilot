@@ -72,6 +72,26 @@ The Qdrant dashboard is at <http://127.0.0.1:6333/dashboard>. To rebuild a colle
 
 `uv run poe check-hnsw` copies the main index into a scratch collection that builds an HNSW graph in every segment, and reports recall@10 and latency against exact search for the dev questions (`eval/results/indexing/`).
 
+## In the deployment: the ingestion worker
+
+On Google Cloud, a filing is indexed by publishing a request to the `ingest` topic ([ADR-0031](../decisions/0031-google-cloud-topology.md)). Pub/Sub pushes it to the `worker` service, which does what this page does for one filing:
+
+1. download the PDF, from sec.gov with the SEC contact in its User-Agent;
+2. keep a copy in the filings bucket;
+3. parse it, chunk it one page at a time, and embed and upsert what the collection lacks.
+
+```bash
+gcloud pubsub topics publish ingest --project=filings-research-copilot --message='{
+  "doc_name": "ACME_2024_10K", "url": "https://www.sec.gov/Archives/edgar/data/.../acme-2024.pdf",
+  "company": "Acme", "doc_type": "10k", "doc_period": 2024}'
+```
+
+**Acknowledgements.** The worker answers 204 when the filing is indexed. It answers 400 for a request it can't read and 500 for a failure on the way; Pub/Sub retries both with backoff. After five attempts a message moves to `ingest-dead-letter`, and an alert says so. Indexing is idempotent: chunk ids come from their content, so a retried or repeated request adds nothing.
+
+**Offline models.** The worker loads its models from the image (`HF_HUB_OFFLINE=1`), including bge-small's tokenizer for page windows. That tokenizer gave the same token spans as the Hub's on 120 of 120 corpus pages, so the chunk ids match the index's.
+
+**Not yet answerable.** A new filing is searchable at once, but the doc agent's resolver knows filings from the corpus list. A question names a filing it can resolve only once `data/processed/corpus.jsonl`, rebuilt into the next data bundle, includes it.
+
 ## Troubleshooting
 
 | Symptom | Cause and fix |
