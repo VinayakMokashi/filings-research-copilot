@@ -121,6 +121,8 @@ analyse-errors = { cmd = "python scripts/analyse_errors.py", help = "Sort a run'
 run-sql-agent = { cmd = "python scripts/run_sql_agent.py", help = "Answer the SQL set with the data agent and score it, resumably" }
 ask-data = { cmd = "python scripts/ask_data.py", help = "Ask the data agent one question (needs GROQ_API_KEY)" }
 answer-with-data = { cmd = "python scripts/answer_with_data.py", help = "Answer FinanceBench dev questions with the data agent, resumably (needs GROQ_API_KEY)" }
+load-facts-postgres = { cmd = "python scripts/load_facts_postgres.py", help = "Copy facts.db into PostgreSQL (the Compose Postgres by default) and set up the read-only facts_reader role" }
+check-facts-postgres = { cmd = "python scripts/check_facts_postgres.py", help = "Run the data agent's evaluated queries on facts.db and on PostgreSQL (FRC_FACTS_URL) and compare the results" }
 run-hybrid = { cmd = "python scripts/run_hybrid.py", help = "Answer the hybrid questions with the hybrid or the doc agent and check them (needs Qdrant and GROQ_API_KEY)" }
 
 # ---------------------------------------------------------------------------
@@ -179,7 +181,7 @@ filterwarnings = [
 ]
 
 [tool.uv.sources]
-text2sql-analyst = { git = "https://github.com/VinayakMokashi/text2sql-analyst", rev = "bfaafdf7fdb212eef15a6e0c5bb4994d7ff38d7b" }
+text2sql-analyst = { git = "https://github.com/VinayakMokashi/text2sql-analyst", rev = "d5420f1ad73c6608c1b2869d7fba662ea4709920" }
 
 [tool.uv]
 # FastEmbed caps Pillow below 13, but Pillow's security fixes landed in 13.0.0. Only
