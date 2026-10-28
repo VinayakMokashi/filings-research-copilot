@@ -15,6 +15,34 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · The Terraform, checked before the cloud exists
+
+- **Goal:** have every Google Cloud resource of ADR-0031 written and validated before the project exists, so the first applies follow the owner's approval directly.
+- **Done:**
+  - **`infra/terraform/bootstrap`:**
+    - the APIs, the $15 monthly budget (measured before credits; created first with gcloud, then imported), and the state and data buckets;
+    - Artifact Registry with cleanup rules and its own scanning off;
+    - workload identity federation for this repository's `main` branch, by ID, and one service account per service;
+    - the deployer's roles, ten empty secrets, and the billing export's dataset.
+  - **`infra/terraform/envs/prod`:**
+    - a VPC with private services access, so the database has a private address only;
+    - Cloud SQL for PostgreSQL 18 (Enterprise, db-f1-micro, stopped by default; Terraform ignores whether it runs);
+    - Firestore with a TTL on cached answers, and buckets for filings and backups;
+    - Pub/Sub with a push subscription and a dead-letter topic;
+    - the four Cloud Run services through a module, each reading only its own secrets: `api` private, `ui` and `mcp` public, `worker` callable by Pub/Sub only;
+    - two Cloud Scheduler jobs (a weekly keep-alive, a nightly database stop);
+    - four alert conditions, an uptime check, and a dashboard.
+  - **CI and upkeep:** CI's new Terraform job checks the formatting and validates both roots without a backend. Dependabot watches the providers.
+  - **The loader:** each text column of the facts tables uses the C collation, because Cloud SQL's databases don't default to it.
+  - **Docs:** the [deploy runbook](runbooks/deploy.md), and the guides [terraform-basics.md](concepts/terraform-basics.md) and [workload-identity-federation.md](concepts/workload-identity-federation.md).
+- **Commands:** `terraform fmt -recursive infra/terraform`; for each root, `terraform init -backend=false` and `terraform validate`.
+- **Results:** both roots validate against the Google provider 8.8.1 with Terraform 1.17.0. Nothing exists in the cloud yet.
+- **Problems and fixes:**
+  - **A secret without a version stops a revision,** and the `facts-url` secret needs the database's address. The runbook's first apply of `envs/prod` therefore creates the database alone, then everything else.
+  - **A service can't name its own address** in its settings. Cloud Run's deterministic address is known in advance and serves the MCP server's allowed host.
+- **Decisions:** each service gets its own Dockerfile target and start command, so Terraform never overrides commands, and every service can start on Google's sample image before the first deploy ([ADR-0031](decisions/0031-google-cloud-topology.md)).
+- **Next:** the runtime code the deployment needs (Firestore stores, ID tokens, the switches for disk caches and trace files, the Qdrant key, the MCP server's port and host), slimmer images, and the deploy workflow.
+
 ### 2026-10-28 · Phase 8 · The Google Cloud topology
 
 - **Goal:** settle Phase 8's open questions before anything is created in the cloud: where the facts, the files the API reads at start, the vectors and the app's state live, and who may call what.
