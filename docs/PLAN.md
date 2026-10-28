@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 5, Orchestration with LangGraph (in progress) |
+| **Current phase** | Phase 8, Production deployment on Google Cloud (in progress) |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -78,9 +78,9 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Hugging Face account and token | Added | Phase 7 | In `.env`; publishes the classifier router ([ADR-0025](decisions/0025-classifier-router.md)); FinanceBench comes from GitHub |
 | Langfuse Cloud (free tier) | Ready | Phase 6 | Tracing |
 | Kaggle or Colab GPU (free tier) | Ready | Phase 7 | Kaggle's T4 GPUs trained the router and the embedders through the Kaggle CLI ([runbook](runbooks/training-models.md)) |
-| Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then |
-| Terraform, Google Cloud CLI | Not installed | Phase 8 | |
-| Google Cloud project with billing, MFA and a budget alert | Pending | Phase 8 | The free-trial credit ($300) lasts 90 days from activation |
+| Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then; a free cluster is suspended after a week without use, so the deployment pings it weekly ([ADR-0031](decisions/0031-google-cloud-topology.md)) |
+| Terraform, Google Cloud CLI | Installed | Phase 8 | Terraform 1.17 and gcloud 586; the project gets a gcloud configuration of its own |
+| Google Cloud project with billing, MFA and a budget alert | Pending | Phase 8 | The free-trial credit ($300) ends on 2026-12-22, shared with other projects; the budget alert comes before any other resource |
 | Custom domain | Optional | Phase 8 | Cloud Run serves every service over HTTPS on its own address ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)) |
 
 ## 6. Technical choices
@@ -98,15 +98,15 @@ Starting points, each confirmed by an ADR when its phase lands.
 | Keyword search | BM25 sparse vectors (FastEmbed `Qdrant/bm25`) | Exact terms such as tickers and line items | Phase 2 |
 | Vector database | Qdrant: dense and sparse named vectors, payload indexes; rank fusion done in our code | Dense and keyword search on one point; free cloud tier | [ADR-0010](decisions/0010-vector-store-and-embeddings.md) |
 | Reranker | None in the baseline: MiniLM-L6, jina-turbo and bge-reranker-base didn't beat dense search; re-tested after query rewriting | Measured on FinanceBench dev | [ADR-0011](decisions/0011-retrieval-baseline.md); Phase 3 |
-| Numbers | SEC company facts → SQLite for the curated companies; Postgres in production | text2sql-analyst runs on SQLite as-is | [ADR-0008](decisions/0008-xbrl-normalisation.md); Phase 8 |
-| App state | Postgres: the Compose container locally (127.0.0.1:5433), Cloud SQL on Google Cloud. LangGraph checkpoints (Phase 5), feedback (Phases 6 and 9), and testing the Postgres executor for the facts tables (Phase 8). No code uses it in Phase 0 | One engine locally and in production | Phases 5, 6 and 8 |
+| Numbers | SEC company facts → SQLite, built into the API image; a PostgreSQL copy in Cloud SQL for demo windows, queried with the same prompts | Figures at any hour, and the same answers on both databases, measured ([report](eval/facts-postgres.md)) | [ADR-0008](decisions/0008-xbrl-normalisation.md), [ADR-0031](decisions/0031-google-cloud-topology.md) |
+| App state | Locally, Postgres (the Compose container on 127.0.0.1:5433) or memory: conversations, notes, feedback, quotas, the answer cache. On Google Cloud, Firestore for quotas, the answer cache and feedback, and conversations in memory on one API instance | Firestore is shared by every instance, survives scaling to zero and is free at this volume; Cloud SQL runs only in demo windows | Phases 5 and 6; [ADR-0031](decisions/0031-google-cloud-topology.md) |
 | Data agent | text2sql-analyst, an earlier project, as a pinned dependency | Reuses a tested pipeline | Phase 4 |
 | Orchestration | LangGraph state graph with a checkpointer | Routing, loops, streaming, human-in-the-loop | Phase 5 |
 | API and UI | FastAPI with SSE streaming; Streamlit as a thin client | Python end to end | Phase 6 |
 | MCP | Official MCP Python SDK | Works with standard MCP clients | Phase 6 |
 | Observability | Langfuse Cloud traces; JSON logs | Per-step latency, tokens and cost | Phase 6 |
 | Evaluation | Own harness, an LLM judge checked against human labels, bootstrap CIs, paired permutation tests | Deterministic retrieval metrics; fair comparisons | [ADR-0007](decisions/0007-evaluation-statistics.md) |
-| Infrastructure | Docker Compose locally; Terraform → Cloud Run, Cloud SQL for PostgreSQL, Cloud Storage, Pub/Sub, Firestore, Secret Manager, Cloud Logging and Monitoring | Services that scale to zero; only the database runs in demo windows | [ADR-0016](decisions/0016-deploy-on-google-cloud.md) |
+| Infrastructure | Docker Compose locally; Terraform → Cloud Run, Cloud SQL for PostgreSQL, Cloud Storage, Pub/Sub, Firestore, Secret Manager, Cloud Logging and Monitoring, Cloud Scheduler, and a VPC for the database's private address | Services that scale to zero; only the database runs in demo windows | [ADR-0016](decisions/0016-deploy-on-google-cloud.md), [ADR-0031](decisions/0031-google-cloud-topology.md) |
 | CI/CD | GitHub Actions pinned to commit SHAs; a checksum-verified gitleaks scan of the full history; Dependabot updates; Google Cloud access through Workload Identity Federation | No long-lived keys; reproducible pipelines | Phases 0 and 8 |
 
 Repository layout. Folders are created when their phase lands:
@@ -270,9 +270,9 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 **Goal:** a production-shaped deployment whose services scale to zero, with the database running only for demos ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)).
 
 - [ ] 8.1 Install Terraform and the Google Cloud CLI. Create the budget alert before any other resource; MFA on the account; Workload Identity Federation for GitHub Actions.
-- [ ] 8.2 Slim, non-root container images; Artifact Registry with vulnerability scanning.
-- [ ] 8.3 Terraform: Cloud Run services (api, ui, mcp), a Cloud Run worker fed by Pub/Sub with a dead-letter topic, Cloud SQL for PostgreSQL, Cloud Storage for filings and backups, Firestore quotas, Secret Manager, Cloud Logging and Monitoring with dashboards and alerts, and one least-privilege service account per service.
-- [ ] 8.4 Move the facts tables to Postgres and add a Postgres executor for the data agent; ingest into Qdrant Cloud and keep collection snapshots in Cloud Storage.
+- [ ] 8.2 Slim, non-root container images, with the data built into the API image from a versioned bundle; Trivy scans every build in CI, and Artifact Registry's scanning runs once, in the security pass, since it costs $0.26 an image ([ADR-0031](decisions/0031-google-cloud-topology.md)).
+- [ ] 8.3 Terraform: Cloud Run services (api, ui, mcp), a Cloud Run worker fed by Pub/Sub with a dead-letter topic, Cloud SQL for PostgreSQL on a private address (a VPC with private services access for the database), Cloud Storage for filings and backups, Firestore for quotas, the answer cache and feedback, Secret Manager, Cloud Scheduler (a weekly keep-alive, a nightly database stop), Cloud Logging and Monitoring with dashboards and alerts, and one least-privilege service account per service.
+- [ ] 8.4 Move the facts tables to Postgres and add a Postgres executor for the data agent; ingest into Qdrant Cloud and keep collection snapshots in Cloud Storage. Locally: the same answers on PostgreSQL as on SQLite, with the model's prompts unchanged and facts.db kept in the image as the fallback ([report](eval/facts-postgres.md)).
 - [ ] 8.5 `demo-up` and `demo-down` start and stop the database; a scheduled job stops it if it is left running past a time limit.
 - [ ] 8.6 CD: build and push, deploy, smoke tests; roll back to the previous Cloud Run revision when needed.
 - [ ] 8.7 Load test with Locust and size the services from the results.
@@ -280,7 +280,7 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 - [ ] 8.9 Measure and document the cost of an idle month and of one demo, inside the free-trial credit's 90 days.
 
 **Done when:** the public URLs work, dashboards and alerts work, `demo-up` and `demo-down` start and stop the database, and an idle month costs close to nothing.
-**Docs:** ADRs on the Google Cloud topology and CI/CD; runbooks for demo-up, demo-down, rollback, key rotation and provider outages; guides `cloud-run.md`, `terraform-basics.md`, `workload-identity-federation.md`.
+**Docs:** ADRs on the Google Cloud topology ([ADR-0031](decisions/0031-google-cloud-topology.md)) and CI/CD; runbooks for demo-up, demo-down, rollback, key rotation and provider outages; guides `cloud-run.md`, `terraform-basics.md`, `workload-identity-federation.md`.
 **Manual steps:** a Google Cloud project with billing enabled; a domain, only if a custom one is wanted.
 
 ### Phase 9: Online evaluation and feedback (M)
@@ -367,6 +367,8 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-28 | Step 7.5 done: answers keep one fixed model, and the bandit waits behind a setting | On 100 dev questions both learners earned less than the best fixed arm at every cost penalty; arms are model settings on Cerebras, since gpt-oss-20b runs only on Groq's quota-bound free tier ([ADR-0029](decisions/0029-bandit-routing.md)) |
 | 2026-10-28 | Step 7.6 done: briefs come from the crew, through `POST /v1/brief` | The brief route answered with a note until now; the crew answers every request and covers more than a one-shot answer, though 12 briefs can't make its lead significant ([ADR-0030](decisions/0030-brief-crew.md)) |
 | 2026-10-28 | Phase 7 closed, with step 7.4 not attempted | Every other step has its report and ADR: the LoRA router, the copilot's version 2 and the brief crew adopted; the domain embedder, the DSPy prompt search and bandit routing measured and not adopted. Phase 8 must deploy before the free-trial credit expires on 2026-12-22 |
+| 2026-10-28 | Phase 8's topology: the facts built into the API image and copied to Cloud SQL for demo windows; Firestore for quotas, the answer cache and feedback; a private API behind a public UI and MCP server; the database on a private address; Trivy in CI instead of registry scans on every push | Figures must work outside demo windows; a stopped instance's public IPv4 address costs $7.30 a month; registry scans cost $0.26 an image ([ADR-0031](decisions/0031-google-cloud-topology.md)) |
+| 2026-10-28 | Step 8.4's executor keeps the model writing SQLite and compiles each query on facts.db before PostgreSQL runs it | The prompts were evaluated on SQLite, and sqlglot's parser accepted a query SQLite rejects ([report](eval/facts-postgres.md)) |
 
 ## 11. Status tracker
 
@@ -380,6 +382,6 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 5 Orchestration | Done | 2026-10-24 | 2026-10-27 |
 | 6 API, UI, MCP, observability | Done | 2026-10-26 | 2026-10-27 |
 | 7 Fine-tuning and optimisation | Done | 2026-10-27 | 2026-10-28 |
-| 8 Google Cloud deployment | Planned | | |
+| 8 Google Cloud deployment | In progress | 2026-10-28 | |
 | 9 Online evaluation | Planned | | |
 | 10 Showcase and polish | Planned | | |
