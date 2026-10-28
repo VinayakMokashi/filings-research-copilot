@@ -2,6 +2,7 @@
 # The copilot's images, from the locked environment:
 #   api  the API, with the router's examples
 #   mcp  the MCP server over streamable HTTP: the api image, started as the MCP server
+#   worker  the ingestion worker that Pub/Sub pushes to: the api image, started as the worker
 #   ui   the Streamlit UI with the evaluation results its results page reads; it installs
 #        only the `ui` dependency group, not the rest of the copilot
 # Each runs as a non-root user and listens on $PORT when it is set, as Cloud Run sets it.
@@ -64,6 +65,10 @@ CMD ["sh", "-c", "exec uvicorn copilot.api.app:create_app --factory --host 0.0.0
 FROM api AS mcp
 EXPOSE 8001
 CMD ["sh", "-c", "exec python -m copilot.mcp --transport streamable-http --host 0.0.0.0 --port ${PORT:-8001}"]
+
+FROM api AS worker
+EXPOSE 8080
+CMD ["sh", "-c", "exec uvicorn copilot.worker.app:create_app --factory --host 0.0.0.0 --port ${PORT:-8080}"]
 
 FROM runtime AS ui
 COPY --from=build-ui /app /app
