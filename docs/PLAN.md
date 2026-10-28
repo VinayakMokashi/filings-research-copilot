@@ -75,9 +75,9 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Groq API key | Added | Phase 0 (step 0.8) | In `.env`; verified live on 2026-10-17 |
 | Cerebras API key | Added | Phase 5 | In `.env`; the same open models as Groq without the free tier's daily cap, for Phase 5's last evaluations ([ADR-0024](decisions/0024-second-provider.md)) |
 | SEC EDGAR contact for the User-Agent header | Added | Phase 1 | In `.env`; sent only to sec.gov |
-| Hugging Face account and token | Pending | Phase 7 | Publishing models (FinanceBench comes from GitHub) |
+| Hugging Face account and token | Added | Phase 7 | In `.env`; publishes the classifier router ([ADR-0025](decisions/0025-classifier-router.md)); FinanceBench comes from GitHub |
 | Langfuse Cloud (free tier) | Ready | Phase 6 | Tracing |
-| Kaggle or Colab GPU (free tier) | Pending | Phase 7 | Fine-tuning |
+| Kaggle or Colab GPU (free tier) | Ready | Phase 7 | Kaggle's T4 GPUs trained the router and the embedders through the Kaggle CLI ([runbook](runbooks/training-models.md)) |
 | Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then |
 | Terraform, Google Cloud CLI | Not installed | Phase 8 | |
 | Google Cloud project with billing, MFA and a budget alert | Pending | Phase 8 | The free-trial credit ($300) lasts 90 days from activation |
