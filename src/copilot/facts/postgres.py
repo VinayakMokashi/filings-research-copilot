@@ -7,8 +7,9 @@ a server (ADR-0031):
 - **The same schema.** Keys, foreign keys and checks as in SQLite; REAL becomes DOUBLE
   PRECISION, because SQLite's REAL is an 8-byte float and PostgreSQL's has 4 bytes.
   facts.db's references all resolve, so PostgreSQL can enforce them.
-- **SQLite's text order.** The database uses the C collation, so `ORDER BY` on text and
-  text2sql-analyst's value catalogues sort as SQLite's byte order does.
+- **SQLite's text order.** Each text column uses the C collation, so `ORDER BY` on text
+  and text2sql-analyst's value catalogues sort as SQLite's byte order does, whatever
+  the database's own default (Cloud SQL's is not C).
 - **A role that can only read.** `facts_reader` may connect and select, and every
   transaction it starts is read-only, with a statement timeout, as a second layer under
   text2sql-analyst's own read-only connections and guardrails.
@@ -28,7 +29,7 @@ from copilot.facts.database import SCHEMA
 
 # facts.db's tables, parents first, so the foreign keys hold while rows arrive.
 TABLES = ("companies", "filings", "concepts", "facts", "metrics", "metric_tags", "annual_values")
-POSTGRES_SCHEMA = SCHEMA.replace(" REAL", " DOUBLE PRECISION")
+POSTGRES_SCHEMA = SCHEMA.replace(" REAL", " DOUBLE PRECISION").replace(" TEXT", ' TEXT COLLATE "C"')
 DATABASE = "facts"
 READER = "facts_reader"
 
