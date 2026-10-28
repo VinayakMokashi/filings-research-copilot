@@ -33,7 +33,8 @@ jobs:
       # Cloud Run's deterministic addresses, which the services are configured with.
       API_URL: https://api-${{ vars.GCP_PROJECT_NUMBER }}.${{ vars.GCP_REGION }}.run.app
       MCP_URL: https://mcp-${{ vars.GCP_PROJECT_NUMBER }}.${{ vars.GCP_REGION }}.run.app
-      SERVICES: api mcp ui # the API first: the others call it
+      WORKER_URL: https://worker-${{ vars.GCP_PROJECT_NUMBER }}.${{ vars.GCP_REGION }}.run.app
+      SERVICES: api mcp worker ui # the API first: the UI and the MCP server call it
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -89,6 +90,17 @@ jobs:
           tags: ${{ env.REGISTRY }}/mcp:${{ github.sha }}
           cache-from: type=gha,scope=api
 
+      - name: Build and push the worker image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: worker
+          build-contexts: data=${{ runner.temp }}/bundle
+          build-args: GIT_SHA=${{ github.sha }}
+          push: true
+          tags: ${{ env.REGISTRY }}/worker:${{ github.sha }}
+          cache-from: type=gha,scope=api
+
       - name: Build and push the UI image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -141,6 +153,24 @@ jobs:
             -H "Authorization: Bearer $ID_TOKEN" "$API_URL/readyz" | tee ready.json
           echo
           jq -e '.ready' ready.json
+
+      - id: worker_token
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+          token_format: id_token
+          id_token_audience: ${{ env.WORKER_URL }}
+          id_token_include_email: true
+
+      - name: "Smoke test: the worker serves this commit"
+        env:
+          ID_TOKEN: ${{ steps.worker_token.outputs.id_token }}
+        run: |
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 \
+            -H "Authorization: Bearer $ID_TOKEN" "$WORKER_URL/healthz" | tee worker.json
+          echo
+          jq -e --arg sha "$GITHUB_SHA" '.commit == $sha' worker.json
 
       - name: "Smoke test: the MCP server answers an MCP client"
         run: |
