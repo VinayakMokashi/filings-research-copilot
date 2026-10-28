@@ -15,6 +15,20 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 7 · The brief crew, and `POST /v1/brief`
+
+- **Goal:** step 7.6: give the brief route an implementation: a crew that plans a brief, has the specialists write its sections, checks every sentence and edits a summary; measure it against answering the request in one shot.
+- **Done:**
+  - `copilot.agents.brief`: one strong-model call plans two to five sections from a list of analyst's modules (Self-Discover's select, adapt, implement); the doc agent and the hybrid write them in parallel threads (the hybrid one at a time); the validator's checker cuts unsupported sentences and drops a section left empty; the sources are numbered once for the brief; an editor writes a checked summary. Paced clients count their usage under a lock now.
+  - The graph's brief node runs the crew, a caller can ask for a route for one turn, `POST /v1/brief` streams the crew's steps and caches briefs apart from answers, and the chat has a "Write a brief" switch.
+  - A brief set of 12 requests on dev companies with rubrics; a rubric judge (`copilot.eval.briefs`), `poe run-briefs` for the crew and the one-shot baselines, and `poe jury-briefs` for a second judge.
+  - The [report](eval/brief-crew.md), [ADR-0030](decisions/0030-brief-crew.md), the [guide](concepts/research-briefs.md), the [data card](data/brief-set.md), the plan's step 7.6.
+- **Commands:** `uv run poe run-briefs --system crew --run crew-v1` (and `--system hybrid`, `--system doc`), through `private`'s one retry loop; `uv run poe jury-briefs --run crew-v1`; `uv run poe compare-runs eval/results/briefs/doc-one-shot/dev eval/results/briefs/crew-v1/dev --metric rubric`.
+- **Results:** the crew covers 0.863 of rubric items (0.754 to 0.963) with 0.916 of sentences supported, 7.1 sources and 411 words a brief, at $0.015 and 91 seconds. The doc agent in one shot covers 0.658 with 0.764 supported, refusing 2 of 12 requests, in 97 words and 3.0 sources: the crew's lead on coverage, +0.20, isn't significant on 12 briefs (p = 0.18), its lead on sources is (p = 0.0008). The hybrid's one shot was the doc agent's, word for word. A second judge (gpt-oss-120b) agrees with the first on 95% of the crew's items (kappa 0.70) and 98% of the one shot's (kappa 0.96).
+- **Problems and fixes:** the critic's checks run on Groq's free tier, and the crew's 12 briefs nearly filled gpt-oss-20b's daily 200,000 tokens; the loop paused the baselines for about three hours until the rolling window cleared. The run script recorded the clients' running totals as each brief's tokens; it records each brief's own now (its costs were right).
+- **Decisions:** [ADR-0030](decisions/0030-brief-crew.md): the crew is the brief route.
+- **Next:** the Phase 7 close: the project page and the README.
+
 ### 2026-10-28 · Phase 7 · Bandit routing between answer models, replayed and not adopted
 
 - **Goal:** step 7.5: see whether a bandit learning from each answer's reward (right or wrong, less a price for its cost) picks the doc agent's answer model better than a fixed choice, offline first, then behind a flag.
