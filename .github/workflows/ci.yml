@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Runs on main queue instead, so a deploy is never cut off in the middle of a rollout.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   checks:
@@ -140,3 +141,41 @@ jobs:
       - name: Scan full git history
         run: |
           "$RUNNER_TEMP/gitleaks" git --config .gitleaks.toml --redact --verbose .
+
+  # On a push to main that changes what the images hold, deploy once every check has
+  # passed (ADR-0032). Skipped until the deployment exists: the repository's
+  # GCP_PROJECT_ID variable is set when it does. Run the Deploy workflow by hand to
+  # deploy anything else.
+  changes:
+    name: What the images hold changed
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.diff.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BEFORE" "$GITHUB_SHA" \
+              | grep -qE '^(src/|Dockerfile$|pyproject\.toml$|uv\.lock$|eval/(routing|results)/|infra/data-bundle\.json$)'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy
+    needs: [checks, images, terraform, secrets, changes]
+    if: needs.changes.outputs.deploy == 'true'
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      contents: read
+      id-token: write
