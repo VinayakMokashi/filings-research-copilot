@@ -15,6 +15,28 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · Continuous deployment, without keys
+
+- **Goal:** step 8.6: releases that build and roll out themselves after CI's checks, prove that the new revision serves, and undo themselves when it doesn't.
+- **Done:**
+  - **The Deploy workflow** ([ADR-0032](decisions/0032-continuous-deployment.md)):
+    1. keyless access through workload identity federation;
+    2. the data bundle fetched and its hash checked;
+    3. `api` and `mcp` built with the bundle, `ui` without it, all tagged with the commit;
+    4. a rollout of `api`, then `mcp`, then `ui`;
+    5. smoke tests: the private API's commit and readiness, read with an ID token; an MCP `initialize`; the UI's health;
+    6. a rollback of every service to its previous revision if any step after the rollout fails.
+  - **CI's deploy job** runs on `main` only when what the images hold changed, and is skipped until the repository's `GCP_PROJECT_ID` variable exists. Runs on `main` now queue instead of cancelling each other.
+  - **`/healthz` reports the commit** the image was built from (`FRC_GIT_SHA`, a build argument).
+  - **Terraform:**
+    - the API and the worker accept ID tokens for their deterministic addresses;
+    - the deployer may call them, for the smoke tests;
+    - the bootstrap outputs the project number the deploy builds those addresses from.
+  - **Docs:** the deploy runbook's sections on connecting GitHub, how a release happens and rolling back by hand.
+- **Results:** actionlint finds nothing in either workflow. Both Terraform roots validate, and `poe check` passes. The workflow can't run until the cloud exists.
+- **Decisions:** [ADR-0032](decisions/0032-continuous-deployment.md): GitHub Actions rather than Cloud Build, so that one set of checks gates every release; no canary, since one instance and a few visitors a day make a traffic split meaningless.
+- **Next:** the ingestion worker, then the cloud itself once the owner approves.
+
 ### 2026-10-28 · Phase 8 · Demo windows, and the data's way to the cloud
 
 - **Goal:** everything that moves data into the cloud and runs the demo windows, written and tested before the cloud exists, so each is one command after the owner's approval.
