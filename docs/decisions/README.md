@@ -31,5 +31,6 @@
 | [0027](0027-domain-embedder.md) | Keep bge-small; the embedders fine-tuned on filings aren't adopted | Accepted | 2026-10-28 |
 | [0028](0028-dspy-hyde.md) | Keep the hand-written HyDE prompt; DSPy found no better instruction | Accepted | 2026-10-28 |
 | [0029](0029-bandit-routing.md) | Answer with one fixed model; keep the answer bandit behind a setting for Phase 9 | Accepted | 2026-10-28 |
+| [0030](0030-brief-crew.md) | Write briefs with a crew: a Self-Discover plan, the specialists as writers, the validator as critic | Accepted | 2026-10-28 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
