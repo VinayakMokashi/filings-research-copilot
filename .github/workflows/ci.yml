@@ -55,6 +55,7 @@ jobs:
         run: |
           docker build --target api -t filings-copilot-api:ci .
           docker build --target mcp -t filings-copilot-mcp:ci .
+          docker build --target worker -t filings-copilot-worker:ci .
           docker build --target ui -t filings-copilot-ui:ci .
 
       # Built without the data bundle, the images hold no data, so check that they run as
@@ -62,10 +63,11 @@ jobs:
       # dependency group, and the Compose file must parse with the app profile on.
       - name: Check
         run: |
-          for image in api mcp ui; do
+          for image in api mcp worker ui; do
             test "$(docker run --rm filings-copilot-$image:ci id -u)" != "0"
           done
           docker run --rm filings-copilot-api:ci python -c "import copilot.api.app, copilot.mcp.server"
+          docker run --rm filings-copilot-worker:ci python -c "import copilot.worker.app"
           docker run --rm filings-copilot-ui:ci python -c "import streamlit, copilot.ui, copilot.api.client"
           docker run --rm filings-copilot-ui:ci python -c "import importlib.util as u, sys; sys.exit(any(u.find_spec(m) for m in ('litellm', 'fastembed', 'langgraph')))"
           docker compose --profile app config --quiet
