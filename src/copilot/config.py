@@ -26,6 +26,9 @@ class Settings(BaseSettings):
 
     # Application
     env: Literal["dev", "test", "prod"] = "dev"
+    # The commit an image was built from (the deploy workflow's build argument), which
+    # /healthz reports so a deploy can check that the new revision is the one serving
+    git_sha: str = "unknown"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["console", "json"] = "console"
 

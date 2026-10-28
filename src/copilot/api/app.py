@@ -114,8 +114,8 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
 
     @app.get("/healthz", tags=["health"])
     def healthz() -> Health:
-        """The process is up."""
-        return Health()
+        """The process is up, and the commit its image was built from."""
+        return Health(commit=(settings or get_settings()).git_sha)
 
     @app.get("/readyz", tags=["health"], responses={503: {"model": Readiness}})
     def readyz(request: Request) -> JSONResponse:
