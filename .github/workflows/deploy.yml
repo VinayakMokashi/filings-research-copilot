@@ -1,0 +1,166 @@
+# Build the images (the API's with its data bundle), push them to Artifact Registry, roll
+# each service out on Cloud Run and smoke-test it (ADR-0032). Called by CI after the
+# checks pass on main, or run by hand from the Actions tab.
+#
+# Keyless: GitHub's OIDC token becomes an hour of the deployer account's access through
+# workload identity federation, which accepts only this repository's main branch. A
+# failed smoke test moves every service's traffic back to the revision it replaced.
+name: Deploy
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, push, roll out, smoke-test
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.rollout.outputs.ui_url }}
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      REGISTRY: ${{ vars.GCP_REGISTRY }}
+      # Cloud Run's deterministic addresses, which the services are configured with.
+      API_URL: https://api-${{ vars.GCP_PROJECT_NUMBER }}.${{ vars.GCP_REGION }}.run.app
+      MCP_URL: https://mcp-${{ vars.GCP_PROJECT_NUMBER }}.${{ vars.GCP_REGION }}.run.app
+      SERVICES: api mcp ui # the API first: the others call it
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+          token_format: access_token
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      # infra/data-bundle.json names the bundle and its SHA-256; a different file fails here.
+      - name: Fetch the data bundle
+        run: |
+          object="$(jq -r .object infra/data-bundle.json)"
+          gcloud storage cp "gs://${{ vars.GCP_DATA_BUCKET }}/$object" "$RUNNER_TEMP/bundle.tar.gz"
+          echo "$(jq -r .sha256 infra/data-bundle.json)  $RUNNER_TEMP/bundle.tar.gz" \
+            | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/bundle"
+          tar -xzf "$RUNNER_TEMP/bundle.tar.gz" -C "$RUNNER_TEMP/bundle"
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build and push the API image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: api
+          build-contexts: data=${{ runner.temp }}/bundle
+          build-args: GIT_SHA=${{ github.sha }}
+          push: true
+          tags: ${{ env.REGISTRY }}/api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build and push the MCP image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: mcp
+          build-contexts: data=${{ runner.temp }}/bundle
+          build-args: GIT_SHA=${{ github.sha }}
+          push: true
+          tags: ${{ env.REGISTRY }}/mcp:${{ github.sha }}
+          cache-from: type=gha,scope=api
+
+      - name: Build and push the UI image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: ui
+          build-args: GIT_SHA=${{ github.sha }}
+          push: true
+          tags: ${{ env.REGISTRY }}/ui:${{ github.sha }}
+          cache-from: type=gha,scope=ui
+          cache-to: type=gha,mode=max,scope=ui
+
+      # Each service's revision before this deploy is recorded first, for the rollback.
+      # A rollback pins traffic to a revision, so a rollout sends it to the latest again.
+      - id: rollout
+        name: Roll out the new revisions
+        run: |
+          : > "$RUNNER_TEMP/previous.txt"
+          for service in $SERVICES; do
+            previous="$(gcloud run services describe "$service" --region "$REGION" \
+              --project "$PROJECT" --format='value(status.latestReadyRevisionName)')"
+            echo "$service $previous" >> "$RUNNER_TEMP/previous.txt"
+            gcloud run services update "$service" --image "$REGISTRY/$service:$GITHUB_SHA" \
+              --region "$REGION" --project "$PROJECT" --quiet
+            gcloud run services update-traffic "$service" --to-latest \
+              --region "$REGION" --project "$PROJECT" --quiet
+          done
+          url="$(gcloud run services describe ui --region "$REGION" --project "$PROJECT" \
+            --format='value(status.url)')"
+          echo "ui_url=$url" >> "$GITHUB_OUTPUT"
+
+      # An ID token for the private API, signed for the deployer account, which may call it.
+      - id: token
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+          token_format: id_token
+          id_token_audience: ${{ env.API_URL }}
+          id_token_include_email: true
+
+      - name: "Smoke test: the API serves this commit and is ready"
+        env:
+          ID_TOKEN: ${{ steps.token.outputs.id_token }}
+        run: |
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 \
+            -H "Authorization: Bearer $ID_TOKEN" "$API_URL/healthz" | tee health.json
+          echo
+          jq -e --arg sha "$GITHUB_SHA" '.status == "ok" and .commit == $sha' health.json
+          curl -fsS --retry 3 --retry-all-errors --retry-delay 5 \
+            -H "Authorization: Bearer $ID_TOKEN" "$API_URL/readyz" | tee ready.json
+          echo
+          jq -e '.ready' ready.json
+
+      - name: "Smoke test: the MCP server answers an MCP client"
+        run: |
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 -X POST "$MCP_URL/mcp" \
+            -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"deploy-smoke-test","version":"1"}}}' \
+            | tee mcp.txt
+          grep -q '"serverInfo"' mcp.txt
+
+      - name: "Smoke test: the web UI is up"
+        run: |
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 \
+            "${{ steps.rollout.outputs.ui_url }}/_stcore/health"
+
+      - name: Roll back to the previous revisions
+        if: failure() && steps.rollout.outcome != 'skipped'
+        run: |
+          while read -r service revision; do
+            [ -n "$revision" ] || continue
+            gcloud run services update-traffic "$service" --to-revisions "$revision=100" \
+              --region "$REGION" --project "$PROJECT" --quiet
+            echo "$service: traffic back on $revision"
+          done < "$RUNNER_TEMP/previous.txt"
