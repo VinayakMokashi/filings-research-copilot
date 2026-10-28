@@ -15,6 +15,26 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-10-28 · Phase 8 · Demo windows, and the data's way to the cloud
+
+- **Goal:** everything that moves data into the cloud and runs the demo windows, written and tested before the cloud exists, so each is one command after the owner's approval.
+- **Done:**
+  - **`poe demo-up` and `poe demo-down`** (`copilot.deploy.cloudsql`, `scripts/demo_window.py`) start and stop the Cloud SQL instance, and wait until it is running or stopped.
+  - **`poe load-facts-cloudsql`:**
+    - dumps the local PostgreSQL copy and imports it into the instance through the backups bucket, since the instance has only a private address;
+    - creates `facts_reader` with a generated password and gives it SELECT only;
+    - puts the reader's URL, on the private address, into the `facts-url` secret, without printing a password.
+
+    Terraform lets the instance's own account read the backups bucket.
+  - **`poe copy-collection`** (`copilot.deploy.qdrant`) copies the doc agent's collection to Qdrant Cloud point by point, with its vector settings and payload indexes. It is idempotent and finishes an interrupted copy. `--snapshot-to` keeps a snapshot in the backups bucket for the restore runbook.
+  - **`copilot.deploy.gcloud`** runs every gcloud command with the copilot's own configuration (`frc`), resolving gcloud's full path, which Windows needs for its `.cmd` script.
+  - **Docs:** the [demo-window runbook](runbooks/demo-windows.md), and the deploy runbook's Qdrant Cloud section.
+- **Results:** `poe check` passes 664 tests, among them a copy between two in-memory Qdrants with dense and sparse vectors, and the helpers' command lines, waits and URLs. None of these commands has run against the cloud yet.
+- **Problems and fixes:**
+  - **Passwords on the command line.** gcloud takes a database user's password only as an argument, so the reader's password appears in a local process and nowhere else.
+  - **Secrets on standard input.** Every secret value goes to `gcloud secrets versions add` on its standard input.
+- **Next:** the ingestion worker, the deploy workflow, then the cloud itself once the owner approves.
+
 ### 2026-10-28 · Phase 8 · Slimmer images, and the data the API image carries
 
 - **Goal:** step 8.2: images that hold what each service needs and nothing more, with the API's data built in for Cloud Run (ADR-0031).
