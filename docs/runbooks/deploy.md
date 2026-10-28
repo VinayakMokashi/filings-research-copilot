@@ -117,6 +117,52 @@ terraform -chdir=infra/terraform/envs/prod apply prod.tfplan
 
 The services start on Google's sample image; the first deploy replaces it. A deploy changes only the image, which Terraform ignores, and `demo-up` and `demo-down` change only whether the database runs, which it ignores too. So a plan right after either should say "No changes".
 
+## Connect GitHub
+
+After the bootstrap, set the repository's variables from its outputs. None of them is secret: the deploy reaches Google Cloud through workload identity federation.
+
+```bash
+for name in workload_identity_provider deployer_service_account registry data_bucket project_number; do
+  terraform -chdir=infra/terraform/bootstrap output -raw "$name"; echo
+done
+gh variable set GCP_PROJECT_ID --body filings-research-copilot
+gh variable set GCP_REGION --body asia-south1
+gh variable set GCP_PROJECT_NUMBER --body <project_number>
+gh variable set GCP_WIF_PROVIDER --body <workload_identity_provider>
+gh variable set GCP_DEPLOYER_SA --body <deployer_service_account>
+gh variable set GCP_REGISTRY --body <registry>
+gh variable set GCP_DATA_BUCKET --body <data_bucket>
+```
+
+Setting `GCP_PROJECT_ID` switches deploys on. Until then CI skips them.
+
+## How a release happens
+
+[ADR-0032](../decisions/0032-continuous-deployment.md) sets out the design. On a push to `main` that changes what the images hold, CI's deploy job waits for every check, then runs the [Deploy workflow](../../.github/workflows/deploy.yml). "What the images hold" means `src/`, the Dockerfile, the lock, the router's examples, the results the UI shows, or `infra/data-bundle.json`.
+
+1. **Access.** GitHub's OIDC token becomes an hour of `github-deployer`'s access. No key exists anywhere.
+2. **Data.** The data bundle named in `infra/data-bundle.json` is fetched, and its SHA-256 is checked.
+3. **Images.** `api` and `mcp` are built with the bundle, `ui` without it. Each is tagged with the commit and pushed.
+4. **Rollout.** `api`, then `mcp`, then `ui` get a new revision, which takes all their traffic. Each service's previous revision is noted first.
+5. **Smoke tests:**
+   - the private API reports this commit at `/healthz` and passes `/readyz`;
+   - the MCP server answers an MCP `initialize`;
+   - the UI's health endpoint answers.
+6. **Rollback.** If anything fails after the rollout, every service's traffic goes back to the revision it replaced.
+
+To deploy without such a change, run it by hand: Actions → Deploy → Run workflow, on `main`.
+
+## Roll back by hand
+
+A rollback moves traffic to an earlier revision; nothing is rebuilt.
+
+```bash
+gcloud run revisions list --service=api --region=asia-south1
+gcloud run services update-traffic api --to-revisions=<revision>=100 --region=asia-south1
+```
+
+The next deploy sends the traffic to the newest revision again. To do that by hand, run `gcloud run services update-traffic api --to-latest --region=asia-south1`.
+
 ## Qdrant Cloud
 
 The doc agent's collection is copied from the local Qdrant to the free cluster. The cluster's address and its read-write key come from `.env`'s `CLOUD_QDRANT_URL` and `CLOUD_QDRANT_API_KEY`; the services get their keys from Secret Manager.
