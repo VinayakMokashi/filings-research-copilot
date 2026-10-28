@@ -117,6 +117,23 @@ terraform -chdir=infra/terraform/envs/prod apply prod.tfplan
 
 The services start on Google's sample image; the first deploy replaces it. A deploy changes only the image, which Terraform ignores, and `demo-up` and `demo-down` change only whether the database runs, which it ignores too. So a plan right after either should say "No changes".
 
+## Qdrant Cloud
+
+The doc agent's collection is copied from the local Qdrant to the free cluster. The cluster's address and its read-write key come from `.env`'s `CLOUD_QDRANT_URL` and `CLOUD_QDRANT_API_KEY`; the services get their keys from Secret Manager.
+
+```bash
+uv run poe copy-collection --snapshot-to filings-research-copilot-backups
+```
+
+The copy recreates the collection with the local one's vector settings and payload indexes, then upserts every point in batches. A copy that already holds every point is left alone; an interrupted one finishes on the next run. With `--snapshot-to`, it then takes a snapshot of the copy on the cluster, keeps it in the backups bucket under `qdrant/`, and deletes it from the cluster's small disk.
+
+The free cluster is suspended after a week without use and deleted after four. The scheduler's weekly call to the API's readiness check reads the collection, which keeps the cluster in use. **If the cluster was suspended,** resume it in Qdrant Cloud's console. **If it was deleted:**
+
+1. Create a new free cluster and its two keys (read-only and read-write).
+2. Update `CLOUD_QDRANT_URL` and both keys in `.env`.
+3. Run `copy-collection` again, from the local Qdrant, or upload the latest snapshot from the backups bucket through the cluster's `POST /collections/fb_page_bge-small/snapshots/upload`.
+4. Load the secrets again (step 3).
+
 ## Costs
 
 - **Idle:** everything scales to zero and the database is stopped, so an idle month should cost about $3 to $4, mostly the database's 10 GB of storage ([ADR-0031](../decisions/0031-google-cloud-topology.md)).
