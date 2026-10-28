@@ -33,5 +33,6 @@
 | [0029](0029-bandit-routing.md) | Answer with one fixed model; keep the answer bandit behind a setting for Phase 9 | Accepted | 2026-10-28 |
 | [0030](0030-brief-crew.md) | Write briefs with a crew: a Self-Discover plan, the specialists as writers, the validator as critic | Accepted | 2026-10-28 |
 | [0031](0031-google-cloud-topology.md) | The Google Cloud topology: a public UI and MCP server, a private API, and a database only for demos | Accepted | 2026-10-28 |
+| [0032](0032-continuous-deployment.md) | Deploy from GitHub Actions without keys, prove the new revision serves, and roll back on a failed smoke test | Accepted | 2026-10-28 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
