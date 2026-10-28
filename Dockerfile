@@ -1,12 +1,21 @@
 # syntax=docker/dockerfile:1
 # The copilot's images, from the locked environment:
-#   api  the API, with the router's examples; the same image runs the MCP server
-#   ui   the Streamlit UI, with the evaluation results its results page reads
-# Both run as a non-root user and listen on $PORT when it is set, as Cloud Run sets it.
-# The data (facts database, parsed pages, models, caches) is mounted at /app/data, not built in.
+#   api  the API, with the router's examples
+#   mcp  the MCP server over streamable HTTP: the api image, started as the MCP server
+#   ui   the Streamlit UI with the evaluation results its results page reads; it installs
+#        only the `ui` dependency group, not the rest of the copilot
+# Each runs as a non-root user and listens on $PORT when it is set, as Cloud Run sets it.
+#
+# The data (facts database, parsed pages, models) is mounted at /app/data by Docker
+# Compose. For Cloud Run, CI passes the data bundle as the build context named `data`
+# (`docker build --build-context data=<bundle>`), which takes the place of the empty
+# stage below, so the image carries it (ADR-0031).
 
 # Python 3.12 on Debian trixie, and uv, pinned by digest; Dependabot moves the pins.
 FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
+
+# Empty unless a build passes the bundle as `data`.
+FROM scratch AS data
 
 FROM python:3.12-slim-trixie@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS build
 COPY --from=uv /uv /bin/uv
@@ -27,13 +36,11 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-group ui
 
+# The UI's group alone; the copilot's code runs from src/ (PYTHONPATH below).
 FROM build AS build-ui
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev --no-install-project
-COPY README.md LICENSE ./
+    uv sync --locked --no-dev --only-group ui --no-install-project
 COPY src ./src
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
 
 FROM python:3.12-slim-trixie@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS runtime
 ARG UID=1000
@@ -45,13 +52,20 @@ FROM runtime AS api
 COPY --from=build-api /app /app
 # The semantic router's examples, which back up the model router (ADR-0017).
 COPY eval/routing ./eval/routing
+# The data bundle, read-only for the services (owned by root); empty for Compose.
+COPY --from=data / /app/data/
 USER copilot
 EXPOSE 8000
 CMD ["sh", "-c", "exec uvicorn copilot.api.app:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"]
 
+FROM api AS mcp
+EXPOSE 8001
+CMD ["sh", "-c", "exec python -m copilot.mcp --transport streamable-http --host 0.0.0.0 --port ${PORT:-8001}"]
+
 FROM runtime AS ui
 COPY --from=build-ui /app /app
 COPY eval/results ./eval/results
+ENV PYTHONPATH=/app/src
 USER copilot
 EXPOSE 8501
 CMD ["sh", "-c", "exec streamlit run src/copilot/ui/app.py --server.address 0.0.0.0 --server.port ${PORT:-8501} --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --client.toolbarMode minimal"]

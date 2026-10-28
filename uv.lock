@@ -889,6 +889,8 @@ dev = [
     { name = "ruff" },
 ]
 ui = [
+    { name = "httpx" },
+    { name = "pydantic-settings" },
     { name = "streamlit" },
 ]
 
@@ -927,7 +929,11 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.17.0" },
 ]
-ui = [{ name = "streamlit", specifier = ">=1.66.1" }]
+ui = [
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic-settings", specifier = ">=2.16.0" },
+    { name = "streamlit", specifier = ">=1.66.1" },
+]
 
 [[package]]
 name = "flatbuffers"

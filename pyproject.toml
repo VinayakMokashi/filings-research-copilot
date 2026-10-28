@@ -48,7 +48,11 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.17.0",
 ]
+# The web UI's image installs this group alone (ADR-0031): the UI imports Streamlit,
+# httpx and pydantic-settings, and the rest of the copilot stays out of it.
 ui = [
+    "httpx>=0.28.1",
+    "pydantic-settings>=2.16.0",
     "streamlit>=1.66.1",
 ]
 
