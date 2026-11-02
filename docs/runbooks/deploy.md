@@ -72,7 +72,7 @@ grep '^CLOUD_GROQ_API_KEY=' .env | cut -d= -f2- | tr -d '\r\n' \
 
 | Secret | Read by | Value |
 |---|---|---|
-| `groq-api-key`, `cerebras-api-key` | `api` | The cloud's own keys; Cerebras only if the fallback is on |
+| `groq-api-key`, `cerebras-api-key` | `api` | The cloud's own keys; Cerebras only while the paid fallback is on (`paid_daily_usd` above 0, [ADR-0033](../decisions/0033-capped-paid-fallback.md)) |
 | `langfuse-public-key`, `langfuse-secret-key` | `api` | The cloud's own Langfuse key pair |
 | `qdrant-url`, `qdrant-read-api-key` | `api`, `mcp` | The cluster's endpoint and its read-only key |
 | `qdrant-write-api-key` | `worker` | The cluster's read-write key |
@@ -183,4 +183,5 @@ The free cluster is suspended after a week without use and deleted after four. T
 ## Costs
 
 - **Idle:** everything scales to zero and the database is stopped, so an idle month should cost about $3 to $4, mostly the database's 10 GB of storage ([ADR-0031](../decisions/0031-google-cloud-topology.md)).
+- **The paid fallback:** at most $0.50 a day on Cerebras when Groq refuses ([ADR-0033](../decisions/0033-capped-paid-fallback.md)), billed by Cerebras, so Google's budget doesn't see it. The API logs each paid call as `llm.paid_fallback`, with its cost. To turn it off, set `paid_daily_usd = 0` in `envs/prod` and apply.
 - **If a budget email arrives:** check whether the database was left running (the dashboard's "Demo database up" tile), then Cloud Run's request counts.
