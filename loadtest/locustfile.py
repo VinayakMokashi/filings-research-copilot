@@ -29,7 +29,7 @@ from locust import HttpUser, between, events, task
 QUESTIONS = (
     "What was 3M's capital expenditure in 2018?",
     "How did Boeing's revenue change from 2019 to 2022, and what drove the recovery?",
-    "What risks does Netflix name in its 2022 10-K?",
+    "What does Netflix's 2017 10-K say about competition?",
     "Which companies do you cover?",
     "What was Microsoft's revenue in fiscal 2022, in billions of dollars?",
     "What were Coca-Cola's total assets at the end of 2022?",
@@ -46,8 +46,15 @@ def _headers(visitor: str) -> dict[str, str]:
     return headers
 
 
-def _ask(client: Any, question: str, visitor: str, name: str) -> tuple[bool, bool]:
-    """Ask once and read the whole stream; returns (answered, served from the cache)."""
+def _ask(
+    client: Any, question: str, visitor: str, name: str, *, from_cache: bool = False
+) -> tuple[bool, bool]:
+    """Ask once and read the whole stream; returns (answered, served from the cache).
+
+    `answered` is the copilot's own flag. A refusal streams to its end too, but the API
+    never caches one, so asking it again starts a fresh run each time. With `from_cache`,
+    a reply that didn't come from the cache counts as a failure.
+    """
     with client.post(
         "/v1/ask",
         json={"question": question},
@@ -66,8 +73,17 @@ def _ask(client: Any, question: str, visitor: str, name: str) -> tuple[bool, boo
         if "event: error" in text:  # the API was busy, or a run failed
             response.failure("the stream carried an error event")
             return False, False
+        answered = '"answered": true' in text or '"answered":true' in text
+        cached = '"cached": true' in text or '"cached":true' in text
+        if from_cache and not cached:
+            response.failure("not served from the cache")
+            return answered, cached
         response.success()
-        return True, '"cached": true' in text or '"cached":true' in text
+        return answered, cached
+
+
+# The questions the warm-up got answered, and so cached: the load asks only these.
+CACHED: list[str] = []
 
 
 @events.test_start.add_listener
@@ -80,8 +96,13 @@ def warm_the_cache(environment: Any, **kwargs: Any) -> None:
     )
     for question in QUESTIONS:
         answered, cached = _ask(session, question, f"warm-{uuid.uuid4().hex[:12]}", "warm-up")
-        state = "cached already" if cached else ("answered" if answered else "FAILED")
+        if answered or cached:
+            CACHED.append(question)
+        state = "cached already" if cached else ("answered" if answered else "refused, left out")
         print(f"warm-up: {state}: {question}")
+    if not CACHED and environment.runner is not None:
+        print("warm-up: no question could be cached, so there is nothing to load-test")
+        environment.runner.quit()
 
 
 class Visitor(HttpUser):
@@ -94,7 +115,8 @@ class Visitor(HttpUser):
 
     @task(6)
     def ask_a_cached_question(self) -> None:
-        _ask(self.client, random.choice(QUESTIONS), self.visitor, "/v1/ask (cached)")
+        question = random.choice(CACHED or QUESTIONS)
+        _ask(self.client, question, self.visitor, "/v1/ask (cached)", from_cache=True)
 
     @task(3)
     def read_a_cited_page(self) -> None:
