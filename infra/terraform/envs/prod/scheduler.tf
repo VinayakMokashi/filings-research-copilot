@@ -49,8 +49,17 @@ resource "google_cloud_scheduler_job" "stop_database" {
   }
 }
 
+# Stopping the database is a settings update; Cloud SQL Editor would also allow
+# imports, exports, users and databases. This role allows reading and updating instances.
+resource "google_project_iam_custom_role" "database_stopper" {
+  role_id     = "databaseStopper"
+  title       = "Demo database stopper"
+  description = "Read Cloud SQL instances and change their settings, to stop the demo database"
+  permissions = ["cloudsql.instances.get", "cloudsql.instances.update"]
+}
+
 resource "google_project_iam_member" "scheduler_stops_database" {
   project = var.project_id
-  role    = "roles/cloudsql.editor"
+  role    = google_project_iam_custom_role.database_stopper.id
   member  = "serviceAccount:${local.sa.scheduler}"
 }
