@@ -53,6 +53,9 @@ FROM runtime AS api
 COPY --from=build-api /app /app
 # The semantic router's examples, which back up the model router (ADR-0017).
 COPY eval/routing ./eval/routing
+# The committed reference files the services read at start: the companies, for matching
+# names in questions, and the facts tables' descriptions, for the data agent.
+COPY data/reference/companies.csv data/reference/facts_descriptions.json ./data/reference/
 # The data bundle, read-only for the services (owned by root); empty for Compose.
 COPY --from=data / /app/data/
 USER copilot

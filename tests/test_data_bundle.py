@@ -83,3 +83,17 @@ def test_a_missing_file_stops_the_build(data_dir: Path, tmp_path: Path) -> None:
 
     with pytest.raises(FileNotFoundError, match=r"facts\.db"):
         build(tmp_path / "bundle.tar.gz", Settings(data_dir=data_dir))
+
+
+def test_the_api_image_carries_the_reference_files_the_services_read() -> None:
+    # Committed, so they come from the repository rather than the bundle. The first deploy
+    # stopped at start for want of the companies file.
+    from copilot.ingest.universe import COMPANIES_FILE
+    from copilot.sql.agent import DESCRIPTIONS_FILE
+
+    dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
+    ignored = Path(".dockerignore").read_text(encoding="utf-8").splitlines()
+    for path in (COMPANIES_FILE, DESCRIPTIONS_FILE):
+        assert path.is_file()
+        assert f"!{path.as_posix()}" in ignored
+        assert f" {path.as_posix()} " in dockerfile

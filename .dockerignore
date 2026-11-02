@@ -7,4 +7,6 @@
 !src/
 !eval/results/
 !eval/routing/
+!data/reference/companies.csv
+!data/reference/facts_descriptions.json
 **/__pycache__
