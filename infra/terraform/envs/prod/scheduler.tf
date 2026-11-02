@@ -13,7 +13,7 @@ resource "google_cloud_scheduler_job" "keep_alive" {
 
   http_target {
     http_method = "GET"
-    uri         = "${module.api.uri}/readyz"
+    uri         = "${module.api.uri}/ready"
 
     oidc_token {
       service_account_email = local.sa.scheduler
