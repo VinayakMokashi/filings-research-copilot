@@ -158,10 +158,10 @@ Setting `GCP_PROJECT_ID` switches deploys on. Until then CI skips them.
 1. **Access.** GitHub's OIDC token becomes an hour of `github-deployer`'s access. No key exists anywhere.
 2. **Data.** The data bundle named in `infra/data-bundle.json` is fetched, and its SHA-256 is checked.
 3. **Images.** `api` and `mcp` are built with the bundle, `ui` without it. Each is tagged with the commit and pushed.
-   - **A start check:** the new API image is started on the runner, with its state in memory, and must answer `/healthz` before any revision rolls out. A file missing from the image stops the release here.
+   - **A start check:** the new API image is started on the runner, with its state in memory, and must answer `/health` before any revision rolls out. A file missing from the image stops the release here.
 4. **Rollout.** `api`, then `mcp`, then `ui` get a new revision, which takes all their traffic. Each service's previous revision is noted first.
 5. **Smoke tests:**
-   - the private API reports this commit at `/healthz` and passes `/readyz`;
+   - the private API reports this commit at `/health` and passes `/ready`;
    - the MCP server answers an MCP `initialize`;
    - the UI's health endpoint answers.
 6. **Rollback.** If anything fails after the rollout, every service's traffic goes back to the revision it replaced.

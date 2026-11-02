@@ -31,7 +31,7 @@ The laptop has no GPU and the hosting is free-tier, so images should stay small 
 3. **Data mounted at `/app/data`.** The `api` image carries only what the code reads at startup besides the data, the semantic router's examples (`eval/routing`); the `ui` image carries `eval/results`.
 4. **Compose behind a profile.** The app services sit in the `app` profile, so `poe services-up` still starts only Qdrant and Postgres for development, and `poe stack-up` builds and starts everything and waits until it is healthy. Every port is bound to 127.0.0.1 and can be moved (`API_PORT`, `UI_PORT`, `MCP_PORT`). The API keeps conversations, notes, feedback, quotas and the answer cache in Postgres. The API and MCP containers read `.env` at run time; the UI container gets no secrets; and the build context is an allowlist, so `.env` and `data/` are never sent to the builder.
 5. **`$PORT` when set,** as Cloud Run sets it; the defaults are 8000, 8501 and 8001.
-6. **Health checks** for Compose: the API's `/readyz`, so the UI and MCP server start only once the API can answer; Streamlit's own health endpoint; a TCP check for the MCP server.
+6. **Health checks** for Compose: the API's `/ready`, so the UI and MCP server start only once the API can answer; Streamlit's own health endpoint; a TCP check for the MCP server.
 7. **DNS-rebinding protection on the MCP server's HTTP transport.** The SDK switches it on only when the server binds to localhost, and in a container it binds to every interface, so the server sets it itself: a request must name this machine, or a host given with `--allowed-host`.
 8. **CI builds both images on every pull request** and checks that they run as a non-root user, that the code imports and that the Compose file parses.
 
