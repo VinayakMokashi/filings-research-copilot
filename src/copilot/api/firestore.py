@@ -12,6 +12,8 @@ Conversations stay in memory (one API instance), since visitors keep no notes.
 - **Cached answers** are stored as JSON text, since Firestore can't hold the lists of
   rows inside lists that a data answer carries. Each has an `expires_at`, and a TTL
   policy deletes it after that.
+- **Paid-fallback spend** (ADR-0033) is one more counter in the day's quota document,
+  so it expires with it.
 - **Feedback** is one document per rating, for Phase 9's preference pairs.
 
 Every document has an `expires_at` except feedback, so nothing else accumulates.
@@ -44,7 +46,7 @@ def firestore_client(project: str | None = None) -> Firestore:
     return firestore.Client(project=project)
 
 
-def _increment(by: int) -> Any:
+def _increment(by: float) -> Any:
     from google.cloud import firestore
 
     return firestore.Increment(by)
@@ -53,6 +55,11 @@ def _increment(by: int) -> Any:
 def _count(snapshot: Any) -> int:
     data = snapshot.to_dict() if snapshot.exists else None
     return int((data or {}).get("questions", 0))
+
+
+def _quota_expiry(day: date) -> datetime:
+    """Two days past the day; the TTL policy then deletes the document."""
+    return datetime(day.year, day.month, day.day, tzinfo=UTC) + timedelta(days=3)
 
 
 class FirestoreQuotas:
@@ -71,13 +78,29 @@ class FirestoreQuotas:
                 return Verdict(False, "visitor")
             if _count(everyone_doc.get()) >= total:
                 return Verdict(False, "total")
-            # Kept two days past their day, then deleted by the TTL policy.
-            expires = datetime(day.year, day.month, day.day, tzinfo=UTC) + timedelta(days=3)
+            expires = _quota_expiry(day)
             batch = self.client.batch()
             for doc in (everyone_doc, mine_doc):
                 batch.set(doc, {"questions": _increment(1), "expires_at": expires}, merge=True)
             batch.commit()
             return Verdict(True)
+
+
+class FirestoreSpend:
+    """The day's spend on the paid fallback, as `paid_usd` in `quotas/<day>`."""
+
+    def __init__(self, client: Firestore) -> None:
+        self.client = client
+
+    def spent(self, day: date) -> float:
+        snapshot = self.client.collection("quotas").document(day.isoformat()).get()
+        data = snapshot.to_dict() if snapshot.exists else None
+        return float((data or {}).get("paid_usd", 0.0))
+
+    def add(self, day: date, usd: float) -> None:
+        self.client.collection("quotas").document(day.isoformat()).set(
+            {"paid_usd": _increment(usd), "expires_at": _quota_expiry(day)}, merge=True
+        )
 
 
 def _answer_id(question: str) -> str:

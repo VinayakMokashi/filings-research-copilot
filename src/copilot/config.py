@@ -73,6 +73,13 @@ class Settings(BaseSettings):
         default="",
         description="Comma-separated LiteLLM model ids tried in order when a role's model fails.",
     )
+    # A paid fallback for the deployment (ADR-0033): when the role's model refuses a call
+    # for quota reasons, the same role on these models, until the day's spend reaches this
+    # many dollars. It is counted in Firestore; 0 turns it off.
+    llm_paid_daily_usd: float = Field(default=0.0, ge=0.0)
+    llm_paid_strong_model: str = "cerebras/gpt-oss-120b"
+    llm_paid_fast_model: str = "cerebras/qwen-3.8-27b"
+    llm_paid_small_model: str = "cerebras/gpt-oss-120b"
     llm_timeout_s: float = Field(default=60.0, gt=0)
     llm_max_retries: int = Field(default=2, ge=0)
     llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)

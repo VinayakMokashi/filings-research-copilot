@@ -15,6 +15,7 @@ from typing import Any, cast
 import litellm
 from litellm.exceptions import RateLimitError
 from litellm.router import Router
+from litellm.types.router import RetryPolicy
 from litellm.types.utils import ModelResponse
 
 from copilot.config import Settings
@@ -78,6 +79,17 @@ def role_models(settings: Settings) -> dict[ModelRole, str]:
     }
 
 
+def paid_settings(settings: Settings) -> Settings:
+    """The settings of a gateway with every role on its paid model (ADR-0033)."""
+    return settings.model_copy(
+        update={
+            "llm_strong_model": settings.llm_paid_strong_model,
+            "llm_fast_model": settings.llm_paid_fast_model,
+            "llm_small_model": settings.llm_paid_small_model,
+        }
+    )
+
+
 def build_router(settings: Settings) -> Router:
     """A LiteLLM router with one deployment per role plus the shared fallback chain."""
 
@@ -107,6 +119,9 @@ def build_router(settings: Settings) -> Router:
         # Each role has a single deployment, so a cooldown would only swap the real error
         # (a bad key, say) for "no deployments available" during the cooldown window.
         disable_cooldowns=True,
+        # With a paid fallback, a refused call goes straight to it. LiteLLM would otherwise
+        # try twice more, keeping a visitor waiting for a limit that won't lift in time.
+        retry_policy=RetryPolicy(RateLimitErrorRetries=0) if settings.llm_paid_daily_usd else None,
     )
 
 

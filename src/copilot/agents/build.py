@@ -58,18 +58,29 @@ from copilot.ingest.embed import FastEmbedDense
 from copilot.ingest.universe import read_companies
 from copilot.llm import LLMClient, LLMGateway
 from copilot.llm.cache import CachedLLM
-from copilot.llm.gateway import role_models
+from copilot.llm.fallback import CappedFallback, SpendStore
+from copilot.llm.gateway import paid_settings, role_models
 from copilot.llm.pacing import PacedLLM
 from copilot.retrieval.query import CompanyMatcher
 from copilot.sql.tool import DataAgent
 
 
-def model_client(settings: Settings, cache_file: str, *, batch: bool = False) -> PacedLLM:
+def model_client(
+    settings: Settings,
+    cache_file: str,
+    *,
+    batch: bool = False,
+    spend: SpendStore | None = None,
+) -> PacedLLM:
     """The gateway as one part of the copilot uses it: cached on disk in `cache_file`, and
     paced for the free tier in a batch run, or only counting tokens in the API.
 
     The deployment keeps no disk cache (`FRC_LLM_DISK_CACHE=false`): its file system is
     the instance's memory, and the API's answer cache serves exact repeats.
+
+    With `spend`, the API's calls may fall back to the paid models (ADR-0033). The fallback
+    sits outside the disk cache, so a paid reply is never replayed as the role's own, and a
+    batch run never uses it: evaluations compare within one provider.
     """
     gateway = LLMGateway(settings)
     client: LLMClient = (
@@ -79,16 +90,23 @@ def model_client(settings: Settings, cache_file: str, *, batch: bool = False) ->
     )
     if batch:
         return PacedLLM(client, tokens_per_minute=settings.llm_tokens_per_minute)
+    if spend is not None:
+        paid = LLMGateway(paid_settings(settings))
+        client = CappedFallback(client, paid, spend, settings.llm_paid_daily_usd)
     return PacedLLM(client, pause_s=0.0, attempts=1)  # counts tokens; no pauses or retries
 
 
 def build_components(
-    settings: Settings, *, batch: bool = False, store: BaseStore | None = None
+    settings: Settings,
+    *,
+    batch: bool = False,
+    store: BaseStore | None = None,
+    spend: SpendStore | None = None,
 ) -> Components:
     """The copilot's parts over the evaluation corpus; see the module docstring."""
 
     def client(cache_file: str) -> PacedLLM:
-        return model_client(settings, cache_file, batch=batch)
+        return model_client(settings, cache_file, batch=batch, spend=spend)
 
     names = (
         "llm.jsonl",
