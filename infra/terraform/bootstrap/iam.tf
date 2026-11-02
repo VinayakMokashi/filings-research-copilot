@@ -94,3 +94,14 @@ resource "google_service_account_iam_member" "deployer_acts_as_runtime" {
   role               = "roles/iam.serviceAccountUser"
   member             = google_service_account.deployer.member
 }
+
+# Enabling Compute gives its default service account Editor on the project. Nothing here
+# runs as it (each service, the scheduler and Pub/Sub have their own accounts), so it
+# keeps no role on the project.
+resource "google_project_iam_member_remove" "default_compute_editor" {
+  project = var.project_id
+  role    = "roles/editor"
+  member  = "serviceAccount:${data.google_project.this.number}-compute@developer.gserviceaccount.com"
+
+  depends_on = [google_project_service.this]
+}
