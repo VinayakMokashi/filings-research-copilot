@@ -27,7 +27,12 @@ INSTANCE = "facts"
 DATABASE = "facts"
 
 # Given to the reader once the tables exist; the dump's --no-acl leaves grants out.
+# A user created through the Cloud SQL API joins cloudsqlsuperuser, which owns the
+# database (so it could create schemas and tables), and may create roles and databases.
+# The first two lines take all of that away; repeated, the REVOKE only warns.
 GRANTS = f"""
+REVOKE cloudsqlsuperuser FROM {READER};
+ALTER ROLE {READER} NOCREATEDB NOCREATEROLE;
 ALTER ROLE {READER} CONNECTION LIMIT 20;
 ALTER ROLE {READER} SET default_transaction_read_only = on;
 ALTER ROLE {READER} SET statement_timeout = '15s';

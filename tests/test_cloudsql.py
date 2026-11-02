@@ -90,3 +90,14 @@ def test_the_reader_may_only_read() -> None:
     assert "default_transaction_read_only = on" in GRANTS
     assert "INSERT" not in GRANTS
     assert "UPDATE" not in GRANTS
+
+
+def test_the_reader_loses_what_cloud_sql_gives_new_users() -> None:
+    # A user created through the Cloud SQL API joins cloudsqlsuperuser, which owns the
+    # database, and may create roles and databases; measured on the instance.
+    statements = [line.strip() for line in GRANTS.splitlines() if line.strip()]
+
+    assert statements[:2] == [
+        "REVOKE cloudsqlsuperuser FROM facts_reader;",
+        "ALTER ROLE facts_reader NOCREATEDB NOCREATEROLE;",
+    ]
