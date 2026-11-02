@@ -32,12 +32,15 @@ from copilot.api.firestore import (
     FirestoreCache,
     FirestoreFeedback,
     FirestoreQuotas,
+    FirestoreSpend,
     firestore_client,
 )
 from copilot.api.quotas import MemoryQuotas, PostgresQuotas, QuotaStore
 from copilot.config import Settings
 from copilot.ingest.corpus import filing_pages
 from copilot.ingest.pdf import Page
+from copilot.llm.fallback import SpendStore
+from copilot.llm.gateway import api_key_for
 from copilot.retrieval.query import Filing
 from copilot.sql.agent import facts_db_path
 
@@ -155,6 +158,8 @@ def readiness(settings: Settings) -> dict[str, bool]:
         "pages": (settings.data_dir / "processed" / "pages").is_dir(),
         "llm_key": settings.groq_api_key is not None,
     }
+    if settings.llm_paid_daily_usd:
+        checks["paid_llm_key"] = api_key_for(settings.llm_paid_strong_model, settings) is not None
     key = settings.qdrant_api_key
     headers = {"api-key": key.get_secret_value()} if key is not None else {}
     try:
@@ -184,6 +189,7 @@ def readiness(settings: Settings) -> dict[str, bool]:
 def build_services(settings: Settings) -> Iterator[Services]:
     """The real services from settings, open for as long as the application runs."""
     with ExitStack() as stack:
+        spend: SpendStore | None = None
         if settings.api_state == "postgres":
             checkpointer = stack.enter_context(postgres_checkpointer(settings))
             store = stack.enter_context(postgres_store(settings))
@@ -197,6 +203,7 @@ def build_services(settings: Settings) -> Iterator[Services]:
             checkpointer, store = None, None
             feedback = FirestoreFeedback(client)
             quotas = FirestoreQuotas(client)
+            spend = FirestoreSpend(client) if settings.llm_paid_daily_usd else None
         else:
             checkpointer, store, feedback = None, None, MemoryFeedback()
             quotas = MemoryQuotas()
@@ -209,7 +216,7 @@ def build_services(settings: Settings) -> Iterator[Services]:
                 cache = FirestoreCache(client, ttl)
             else:
                 cache = MemoryCache(ttl)
-        parts = build_components(settings, store=store)
+        parts = build_components(settings, store=store, spend=spend)
         tracer = build_tracer(settings)
         if tracer is not None:
             stack.callback(tracer.close)

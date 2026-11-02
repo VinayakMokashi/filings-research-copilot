@@ -23,7 +23,12 @@ from pydantic import SecretStr
 from copilot.agents.build import model_client
 from copilot.answer.agent import corpus_documents, corpus_filings
 from copilot.api.client import CopilotClient, GoogleIdToken, visitor_from_forwarded
-from copilot.api.firestore import FirestoreCache, FirestoreFeedback, FirestoreQuotas
+from copilot.api.firestore import (
+    FirestoreCache,
+    FirestoreFeedback,
+    FirestoreQuotas,
+    FirestoreSpend,
+)
 from copilot.api.quotas import Verdict
 from copilot.api.services import Feedback, readiness
 from copilot.config import Settings
@@ -259,3 +264,33 @@ def test_readiness_reads_the_collection_with_the_key(
     assert calls == [
         ("https://cluster.example:6333/collections/fb_page_bge-small", {"api-key": "read-only"})
     ]
+
+
+PAID_DAY = date(2026, 11, 2)
+
+
+# --- The paid fallback's spend (ADR-0033) ----------------------------------------------
+
+
+def test_firestore_spend_adds_up_in_the_days_quota_document() -> None:
+    db = FakeFirestore()
+    spend = FirestoreSpend(db)
+
+    spend.add(PAID_DAY, 0.003)
+    spend.add(PAID_DAY, 0.002)
+
+    assert spend.spent(PAID_DAY) == pytest.approx(0.005)
+    assert spend.spent(date(2026, 11, 3)) == 0.0
+    doc = db.docs["quotas/2026-11-02"]
+    assert doc["expires_at"].date() == date(2026, 11, 5)
+
+
+def test_firestore_spend_and_the_question_quota_share_a_document() -> None:
+    db = FakeFirestore()
+    FirestoreSpend(db).add(PAID_DAY, 0.003)
+
+    verdict = FirestoreQuotas(db).take("visitor", PAID_DAY, per_visitor=20, total=200)
+
+    assert verdict.allowed
+    assert db.docs["quotas/2026-11-02"]["questions"] == 1
+    assert db.docs["quotas/2026-11-02"]["paid_usd"] == pytest.approx(0.003)
