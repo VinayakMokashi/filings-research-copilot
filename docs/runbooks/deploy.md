@@ -102,18 +102,21 @@ The archive is deterministic: the same data gives the same SHA-256, and so the s
 
 ## 4. Apply the environment
 
-A revision can't start while a secret it reads has no version, and the `facts-url` secret needs the database's private address. So the database goes first:
+A revision can't start while a secret it reads has no version, and the `facts-url` secret needs the database's private address. So the database goes first, with the backups bucket the facts load reads its dump from:
 
 ```bash
 export TF_VAR_alert_email=<where alerts go>    # never committed
 terraform -chdir=infra/terraform/envs/prod init
 terraform -chdir=infra/terraform/envs/prod apply \
-    -target=google_sql_database_instance.facts -target=google_sql_database.facts
-terraform -chdir=infra/terraform/envs/prod output database_private_address
-# add the facts-url secret with that address (step 3), then everything else:
+    -target=google_sql_database_instance.facts -target=google_sql_database.facts \
+    -target=google_storage_bucket_iam_member.sql_reads_backups
+uv run poe load-facts-cloudsql     # writes the facts-url secret (demo-windows runbook)
+uv run poe demo-down
 terraform -chdir=infra/terraform/envs/prod plan -out=prod.tfplan
 terraform -chdir=infra/terraform/envs/prod apply prod.tfplan
 ```
+
+Cloud SQL can't create a stopped instance, so the instance is created running, and `demo-down` stops it once the facts are in. From then on Terraform ignores whether it runs.
 
 The services start on Google's sample image; the first deploy replaces it. A deploy changes only the image, which Terraform ignores, and `demo-up` and `demo-down` change only whether the database runs, which it ignores too. So a plan right after either should say "No changes".
 
