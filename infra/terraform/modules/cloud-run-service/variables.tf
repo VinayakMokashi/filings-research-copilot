@@ -76,6 +76,12 @@ variable "public" {
   default     = false
 }
 
+variable "deployers" {
+  description = "Principals that may roll out revisions of this service, and nothing else in the project."
+  type        = list(string)
+  default     = []
+}
+
 variable "invokers" {
   description = "Principals allowed to call a private service, such as serviceAccount:ui-runtime@..."
   type        = list(string)

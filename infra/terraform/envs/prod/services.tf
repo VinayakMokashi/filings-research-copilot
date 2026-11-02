@@ -53,6 +53,7 @@ module "api" {
   source = "../../modules/cloud-run-service"
 
   name            = "api"
+  deployers       = ["serviceAccount:${local.deployer}"]
   region          = var.region
   service_account = local.sa.api
   memory          = "2Gi"
@@ -84,6 +85,7 @@ module "ui" {
   source = "../../modules/cloud-run-service"
 
   name             = "ui"
+  deployers        = ["serviceAccount:${local.deployer}"]
   region           = var.region
   service_account  = local.sa.ui
   memory           = "512Mi"
@@ -103,6 +105,7 @@ module "mcp" {
   source = "../../modules/cloud-run-service"
 
   name            = "mcp"
+  deployers       = ["serviceAccount:${local.deployer}"]
   region          = var.region
   service_account = local.sa.mcp
   memory          = "1Gi"
@@ -123,6 +126,7 @@ module "worker" {
   source = "../../modules/cloud-run-service"
 
   name            = "worker"
+  deployers       = ["serviceAccount:${local.deployer}"]
   region          = var.region
   service_account = local.sa.worker
   memory          = "2Gi"
