@@ -16,10 +16,10 @@ variable "alert_email" {
   sensitive   = true
 }
 
-variable "cerebras_fallback" {
-  description = "Whether the API may fall back to Cerebras when Groq refuses (the owner's choice); its key secret must then have a version."
-  type        = bool
-  default     = false
+variable "paid_daily_usd" {
+  description = "The most the API may spend in a day on Cerebras when Groq refuses a call (ADR-0033); 0 turns the fallback off. Above 0, the key's secret must have a version."
+  type        = number
+  default     = 0.5
 }
 
 variable "sql_tier" {
