@@ -34,7 +34,7 @@ DATABASE = "facts-database"
 EXAMPLES = (
     "What was 3M's capital expenditure in 2018?",
     "How did Boeing's revenue change from 2019 to 2022, and what drove the recovery?",
-    "What risks does Netflix name in its 2022 10-K?",
+    "What does Netflix's 2017 10-K say about competition?",
     "Which companies do you cover?",
 )
 # (area, what, run folder under eval/results, metric)
