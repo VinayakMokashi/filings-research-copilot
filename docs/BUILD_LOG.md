@@ -15,6 +15,32 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-02 · Phase 8 · Load, the security pass, and the deployment's report
+
+- **Goal:** steps 8.7 and 8.8 on the live deployment, and the report on Phase 8 so far.
+- **Done:**
+  - **Two load tests,** each 30 simulated visitors for 10 minutes. The first exposed a flaw in the test and a UI example the copilot rightly declines; the second ran on the fixes (#88).
+  - **`X-Forwarded-For`, measured,** with a throwaway echo service from the API's image, since deleted.
+  - **The security pass:**
+    - the deployer may roll out the four services only, no longer every Cloud Run service in the project (#89);
+    - the scheduler holds a two-permission custom role instead of Cloud SQL Editor (#89);
+    - Google's default Compute account lost Editor, and the unused admin secret is gone (#87);
+    - a failed gcloud command hides a password (#87).
+  - **The [report](eval/deployment.md)** on the releases, the live checks, the demo window, the load, the visitors' addresses and the security pass. Its costs section waits for step 8.9.
+- **Results:**
+  - **The second load test:** 3,540 requests and no failure. Cached answers took 49 ms at the median, 65 ms at the 95th percentile and 130 ms at the 99th, as Locust times them. Cloud Run's metrics: the API's own latency at most 49 ms at the 99th percentile, one instance throughout, CPU at most 6% and memory at most 49% of 2 GiB. The sizes stay.
+  - **The first load test:** 45 of 682 asks got the API's "busy" reply.
+    - The UI example about Netflix's 2022 10-K was declined, since the corpus holds the 2015 and 2017 ones, so it was never cached and every visitor who drew it started a fresh run.
+    - Groq refused 224 model calls during that run, and the paid fallback carried them all for $0.1637, within its cap.
+  - **`X-Forwarded-For`:** a forged entry arrived first, and the caller's address last, as the UI assumes.
+  - **After the narrower roles:** a deploy run by hand rolled out and passed every smoke test, and the stop job, run by hand, answered 200.
+  - **Images:** Trivy on the final commit found no fixable HIGH or CRITICAL vulnerability in 364 targets.
+- **Problems and fixes:**
+  - **The load test trusted its warm-up.** A declined answer streams to its end like an answer. The warm-up now reads the copilot's own `answered` flag and leaves such a question out, and a cache miss during the load is a failure.
+  - **A UI example the copilot can't answer.** It now asks about Netflix's 2017 10-K, which the copilot answered in 11.3 s with a citation.
+  - **No registry scan.** gcloud's on-demand scan doesn't run on Windows, and switching on the registry's automatic scanning would rescan every image pushed that day, about 20 at $0.26 each, and every later push. Trivy covers the same packages.
+- **Next:** step 8.9, the costs. They need the billing export, which the owner turns on, and an idle week. Then Phase 8 closes.
+
 ### 2026-11-02 · Phase 8 · The first deploy, and a live demo window
 
 - **Goal:** step 8.6's first release, then 8.5's and 8.6's checks on the live services.
