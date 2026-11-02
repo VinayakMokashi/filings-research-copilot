@@ -88,7 +88,7 @@ jobs:
             -e HF_HUB_OFFLINE=1 "$REGISTRY/api:$GITHUB_SHA"
           started=""
           for _ in $(seq 1 60); do
-            if curl -fsS http://127.0.0.1:8080/healthz; then started=yes; break; fi
+            if curl -fsS http://127.0.0.1:8080/health; then started=yes; break; fi
             sleep 2
           done
           echo
@@ -163,11 +163,11 @@ jobs:
           ID_TOKEN: ${{ steps.token.outputs.id_token }}
         run: |
           curl -fsS --retry 5 --retry-all-errors --retry-delay 5 \
-            -H "Authorization: Bearer $ID_TOKEN" "$API_URL/healthz" | tee health.json
+            -H "Authorization: Bearer $ID_TOKEN" "$API_URL/health" | tee health.json
           echo
           jq -e --arg sha "$GITHUB_SHA" '.status == "ok" and .commit == $sha' health.json
           curl -fsS --retry 3 --retry-all-errors --retry-delay 5 \
-            -H "Authorization: Bearer $ID_TOKEN" "$API_URL/readyz" | tee ready.json
+            -H "Authorization: Bearer $ID_TOKEN" "$API_URL/ready" | tee ready.json
           echo
           jq -e '.ready' ready.json
 
@@ -185,7 +185,7 @@ jobs:
           ID_TOKEN: ${{ steps.worker_token.outputs.id_token }}
         run: |
           curl -fsS --retry 5 --retry-all-errors --retry-delay 5 \
-            -H "Authorization: Bearer $ID_TOKEN" "$WORKER_URL/healthz" | tee worker.json
+            -H "Authorization: Bearer $ID_TOKEN" "$WORKER_URL/health" | tee worker.json
           echo
           jq -e --arg sha "$GITHUB_SHA" '.commit == $sha' worker.json
 
