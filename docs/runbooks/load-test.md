@@ -5,6 +5,8 @@ Step 8.7 measures what the deployment takes before it slows, refuses or scales. 
 ## What it does
 
 1. **Warm-up.** It asks six questions once each: the web UI's four examples and two of the SQL set's, all the project's own. Their answers go into the answer cache in Firestore. These are the test's only model calls, about six answers' worth of the day's free quota.
+
+   A question the copilot declines is never cached, so asking it again would start a fresh run every time. The warm-up reads the copilot's own `answered` flag and leaves such a question out of the load. During the load, a reply that didn't come from the cache counts as a failure.
 2. **The load.** Simulated visitors, each with its own visitor id, then:
    - ask those questions again (6 parts in 10), which the API serves from the cache, at no quota;
    - read cited pages (3 in 10);
@@ -13,6 +15,8 @@ Step 8.7 measures what the deployment takes before it slows, refuses or scales. 
    Each waits 2 to 8 seconds between requests. The measured path is Cloud Run, the API's code and Firestore.
 
 What it doesn't measure is a fresh answer's time. That is set by the models (copilot v2's latency report: 4.0 s at the median, 47 s at the 95th percentile). The API also runs one fresh question at a time per instance (ADR-0020), so fresh answers queue at one instance whatever the load test shows.
+
+**Two clocks.** Locust times a streamed reply to its first byte. For a cached answer, a few small events, that is the whole reply. Cloud Run's request latencies, on the dashboard, cover the whole stream, so a fresh answer's minute shows there and not in Locust's table.
 
 ## Run it
 
