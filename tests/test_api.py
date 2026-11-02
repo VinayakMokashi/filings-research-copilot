@@ -115,13 +115,13 @@ def sse(text: str) -> list[tuple[str, dict[str, Any]]]:
 
 def test_health_and_readiness(tmp_path: Path) -> None:
     with TestClient(api.create_app(make_services(tmp_path))) as client:
-        assert client.get("/healthz").json() == {"status": "ok", "commit": "unknown"}
-        ready = client.get("/readyz")
+        assert client.get("/health").json() == {"status": "ok", "commit": "unknown"}
+        ready = client.get("/ready")
         assert (ready.status_code, ready.json()["ready"]) == (200, True)
 
     not_ready = make_services(tmp_path / "b", checks=lambda: {"qdrant": False, "llm_key": True})
     with TestClient(api.create_app(not_ready)) as client:
-        response = client.get("/readyz")
+        response = client.get("/ready")
         assert response.status_code == 503
         assert response.json() == {"ready": False, "checks": {"qdrant": False, "llm_key": True}}
 
@@ -245,13 +245,16 @@ def test_the_openapi_document_lists_every_endpoint(tmp_path: Path) -> None:
     with TestClient(api.create_app(make_services(tmp_path))) as client:
         paths = set(client.get("/openapi.json").json()["paths"])
     assert {
-        "/healthz",
-        "/readyz",
+        "/health",
+        "/ready",
         "/v1/ask",
         "/v1/brief",
         "/v1/feedback",
         "/v1/sources/{doc_name}/{page}",
     } <= paths
+    # Cloud Run's front end answers /healthz itself, and Google advises against paths
+    # ending in "z": such a path would never reach the container.
+    assert not [path for path in paths if path.endswith("z")]
 
 
 def test_a_visitor_over_the_daily_quota_gets_a_429(tmp_path: Path) -> None:

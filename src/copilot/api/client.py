@@ -207,7 +207,7 @@ class CopilotClient:
     def ready(self) -> dict[str, Any]:
         """The API's readiness checks, or why it couldn't be asked."""
         try:
-            checked: dict[str, Any] = self._http.get("/readyz", timeout=5.0).json()
+            checked: dict[str, Any] = self._http.get("/ready", timeout=5.0).json()
         except (httpx.HTTPError, ValueError) as exc:
             return {"ready": False, "checks": {}, "error": type(exc).__name__}
         return checked

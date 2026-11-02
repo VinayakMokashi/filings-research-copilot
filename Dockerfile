@@ -59,7 +59,7 @@ COPY data/reference/companies.csv data/reference/facts_descriptions.json ./data/
 # The data bundle, read-only for the services (owned by root); empty for Compose.
 COPY --from=data / /app/data/
 USER copilot
-# Last, so a new commit rebuilds nothing above it; /healthz reports it.
+# Last, so a new commit rebuilds nothing above it; /health reports it.
 ARG GIT_SHA=unknown
 ENV FRC_GIT_SHA=${GIT_SHA}
 EXPOSE 8000
