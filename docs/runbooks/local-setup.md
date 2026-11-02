@@ -58,7 +58,7 @@ Each node's start and end is printed as the graph streams it, and every event is
 
 ```bash
 uv run poe api                                  # http://127.0.0.1:8000, interactive docs at /docs
-curl http://127.0.0.1:8000/readyz               # 200 when every check passes, 503 otherwise
+curl http://127.0.0.1:8000/ready                # 200 when every check passes, 503 otherwise
 curl -N -X POST http://127.0.0.1:8000/v1/ask -H "Content-Type: application/json" -d '{"question": "What was 3M'"'"'s capital expenditure in 2018?"}'
 ```
 
@@ -125,5 +125,5 @@ docker compose down -v        # also deletes the data volumes
 | `poe models` shows a role as `NOT AVAILABLE` | Set `FRC_LLM_STRONG_MODEL` or `FRC_LLM_FAST_MODEL` to one of the listed models, keeping the `groq/` prefix. |
 | CI fails at `uv sync --locked` but `poe check` passes locally | `uv.lock` is out of date. Run `uv lock`, commit it, and use `uv run --locked poe check` to catch this before pushing. |
 | `ask_copilot` says the copilot can't be reached, or answers with an HTTP error | Start `uv run poe api`, or set `FRC_API_URL` in `.env` or the client's `env` block when the API listens elsewhere: another program may hold port 8000. |
-| `poe stack-up` reports an unhealthy `api` | Read `docker compose --profile app logs api`. `/readyz` must pass: the facts database, the pages, the model key, Qdrant and Postgres. |
+| `poe stack-up` reports an unhealthy `api` | Read `docker compose --profile app logs api`. `/ready` must pass: the facts database, the pages, the model key, Qdrant and Postgres. |
 | The MCP server doesn't appear in the client | Read the client's log (on Windows, Claude Desktop keeps `mcp.log` and `mcp-server-filings-research-copilot.log` in `%APPDATA%\Claude\logs`), then run the configured command by hand: it should wait silently for input. Anything it prints to stdout breaks the protocol. |

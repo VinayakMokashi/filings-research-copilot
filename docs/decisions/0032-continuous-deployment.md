@@ -39,11 +39,11 @@ The Deploy workflow can also run by hand. The job is skipped until the deploymen
 1. **Keyless access.** GitHub's OIDC token becomes an hour of the `github-deployer` account's access through workload identity federation. The provider accepts only this repository and `main` ([guide](../concepts/workload-identity-federation.md)).
 2. **The data bundle.** The workflow fetches the bundle that `infra/data-bundle.json` names and checks its SHA-256. A different file fails the release.
 3. **The images.** `api` and `mcp` are built with the bundle as the `data` build context; `ui` is built without it. Each is tagged with the commit's SHA and carries it as `GIT_SHA`. Layers are cached in GitHub Actions' cache.
-   - Added on 2026-11-02, after the first deploy stopped at start: the new API image must start on the runner and answer `/healthz` before anything rolls out.
+   - Added on 2026-11-02, after the first deploy stopped at start: the new API image must start on the runner and answer `/health` before anything rolls out.
 4. **The rollout:** `api` first, since the others call it, then `mcp`, then `ui`. Each service's previous revision is recorded first. Each update sends all traffic to the latest revision, which also undoes an earlier rollback's pin.
 5. **The smoke tests:**
-   - the private API's `/healthz` must report this commit, called with an ID token for its deterministic address;
-   - its `/readyz` must pass, which reads the facts database, the pages, Qdrant with its key and Firestore;
+   - the private API's `/health` must report this commit, called with an ID token for its deterministic address;
+   - its `/ready` must pass, which reads the facts database, the pages, Qdrant with its key and Firestore;
    - the MCP server must answer an MCP `initialize`;
    - the UI's health endpoint must answer.
 6. **The rollback.** If any step after the rollout fails, every service's traffic goes back to the revision it replaced.
@@ -54,7 +54,7 @@ The Deploy workflow can also run by hand. The job is skipped until the deploymen
 - **What may deploy.** Only `main`, after every check, through a GitHub environment named `production`, can deploy. Forks and branches are refused at the token exchange.
 - **What isn't redeployed.** A push that changes only docs or Terraform doesn't redeploy. A failed release stays rolled back until the next change, or a manual run.
 - **What CI needs.** Seven repository variables, none of them secret: `GCP_PROJECT_ID`, `GCP_PROJECT_NUMBER`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOYER_SA`, `GCP_REGISTRY` and `GCP_DATA_BUCKET`. The deployer account may also call the API and the worker, for the smoke tests.
-- **The worker** is part of the rollout: its image is the API's, started as the worker, and its `/healthz` must report the commit too.
+- **The worker** is part of the rollout: its image is the API's, started as the worker, and its `/health` must report the commit too.
 
 ## References
 

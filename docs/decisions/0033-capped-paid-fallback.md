@@ -39,7 +39,7 @@ The owner chose to pay for answers when Groq refuses, within a cap: at most $0.5
 - **When the paid call fails too,** the caller sees Groq's refusal, so the visitor gets the usual apology.
 - **No waiting.** With the fallback on, LiteLLM doesn't retry rate limits (`RateLimitErrorRetries=0`): a refused call reaches the fallback at once. Measured, again with a refused call: 1 attempt and no delay.
 - **Only the API.** Batch runs never fall back, and the fallback sits outside the disk cache. So evaluations stay within one provider, and a Cerebras reply is never replayed as Groq's.
-- **Readiness.** With the cap above 0, `/readyz` also requires the Cerebras key.
+- **Readiness.** With the cap above 0, `/ready` also requires the Cerebras key.
 
 ## Consequences
 
