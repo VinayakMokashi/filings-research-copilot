@@ -137,12 +137,13 @@ resource "google_monitoring_dashboard" "copilot" {
       columns = 12
       tiles = [
         {
-          width = 6, height = 4, xPos = 0, yPos = 0
+          width = 6, height = 4
           widget = {
             title = "Requests by service and response class"
             xyChart = {
               dataSets = [{
-                plotType = "STACKED_BAR"
+                plotType   = "STACKED_BAR"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "resource.type = \"cloud_run_revision\" AND metric.type = \"run.googleapis.com/request_count\""
@@ -159,12 +160,13 @@ resource "google_monitoring_dashboard" "copilot" {
           }
         },
         {
-          width = 6, height = 4, xPos = 6, yPos = 0
+          width = 6, height = 4, xPos = 6
           widget = {
             title = "Request latency, 95th percentile"
             xyChart = {
               dataSets = [{
-                plotType = "LINE"
+                plotType   = "LINE"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "resource.type = \"cloud_run_revision\" AND metric.type = \"run.googleapis.com/request_latencies\""
@@ -181,12 +183,13 @@ resource "google_monitoring_dashboard" "copilot" {
           }
         },
         {
-          width = 6, height = 4, xPos = 0, yPos = 4
+          width = 6, height = 4, yPos = 4
           widget = {
             title = "Instances by service"
             xyChart = {
               dataSets = [{
-                plotType = "LINE"
+                plotType   = "LINE"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "resource.type = \"cloud_run_revision\" AND metric.type = \"run.googleapis.com/container/instance_count\""
@@ -208,7 +211,8 @@ resource "google_monitoring_dashboard" "copilot" {
             title = "Memory used, 99th percentile"
             xyChart = {
               dataSets = [{
-                plotType = "LINE"
+                plotType   = "LINE"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "resource.type = \"cloud_run_revision\" AND metric.type = \"run.googleapis.com/container/memory/utilizations\""
@@ -225,12 +229,13 @@ resource "google_monitoring_dashboard" "copilot" {
           }
         },
         {
-          width = 6, height = 4, xPos = 0, yPos = 8
+          width = 6, height = 4, yPos = 8
           widget = {
             title = "Demo database up"
             xyChart = {
               dataSets = [{
-                plotType = "LINE"
+                plotType   = "LINE"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "resource.type = \"cloudsql_database\" AND metric.type = \"cloudsql.googleapis.com/database/up\""
@@ -250,7 +255,8 @@ resource "google_monitoring_dashboard" "copilot" {
             title = "Ingestion: undelivered and dead-lettered messages"
             xyChart = {
               dataSets = [{
-                plotType = "LINE"
+                plotType   = "LINE"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "resource.type = \"pubsub_subscription\" AND metric.type = \"pubsub.googleapis.com/subscription/num_undelivered_messages\""
