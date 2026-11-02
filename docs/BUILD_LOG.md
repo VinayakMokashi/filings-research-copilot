@@ -15,6 +15,31 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-02 · Phase 8 · The foundations in Google Cloud, and the data on its way
+
+- **Goal:** step 8.1 in the cloud, with the budget first, then the secrets and the data the services need.
+- **Done:**
+  - **The project and its budget.** The project `filings-research-copilot` was created with its own gcloud configuration, `frc`. Its budget came before anything that can cost money: $15 a month, measured before credits, with emails at 50%, 90% and 100% of actual spend and at 100% of forecast.
+  - **The bootstrap.** The budget and the state bucket were made with gcloud, so the first apply adopts them with `import` blocks. The budget's import id is built from the billing-account variable, which stays out of the repository.
+  - **The default network, deleted.** Enabling Compute creates a `default` VPC whose firewall rules let SSH and RDP in from anywhere. Nothing used it, so it went with its four rules; the copilot's own VPC is the project's only network.
+  - **The secrets.** Eight of the ten have values, copied from the laptop without being printed. Each was checked by its shape: the key's prefix, and no stray newline or quotes. `facts-url` comes with the facts load. `sql-admin-password` has no use yet (step 8.8 settles it).
+  - **The data:**
+    - the data bundle is in the data bucket under its hash, as `infra/data-bundle.json` records;
+    - the doc agent's collection is on Qdrant Cloud.
+  - **GitHub:** six of the seven repository variables, and the `production` environment, which only `main` may deploy to. `GCP_PROJECT_ID`, which switches deploys on, waits for the first deploy.
+  - **The demo database.** Cloud SQL's instance and its `facts` database exist. The facts were loaded with `load-facts-cloudsql`, which wrote the `facts-url` secret. Then `demo-down` stopped the instance.
+- **Results:**
+  - **The bootstrap apply:** 2 imported, 50 added, 1 changed, 0 destroyed. The one change marks the billing account sensitive in the state.
+  - **The data bundle:** 116 files, 103,860,032 bytes, with the manifest's SHA-256.
+  - **Qdrant Cloud:** 23,585 points copied, and the cluster holds 23,585.
+  - **The instance** took 13 minutes to create, its database 4 seconds, and the facts load under 4 minutes. `demo-down` stopped it in 42 seconds.
+  - **The reader's privileges**, read on the instance (`infra/sql/check-facts-reader.sql`): SELECT on all 7 tables, write on none, the read-only and timeout settings, no membership, and no right to create roles, databases or tables.
+- **Problems and fixes:**
+  - **The reader came with too much.** A user created through Cloud SQL's API joins `cloudsqlsuperuser`, which owns the database, and may create roles and databases. The first check showed `facts_reader` with all three, and with the right to create tables in `public`. Read-only transactions are only a default a session can turn off. So if a statement had got past the data agent's own SQL checks, the database alone wouldn't have stopped it creating a table or a login role. The loader's grants now revoke the membership and both attributes on every load, and a second check found none of them.
+  - **Cloud SQL won't create a stopped instance.** With `activation_policy = NEVER`, the create failed at once with `400 invalidOperation`. The instance is now created running (`ALWAYS`, which Terraform ignores from then on), and `demo-down` stops it once the facts are in. Running at creation also lets its `facts` database be created in the same apply, so the runbook's order changed with it.
+  - **Line endings.** `bundle-data` wrote `infra/data-bundle.json` with Windows line endings on Windows, so an unchanged bundle looked modified. It now writes `\n` everywhere.
+- **Next:** the facts load, the rest of `envs/prod`, and the first deploy.
+
 ### 2026-10-28 · Phase 8 · A load test that spends no model quota
 
 - **Goal:** step 8.7's load test, ready before the deployment exists, without spending the day's model quota.
