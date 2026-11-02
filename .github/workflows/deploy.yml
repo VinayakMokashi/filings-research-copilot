@@ -79,6 +79,23 @@ jobs:
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
+      # The API must start from the files its image holds before any revision rolls out.
+      # Its state stays in memory here, so the check needs no credentials.
+      - name: "Start check: the API image starts"
+        run: |
+          docker run -d --name api-start-check -p 8080:8080 -e PORT=8080 \
+            -e FRC_API_STATE=memory -e FRC_LLM_DISK_CACHE=false -e FRC_API_TRACE_FILE=false \
+            -e HF_HUB_OFFLINE=1 "$REGISTRY/api:$GITHUB_SHA"
+          started=""
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/healthz; then started=yes; break; fi
+            sleep 2
+          done
+          echo
+          docker logs api-start-check 2>&1 | tail -20
+          docker rm -f api-start-check > /dev/null
+          [ -n "$started" ]
+
       - name: Build and push the MCP image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
