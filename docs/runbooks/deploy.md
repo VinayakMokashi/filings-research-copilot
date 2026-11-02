@@ -43,13 +43,25 @@ The budget and the bucket are then adopted by Terraform with `import` blocks in 
 ## 2. Apply the bootstrap
 
 ```bash
-export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)   # valid for an hour
+export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)   # see below: maybe minutes
 export TF_VAR_billing_account=<BILLING_ACCOUNT_ID>                    # never committed
 
 terraform -chdir=infra/terraform/bootstrap init
 terraform -chdir=infra/terraform/bootstrap plan -out=bootstrap.tfplan
 terraform -chdir=infra/terraform/bootstrap apply bootstrap.tfplan
 ```
+
+**The token's life.** gcloud hands out the token it has cached, which may have only minutes left. Before a long apply (creating the database takes about 13 minutes), check what is left:
+
+```bash
+curl -s "https://oauth2.googleapis.com/tokeninfo?access_token=$GOOGLE_OAUTH_ACCESS_TOKEN" | jq .expires_in
+```
+
+**If an apply loses its token midway,** it fails with `401 Invalid Credentials`. It keeps the state it couldn't upload in `errored.tfstate` beside the configuration, and leaves its lock behind. With a fresh token:
+
+1. Release the lock, using the ID that the next plan's error shows: `terraform force-unlock <ID>`.
+2. Upload the kept state: `terraform state push errored.tfstate`.
+3. Plan again. Resources whose creation was cut off are marked tainted and replaced.
 
 This creates:
 
