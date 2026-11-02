@@ -90,9 +90,10 @@ grep '^CLOUD_GROQ_API_KEY=' .env | cut -d= -f2- | tr -d '\r\n' \
 | `qdrant-write-api-key` | `worker` | The cluster's read-write key |
 | `sec-user-agent` | `worker` | The SEC EDGAR contact, sent only to sec.gov |
 | `facts-url` | `api` | The `facts_reader` URL on the database's private address (step 4) |
-| `sql-admin-password` | the owner | The database's `postgres` password, generated straight into the secret |
 
 Each service may read only its own secrets (`envs/prod/services.tf`). After a rotation, disable the old version: `gcloud secrets versions disable <version> --secret=<name>`.
+
+The database's `postgres` user has no password, so nothing can sign in as it. The facts load and its grants reach the instance through Cloud SQL's Admin API (`gcloud sql import`), which needs none.
 
 ## The data bundle
 
