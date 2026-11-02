@@ -22,7 +22,7 @@ locals {
       FRC_QDRANT_API_KEY  = "qdrant-read-api-key"
       FRC_FACTS_URL       = "facts-url"
     },
-    var.cerebras_fallback ? { CEREBRAS_API_KEY = "cerebras-api-key" } : {},
+    var.paid_daily_usd > 0 ? { CEREBRAS_API_KEY = "cerebras-api-key" } : {},
   )
   mcp_secrets = {
     FRC_QDRANT_URL     = "qdrant-url"
@@ -62,6 +62,7 @@ module "api" {
   env = merge(local.common_env, {
     FRC_API_STATE                = "firestore"
     FRC_LLM_DISK_CACHE           = "false"
+    FRC_LLM_PAID_DAILY_USD       = tostring(var.paid_daily_usd)
     FRC_API_TRACE_FILE           = "false"
     GOOGLE_CLOUD_PROJECT         = var.project_id
     LANGFUSE_BASE_URL            = "https://us.cloud.langfuse.com"
