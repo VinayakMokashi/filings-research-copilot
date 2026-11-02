@@ -11,7 +11,7 @@
 - `POST /v1/feedback` keeps a thumbs up or down, and an optional comment, on one answer.
 - `GET /v1/sources/{doc_name}/{page}` returns a cited filing page: its label, section and
   text.
-- `GET /healthz` says the process is up; `GET /readyz` checks what a question needs (the
+- `GET /health` says the process is up; `GET /ready` checks what a question needs (the
   facts database, the parsed pages, Qdrant, the model key and, when used, Postgres).
 
 Every response carries an `X-Request-ID`: the caller's, when it sends a valid one, or a new
@@ -112,13 +112,13 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
         )
         return response
 
-    @app.get("/healthz", tags=["health"])
-    def healthz() -> Health:
+    @app.get("/health", tags=["health"])
+    def health() -> Health:
         """The process is up, and the commit its image was built from."""
         return Health(commit=(settings or get_settings()).git_sha)
 
-    @app.get("/readyz", tags=["health"], responses={503: {"model": Readiness}})
-    def readyz(request: Request) -> JSONResponse:
+    @app.get("/ready", tags=["health"], responses={503: {"model": Readiness}})
+    def ready(request: Request) -> JSONResponse:
         """Whether a question can be answered now: each check, and all of them together."""
         checks = _services(request).checks()
         ready = all(checks.values())

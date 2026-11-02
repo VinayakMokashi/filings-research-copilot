@@ -54,8 +54,8 @@ def create_app(
     app = FastAPI(title="Filings Research Copilot: ingestion worker")
     ingest: Callable[[IngestRequest], JobResult] | None = handler
 
-    @app.get("/healthz")
-    def healthz() -> Health:
+    @app.get("/health")
+    def health() -> Health:
         return Health(commit=config.git_sha)
 
     @app.post("/pubsub/ingest", status_code=204)

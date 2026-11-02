@@ -66,7 +66,7 @@ def test_the_status_code_is_the_acknowledgement() -> None:
         assert client.post("/pubsub/ingest", content=b"not json").status_code == 400
         broken = envelope(REQUEST | {"doc_name": "BROKEN_2024_10K"})
         assert client.post("/pubsub/ingest", json=broken).status_code == 500
-        assert client.get("/healthz").json() == {"status": "ok", "commit": "abc123"}
+        assert client.get("/health").json() == {"status": "ok", "commit": "abc123"}
 
     assert handled == ["ACME_2024_10K"]
 

@@ -71,7 +71,7 @@ def test_feedback_pages_and_readiness() -> None:
             return httpx.Response(201, json={"id": 7})
         if request.url.path == "/v1/sources/3M_2018_10K/59":
             return httpx.Response(200, json={"label": "3M, PDF page 60", "text": "Capex..."})
-        if request.url.path == "/readyz":
+        if request.url.path == "/ready":
             return httpx.Response(503, json={"ready": False, "checks": {"qdrant": False}})
         return httpx.Response(404, json={"detail": "No such page."})
 

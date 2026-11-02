@@ -107,4 +107,4 @@ class Visitor(HttpUser):
 
     @task(1)
     def check_health(self) -> None:
-        self.client.get("/healthz", headers=_headers(self.visitor))
+        self.client.get("/health", headers=_headers(self.visitor))
