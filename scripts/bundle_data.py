@@ -36,6 +36,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         json.dumps({"object": name, "sha256": digest, "bytes": size, "files": count}, indent=2)
         + "\n",
         encoding="utf-8",
+        newline="\n",  # the same bytes on every platform, so a rebuild leaves git clean
     )
     print(f"{OUT}: {count} files, {size / 1e6:.1f} MB, sha256 {digest}")
     print(f"{POINTER}: images build from {name}")
