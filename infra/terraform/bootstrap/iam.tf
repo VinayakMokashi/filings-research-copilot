@@ -78,12 +78,8 @@ resource "google_storage_bucket_iam_member" "deployer_reads_data" {
   member = google_service_account.deployer.member
 }
 
-# Update services and roll out revisions, but not change who may call them.
-resource "google_project_iam_member" "deployer_updates_services" {
-  project = var.project_id
-  role    = "roles/run.developer"
-  member  = google_service_account.deployer.member
-}
+# The deployer may roll out revisions of the four services only: envs/prod grants Cloud
+# Run Developer on each service (the module's `deployers`), not on the project.
 
 # A new revision runs as its runtime account, so the deployer must be allowed to act as
 # the services' accounts (not the scheduler's or Pub/Sub's).

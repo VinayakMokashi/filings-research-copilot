@@ -110,3 +110,14 @@ resource "google_cloud_run_v2_service_iam_member" "invokers" {
   role     = "roles/run.invoker"
   member   = each.value
 }
+
+# The deploy may update this service and roll out its revisions, but not change who may
+# call it, and not touch any other service in the project.
+resource "google_cloud_run_v2_service_iam_member" "deployers" {
+  for_each = toset(var.deployers)
+
+  name     = google_cloud_run_v2_service.this.name
+  location = google_cloud_run_v2_service.this.location
+  role     = "roles/run.developer"
+  member   = each.value
+}
