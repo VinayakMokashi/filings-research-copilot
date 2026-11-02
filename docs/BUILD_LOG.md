@@ -15,6 +15,38 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-02 · Phase 8 · The first deploy, and a live demo window
+
+- **Goal:** step 8.6's first release, then 8.5's and 8.6's checks on the live services.
+- **Done:**
+  - **The paid fallback** ([ADR-0033](decisions/0033-capped-paid-fallback.md)) was merged before the first deploy, so the first release carries it.
+  - **Three deploys.** The third passed every smoke test: the API reports its commit and is ready, and the worker, the MCP server and the UI answer.
+  - **Checks from the laptop** (UI, MCP, API), a demo window, the scheduler's two jobs run by hand, and a rollback by hand.
+- **Results:**
+  - **The UI's health** answered in 1.4 s.
+  - **The MCP server:** a full session from `initialize`; it lists three tools, and `search_filings` returned three passages from Qdrant Cloud in 15.1 s, a cold start included.
+  - **The API:** readiness passes all six checks (the facts database, the pages, the Groq key, the Cerebras key, Qdrant Cloud and Firestore). One of the UI's example questions was answered on the data route in 6.6 s. Its repeat came from the answer cache in Firestore in 0.7 s, with no model call.
+  - **The demo window.** The start took 10 min 27 s. A fresh data question during the window ran on PostgreSQL:
+    - the API logged no fallback to the file;
+    - Cloud SQL counted transactions on the `facts` database in the minutes of the question (9, then 22), after 0 the minute before.
+  - **The scheduler's jobs**, run by hand: both answered 200. The nightly stop stopped the instance within a minute, and the keep-alive read the API's `/ready`.
+  - **A rollback by hand:** 10 s to move the UI's traffic to an earlier revision, and 10 s back to the latest.
+  - **Terraform after the deploy:** both roots plan "No changes".
+- **Problems and fixes:**
+  - **The first deploy's API never started.** The image lacked two committed reference files: the companies, for matching names in questions, and the facts tables' descriptions. Cloud Run kept the traffic on the previous revision, so nothing broken was served.
+    - The Dockerfile now copies both files (#85).
+    - The deploy starts the new API image on the runner and requires `/health` before any rollout.
+    - Checked first from a folder laid out as the image's `/app`: the API, the MCP library and the worker all built.
+  - **`/healthz` never reaches the container on Cloud Run.** The second deploy rolled out, then the API's smoke test got 404s and rolled back.
+    - Measured: `/healthz` got the front end's 404 and left no request log, while `/`, `/readyz`, `/health` and `/ready` reached the container. Cloud Run's known issues list reserved paths ending in "z".
+    - Two throwaway services ruled out the custom audiences first, and both were deleted.
+    - The endpoints are now `/health` and `/ready` (#86), and a test keeps route names off a final "z".
+  - **`demo-up` gave up while the start went on.** gcloud's own wait stops at about ten minutes, and the start took ten and a half. The command now returns at once, and the script waits up to 25 minutes.
+  - **An apply lost its token midway.** gcloud had handed out a cached token with minutes left. The kept state was pushed after a `force-unlock`, and the runbook now says how to check a token's life and recover (#84).
+  - **The dashboard never matched its configuration.** Cloud Monitoring stores each chart's axis and leaves zero positions out, so every plan wanted an update. It is now written that way (#84).
+- **Decisions:** [ADR-0033](decisions/0033-capped-paid-fallback.md), the capped paid fallback.
+- **Next:** the security pass, the load test, and the costs once the billing export runs.
+
 ### 2026-11-02 · Phase 8 · The foundations in Google Cloud, and the data on its way
 
 - **Goal:** step 8.1 in the cloud, with the budget first, then the secrets and the data the services need.
