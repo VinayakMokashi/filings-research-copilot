@@ -131,8 +131,8 @@ def visitor_from_forwarded(headers: Mapping[str, str], fallback: str) -> str:
     session's own id.
 
     The address is the last entry of `X-Forwarded-For`, the one Google's front end adds;
-    entries a client sends come before it. Which entry the front end adds is checked on
-    the deployed service (step 8.7).
+    entries a client sends come before it. Checked on Cloud Run (2026-11-02): with a
+    forged entry sent, the container saw it first and the caller's address last.
     """
     forwarded = next((v for k, v in headers.items() if k.lower() == "x-forwarded-for"), "")
     address = forwarded.split(",")[-1].strip()
