@@ -15,7 +15,7 @@ resource "google_sql_database_instance" "facts" {
     disk_type         = "PD_SSD"
     disk_size         = 10
     disk_autoresize   = false
-    activation_policy = "NEVER"
+    activation_policy = "ALWAYS" # the first start: Cloud SQL can't create a stopped instance
 
     deletion_protection_enabled = true
 
