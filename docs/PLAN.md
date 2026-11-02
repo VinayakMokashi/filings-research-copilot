@@ -78,9 +78,9 @@ Everything lives in `docs/` next to the code, so it is versioned and reviewed wi
 | Hugging Face account and token | Added | Phase 7 | In `.env`; publishes the classifier router ([ADR-0025](decisions/0025-classifier-router.md)); FinanceBench comes from GitHub |
 | Langfuse Cloud (free tier) | Ready | Phase 6 | Tracing |
 | Kaggle or Colab GPU (free tier) | Ready | Phase 7 | Kaggle's T4 GPUs trained the router and the embedders through the Kaggle CLI ([runbook](runbooks/training-models.md)) |
-| Qdrant Cloud free cluster | Pending | Phase 8 | Docker until then; a free cluster is suspended after a week without use, so the deployment pings it weekly ([ADR-0031](decisions/0031-google-cloud-topology.md)) |
+| Qdrant Cloud free cluster | Ready | Phase 8 | Holds the doc agent's 23,585 chunks, with a snapshot in Cloud Storage; a free cluster is suspended after a week without use, so the deployment reads it weekly ([ADR-0031](decisions/0031-google-cloud-topology.md)) |
 | Terraform, Google Cloud CLI | Installed | Phase 8 | Terraform 1.17 and gcloud 586; the project gets a gcloud configuration of its own |
-| Google Cloud project with billing, MFA and a budget alert | Pending | Phase 8 | The free-trial credit ($300) ends on 2026-12-22, shared with other projects; the budget alert comes before any other resource |
+| Google Cloud project with billing, MFA and a budget alert | Ready | Phase 8 | Created 2026-11-02 with its $15 budget first; the free-trial credit ($300) ends on 2026-12-22, shared with other projects |
 | Custom domain | Optional | Phase 8 | Cloud Run serves every service over HTTPS on its own address ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)) |
 
 ## 6. Technical choices
@@ -269,14 +269,14 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 
 **Goal:** a production-shaped deployment whose services scale to zero, with the database running only for demos ([ADR-0016](decisions/0016-deploy-on-google-cloud.md)).
 
-- [ ] 8.1 Install Terraform and the Google Cloud CLI. Create the budget alert before any other resource; MFA on the account; Workload Identity Federation for GitHub Actions.
-- [ ] 8.2 Slim, non-root container images, with the data built into the API image from a versioned bundle; Trivy scans every build in CI, and Artifact Registry's scanning runs once, in the security pass, since it costs $0.26 an image ([ADR-0031](decisions/0031-google-cloud-topology.md)).
-- [ ] 8.3 Terraform: Cloud Run services (api, ui, mcp), a Cloud Run worker fed by Pub/Sub with a dead-letter topic, Cloud SQL for PostgreSQL on a private address (a VPC with private services access for the database), Cloud Storage for filings and backups, Firestore for quotas, the answer cache and feedback, Secret Manager, Cloud Scheduler (a weekly keep-alive, a nightly database stop), Cloud Logging and Monitoring with dashboards and alerts, and one least-privilege service account per service.
-- [ ] 8.4 Move the facts tables to Postgres and add a Postgres executor for the data agent; ingest into Qdrant Cloud and keep collection snapshots in Cloud Storage. Locally: the same answers on PostgreSQL as on SQLite, with the model's prompts unchanged and facts.db kept in the image as the fallback ([report](eval/facts-postgres.md)).
-- [ ] 8.5 `demo-up` and `demo-down` start and stop the database; a scheduled job stops it if it is left running past a time limit.
-- [ ] 8.6 CD: build and push, deploy, smoke tests; roll back to the previous Cloud Run revision when needed.
-- [ ] 8.7 Load test with Locust and size the services from the results.
-- [ ] 8.8 Security pass: least-privilege service accounts, a read-only SQL user, dependency and image scans.
+- [x] 8.1 Install Terraform and the Google Cloud CLI. Create the budget alert before any other resource; MFA on the account; Workload Identity Federation for GitHub Actions. Done on 2026-11-02: the project's $15 budget, before credits, came before any other resource; 2-Step Verification is on; GitHub deploys through workload identity federation, limited to this repository's `main`.
+- [x] 8.2 Slim, non-root container images, with the data built into the API image from a versioned bundle; Trivy scans every build in CI, and Artifact Registry's scanning runs once, in the security pass, since it costs $0.26 an image ([ADR-0031](decisions/0031-google-cloud-topology.md)).
+- [x] 8.3 Terraform: Cloud Run services (api, ui, mcp), a Cloud Run worker fed by Pub/Sub with a dead-letter topic, Cloud SQL for PostgreSQL on a private address (a VPC with private services access for the database), Cloud Storage for filings and backups, Firestore for quotas, the answer cache and feedback, Secret Manager, Cloud Scheduler (a weekly keep-alive, a nightly database stop), Cloud Logging and Monitoring with dashboards and alerts, and one least-privilege service account per service.
+- [x] 8.4 Move the facts tables to Postgres and add a Postgres executor for the data agent; ingest into Qdrant Cloud and keep collection snapshots in Cloud Storage. Locally: the same answers on PostgreSQL as on SQLite, with the model's prompts unchanged and facts.db kept in the image as the fallback ([report](eval/facts-postgres.md)).
+- [x] 8.5 `demo-up` and `demo-down` start and stop the database; a scheduled job stops it if it is left running past a time limit. On the live instance: a start took 10 min 27 s, a stop 42 s, and the nightly job stopped it within a minute; during the window the data agent's queries ran on PostgreSQL ([report](eval/deployment.md)).
+- [x] 8.6 CD: build and push, deploy, smoke tests; roll back to the previous Cloud Run revision when needed. Five deploys on 2026-11-02. Two failed safely (a missing file, and Cloud Run's front end answering `/healthz` itself), and both changed the pipeline: a start check before any rollout, and `/health` and `/ready`. A rollback by hand took 10 s ([report](eval/deployment.md)).
+- [x] 8.7 Load test with Locust and size the services from the results. 30 visitors for 10 minutes: 3,540 requests, none failed, cached answers in 49 ms at the median and 130 ms at the 99th percentile, one API instance at 6% CPU and half its memory; the sizes stay ([report](eval/deployment.md)).
+- [x] 8.8 Security pass: least-privilege service accounts, a read-only SQL user, dependency and image scans. The deployer may roll out the four services only, the scheduler holds a two-permission role, and the default Compute account lost Editor; the SQL reader, checked on the instance, may only read; Trivy found no fixable HIGH or CRITICAL; the registry's own scan was skipped (gcloud's on-demand scan doesn't run on Windows) ([report](eval/deployment.md)).
 - [ ] 8.9 Measure and document the cost of an idle month and of one demo, inside the free-trial credit's 90 days.
 
 **Done when:** the public URLs work, dashboards and alerts work, `demo-up` and `demo-down` start and stop the database, and an idle month costs close to nothing.
@@ -369,6 +369,9 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-10-28 | Phase 7 closed, with step 7.4 not attempted | Every other step has its report and ADR: the LoRA router, the copilot's version 2 and the brief crew adopted; the domain embedder, the DSPy prompt search and bandit routing measured and not adopted. Phase 8 must deploy before the free-trial credit expires on 2026-12-22 |
 | 2026-10-28 | Phase 8's topology: the facts built into the API image and copied to Cloud SQL for demo windows; Firestore for quotas, the answer cache and feedback; a private API behind a public UI and MCP server; the database on a private address; Trivy in CI instead of registry scans on every push | Figures must work outside demo windows; a stopped instance's public IPv4 address costs $7.30 a month; registry scans cost $0.26 an image ([ADR-0031](decisions/0031-google-cloud-topology.md)) |
 | 2026-10-28 | Step 8.4's executor keeps the model writing SQLite and compiles each query on facts.db before PostgreSQL runs it | The prompts were evaluated on SQLite, and sqlglot's parser accepted a query SQLite rejects ([report](eval/facts-postgres.md)) |
+| 2026-11-02 | The deployment is live; the API falls back to Cerebras, capped at $0.50 a day, when Groq refuses | The owner's choice ([ADR-0033](decisions/0033-capped-paid-fallback.md)): Groq's per-minute limit could turn a visitor away with the day's quota unspent |
+| 2026-11-02 | Health endpoints renamed `/health` and `/ready` | Cloud Run's front end answers `/healthz` itself ([report](eval/deployment.md)) |
+| 2026-11-02 | Artifact Registry's one-off scan skipped | gcloud's on-demand scan doesn't run on Windows, and automatic scanning would rescan every push; Trivy scans every build ([report](eval/deployment.md)) |
 
 ## 11. Status tracker
 
@@ -382,6 +385,6 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 5 Orchestration | Done | 2026-10-24 | 2026-10-27 |
 | 6 API, UI, MCP, observability | Done | 2026-10-26 | 2026-10-27 |
 | 7 Fine-tuning and optimisation | Done | 2026-10-27 | 2026-10-28 |
-| 8 Google Cloud deployment | In progress | 2026-10-28 | |
+| 8 Google Cloud deployment | In progress: live since 2026-11-02; the costs remain | 2026-10-28 | |
 | 9 Online evaluation | Planned | | |
 | 10 Showcase and polish | Planned | | |
