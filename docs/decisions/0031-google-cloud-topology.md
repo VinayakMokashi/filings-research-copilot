@@ -149,7 +149,7 @@ All four services are on Cloud Run, scale to zero, and bill CPU only while a req
 ### Models
 
 - **Groq's free tier first.** Its quota bounds the public demo's spending by itself.
-- **Cerebras as a fallback,** only if the owner approves it: the same models, with a daily cap counted in Firestore.
+- **Cerebras as a fallback,** only if the owner approves it: the same models, with a daily cap counted in Firestore. The owner approved it, with $0.50 a day ([ADR-0033](0033-capped-paid-fallback.md)).
 
 ## Evidence
 
