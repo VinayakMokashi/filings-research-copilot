@@ -207,7 +207,7 @@ td.metric{font-weight:600;white-space:nowrap}
 <header class="sheet cover">
   <div class="cover-top">
     <span class="kicker">Personal project · Build in progress</span>
-    <span class="kicker">Updated 28 October 2026</span>
+    <span class="kicker">Updated 2 November 2026</span>
   </div>
   <h1>Filings Research Copilot</h1>
   <p class="lede">Ask about a public company. The copilot answers from its SEC filings and reported financials, and <span class="hl">cites every claim to the page it came from</span><sup class="fn">1</sup>.</p>
@@ -217,7 +217,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><dt>Sources</dt><dd>10-K and 10-Q text · XBRL company facts</dd></div>
     <div><dt>Benchmark</dt><dd>FinanceBench public sample</dd></div>
     <div><dt>Target platform</dt><dd>Google Cloud Run, scaling to zero · Qdrant · open models on Groq</dd></div>
-    <div><dt>Status</dt><dd>Phases 0 to 7 done; Phase 8, deployment on Google Cloud, next</dd></div>
+    <div><dt>Status</dt><dd>Phases 0 to 7 done; Phase 8 live on Google Cloud (<a href="https://ui-499690143794.asia-south1.run.app">try it</a>), with its costs being measured</dd></div>
   </dl>
   <div class="actions">
     <a class="btn btn-primary" href="#architecture">See the architecture</a>
@@ -463,11 +463,11 @@ td.metric{font-weight:600;white-space:nowrap}
       <div class="guard"><span class="eyebrow">Retrieved text</span><p>Filing text reaches the model as quoted data: sentences that read as instructions to an assistant are replaced before any prompt, and a scan of all 53,901 parsed pages found none. Every tool is read-only.</p></div>
       <div class="guard"><span class="eyebrow">Arithmetic</span><p>The model writes the expression and a sandboxed calculator computes it.</p></div>
       <div class="guard"><span class="eyebrow">Cost and abuse</span><p>Daily quotas per visitor and in total, input limits, a cache for questions asked word for word before, and a Cloud Billing budget alert. A semantic cache was measured and rejected: questions with their measure swapped looked more alike than true paraphrases.</p></div>
-      <div class="guard"><span class="eyebrow">Keys</span><p>Locally, keys sit in a git-ignored <span class="mono">.env</span>, and CI scans the full git history for secrets on every push and pull request. On Google Cloud, GitHub will deploy through Workload Identity Federation, so no service-account keys are stored, and third-party API keys will be loaded from Secret Manager.</p></div>
+      <div class="guard"><span class="eyebrow">Keys</span><p>Locally, keys sit in a git-ignored <span class="mono">.env</span>, and CI scans the full git history for secrets on every push and pull request. On Google Cloud, GitHub deploys through Workload Identity Federation, so no service-account keys are stored, and third-party API keys are loaded from Secret Manager.</p></div>
     </div>
     <aside class="note" aria-label="Design note">
       <span class="eyebrow">Design note</span>
-      <p>There will be <b>no long-lived cloud credentials</b>: each service runs as its own service account, and GitHub deploys through Workload Identity Federation. Third-party API keys are long-lived, so they stay out of code and images and are loaded from Secret Manager.</p>
+      <p>There are <b>no long-lived cloud credentials</b>: each service runs as its own service account, and GitHub deploys through Workload Identity Federation. Third-party API keys are long-lived, so they stay out of code and images and are loaded from Secret Manager.</p>
     </aside>
   </div>
 </section>
@@ -476,13 +476,13 @@ td.metric{font-weight:600;white-space:nowrap}
   <div class="item-head">
     <p class="eyebrow">Item 2 · Properties</p>
     <h2 id="h-deploy">Where it runs</h2>
-    <p class="intro">Planned for Phase 8. Today the project runs locally with Docker Compose.</p>
+    <p class="intro">Live on Google Cloud since 2 November 2026: the <a href="https://ui-499690143794.asia-south1.run.app">web UI</a> and the <a href="https://mcp-499690143794.asia-south1.run.app/mcp">MCP server</a>, each limited to 20 questions a visitor and 200 a day in all. Day to day, the project runs locally with Docker Compose.</p>
   </div>
   <div class="cols">
     <figure class="fig">
       <p class="hint">Scroll sideways to see the whole diagram.</p>
       <div class="fig-scroll">
-        <svg class="dg" viewBox="0 0 1000 410" role="img" aria-label="Planned deployment on Google Cloud. Visitors reach the Streamlit web UI and the MCP server, both Cloud Run services, over HTTPS; both call the API service. GitHub Actions deploys images from Artifact Registry through Workload Identity Federation. An ingestion worker takes jobs from Pub/Sub and writes filings to Cloud Storage. The API reads Cloud SQL and Firestore, and calls Groq, Qdrant Cloud and Langfuse over HTTPS.">
+        <svg class="dg" viewBox="0 0 1000 410" role="img" aria-label="The deployment on Google Cloud. Visitors reach the Streamlit web UI and the MCP server, both Cloud Run services, over HTTPS; both call the API service. GitHub Actions deploys images from Artifact Registry through Workload Identity Federation. An ingestion worker takes jobs from Pub/Sub and writes filings to Cloud Storage. The API reads Cloud SQL and Firestore, and calls Groq, Qdrant Cloud and Langfuse over HTTPS.">
           <defs>
             <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
           </defs>
@@ -567,11 +567,11 @@ td.metric{font-weight:600;white-space:nowrap}
           <text class="lbl" x="162" y="376">Secret Manager holds API keys · Cloud Logging and Monitoring hold logs and alerts</text>
         </svg>
       </div>
-      <figcaption>Planned production layout (Phase 8) on Google Cloud in Mumbai (asia-south1). GitHub Actions will deploy through Workload Identity Federation, so no service-account keys are stored. Ingestion runs as queued jobs, separate from the request path. Each service runs as its own service account, and Cloud Run serves every one over HTTPS, scaling it to zero between visits.</figcaption>
+      <figcaption>The production layout on Google Cloud in Mumbai (asia-south1). GitHub Actions deploys through Workload Identity Federation, so no service-account keys are stored. Ingestion runs as queued jobs, separate from the request path. Each service runs as its own service account, and Cloud Run serves every one over HTTPS, scaling it to zero between visits.</figcaption>
     </figure>
     <aside class="note" aria-label="Demo windows">
       <span class="eyebrow">Demo windows</span>
-      <p>Cloud Run scales the services to zero, so they stay deployed and <b>cost nothing while idle</b>. The database, the one part that costs money idle, runs only in demo windows: one command starts it and another stops it, with costs measured in Phase 8.</p>
+      <p>Cloud Run scales the services to zero, so they stay deployed and <b>cost nothing while idle</b>. The database, the one part that costs money idle, runs only in demo windows: one command starts it and another stops it, and a nightly job stops it whatever was left running. The costs of an idle month and of a demo are being measured.</p>
       <p>Its storage stays between demos, with backups in Cloud Storage. Day to day, the project runs locally with Docker Compose.</p>
     </aside>
   </div>
@@ -600,7 +600,7 @@ td.metric{font-weight:600;white-space:nowrap}
         <tr><td><span class="ph">5</span>Orchestration</td><td>LangGraph graph, LLM router, hybrid answers with a planner, validator loop, memory</td><td>One copilot routes, combines and checks</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">6</span>Product surface</td><td>FastAPI with streaming, quotas and guardrails, Streamlit UI, MCP server, Docker Compose stack, Langfuse traces</td><td>People and AI tools can use it</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">7</span>Fine-tuning</td><td>LoRA router (on Hugging Face), copilot v2 and the brief crew adopted; a domain embedder, a DSPy prompt search and bandit routing measured and not adopted</td><td>Each change earns its place on the eval set</td><td><span class="pill pill-done">Done</span></td></tr>
-        <tr><td><span class="ph">8</span>Cloud deployment</td><td>Terraform, Cloud Run, Cloud SQL, Pub/Sub, keyless deploys, demo-up and demo-down</td><td>It runs in production shape and costs nothing idle</td><td><span class="pill">Planned</span></td></tr>
+        <tr><td><span class="ph">8</span>Cloud deployment</td><td>Terraform, Cloud Run, Cloud SQL, Pub/Sub, keyless deploys, demo-up and demo-down</td><td>It runs in production shape and costs nothing idle</td><td><span class="pill pill-now">Live; costs next</span></td></tr>
         <tr><td><span class="ph">9</span>Online evaluation</td><td>Nightly evals, feedback as preference data, drift checks</td><td>Quality stays visible over time</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">10</span>Showcase</td><td>Final README, demo video, this page with measured numbers</td><td>The work is explained and verifiable</td><td><span class="pill">Planned</span></td></tr>
       </tbody>
@@ -648,7 +648,7 @@ td.metric{font-weight:600;white-space:nowrap}
 
 <footer class="sheet foot">
   <p>Built by Vinayak Mokashi · <a href="https://github.com/VinayakMokashi/filings-research-copilot">Source on GitHub</a> · The data agent builds on <a href="https://github.com/VinayakMokashi/text2sql-analyst">text2sql-analyst</a>, an earlier project</p>
-  <p>Updated 28 October 2026</p>
+  <p>Updated 2 November 2026</p>
 </footer>
 
 <script>
