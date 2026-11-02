@@ -47,10 +47,15 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO {READER};
 
 
 def set_activation(policy: Literal["ALWAYS", "NEVER"]) -> list[str]:
-    """Start (ALWAYS) or stop (NEVER) the instance; its storage stays either way."""
+    """Start (ALWAYS) or stop (NEVER) the instance; its storage stays either way.
+
+    `--async` returns at once and the caller waits for the state: gcloud's own wait gives
+    up after about ten minutes, and the first start took ten and a half.
+    """
     return command(
-        "sql", "instances", "patch", INSTANCE, f"--activation-policy={policy}", "--quiet"
-    )
+        "sql", "instances", "patch", INSTANCE, f"--activation-policy={policy}",
+        "--async", "--quiet",
+    )  # fmt: skip
 
 
 def describe_state() -> list[str]:

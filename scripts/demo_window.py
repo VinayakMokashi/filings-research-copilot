@@ -30,6 +30,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     state = wait_for(
         lambda: run(describe_state(), capture=True),
         (lambda s: s == "RUNNABLE") if up else (lambda s: s != "RUNNABLE"),
+        timeout_s=1500.0,  # a start has taken ten and a half minutes
     )
     print(f"the demo database is {state}, {time.monotonic() - started:.0f} s after the request")
     if up:

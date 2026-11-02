@@ -3,6 +3,8 @@ reader's URL. Nothing here calls gcloud."""
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from urllib.parse import urlsplit
 
 import pytest
@@ -22,8 +24,8 @@ def test_commands_name_the_copilots_project() -> None:
     up = set_activation("ALWAYS")
 
     assert up[1:] == [
-        "sql", "instances", "patch", "facts", "--activation-policy=ALWAYS", "--quiet",
-        "--project=filings-research-copilot",
+        "sql", "instances", "patch", "facts", "--activation-policy=ALWAYS", "--async",
+        "--quiet", "--project=filings-research-copilot",
     ]  # fmt: skip
     assert "--user=postgres" in import_sql("gs://bucket/facts.sql.gz")
 
@@ -44,6 +46,18 @@ def test_gcloud_runs_with_the_copilots_own_configuration(monkeypatch: pytest.Mon
 
     assert gcloud.run(["gcloud", "version"], capture=True) == "RUNNABLE"
     assert seen == {"config": "frc"}
+
+
+def test_a_failed_command_never_shows_a_password() -> None:
+    fails = [sys.executable, "-c", "raise SystemExit(3)", "--password=s3cret-value"]
+
+    with pytest.raises(subprocess.CalledProcessError) as info:
+        gcloud.run(fails)
+
+    assert info.value.returncode == 3
+    assert info.value.cmd[-1] == "--password=<hidden>"
+    assert "s3cret-value" not in str(info.value)
+    assert info.value.__suppress_context__
 
 
 def test_waiting_returns_the_state_it_waited_for() -> None:
