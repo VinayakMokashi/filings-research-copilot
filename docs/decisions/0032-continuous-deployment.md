@@ -39,6 +39,7 @@ The Deploy workflow can also run by hand. The job is skipped until the deploymen
 1. **Keyless access.** GitHub's OIDC token becomes an hour of the `github-deployer` account's access through workload identity federation. The provider accepts only this repository and `main` ([guide](../concepts/workload-identity-federation.md)).
 2. **The data bundle.** The workflow fetches the bundle that `infra/data-bundle.json` names and checks its SHA-256. A different file fails the release.
 3. **The images.** `api` and `mcp` are built with the bundle as the `data` build context; `ui` is built without it. Each is tagged with the commit's SHA and carries it as `GIT_SHA`. Layers are cached in GitHub Actions' cache.
+   - Added on 2026-11-02, after the first deploy stopped at start: the new API image must start on the runner and answer `/healthz` before anything rolls out.
 4. **The rollout:** `api` first, since the others call it, then `mcp`, then `ui`. Each service's previous revision is recorded first. Each update sends all traffic to the latest revision, which also undoes an earlier rollback's pin.
 5. **The smoke tests:**
    - the private API's `/healthz` must report this commit, called with an ID token for its deterministic address;
