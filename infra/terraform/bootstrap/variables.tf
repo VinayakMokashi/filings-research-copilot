@@ -47,6 +47,5 @@ variable "secrets" {
     "qdrant-write-api-key",
     "sec-user-agent",
     "facts-url",
-    "sql-admin-password",
   ]
 }
