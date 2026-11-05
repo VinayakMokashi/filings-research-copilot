@@ -59,7 +59,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/bundle"
           tar -xzf "$RUNNER_TEMP/bundle.tar.gz" -C "$RUNNER_TEMP/bundle"
 
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
