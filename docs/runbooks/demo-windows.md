@@ -16,7 +16,11 @@ The deployment's Cloud SQL instance holds the facts tables for the data agent an
 uv run poe demo-up
 ```
 
-It asks Cloud SQL to start the instance and waits until it runs, for up to 25 minutes. The first start took 10 minutes 27 seconds, so start it well before a demo; stopping took under a minute. The API's data agent turns to it with its next question within a minute: a failed connection makes it try the server again only after a minute. Each answer's SQL details then show the query PostgreSQL ran.
+It asks Cloud SQL to start the instance and waits until Cloud SQL's operation ends, for up to 25 minutes. Two starts took 10 minutes 27 seconds (2 November) and 10 minutes 12 seconds (10 November), so start it well before a demo; stopping took under a minute.
+
+The script follows the operation, not the instance's state. During the second start, the state read RUNNABLE six seconds in, then MAINTENANCE, then RUNNABLE again more than two minutes before the operation ended.
+
+The API's data agent turns to it with its next question within a minute: a failed connection makes it try the server again only after a minute. Each answer's SQL details then show the query PostgreSQL ran.
 
 ## End a window
 
@@ -67,5 +71,6 @@ Expect `createrole=f createdb=f member_of=[]`, SELECT on every table (`selectabl
 | Symptom | Cause and fix |
 |---|---|
 | `demo-up` times out | Look at the instance in the console (SQL > facts > Operations). A start still running finishes on its own; a failed one is retried by running `demo-up` again. |
+| `demo-up` or `demo-down` reports "Cloud SQL's operation failed" | The message is Cloud SQL's own. Read the operation in the console (SQL > facts > Operations), then run the command again. |
 | Answers' SQL details never show PostgreSQL during a window | The API couldn't connect. Check its logs for `facts_server_unavailable`, then check that the `facts-url` secret has a version and that the API has Direct VPC egress (`envs/prod/services.tf`). |
 | The four-hour alert arrives during a long demo | Nothing is wrong; run `demo-down` when the demo ends. |
