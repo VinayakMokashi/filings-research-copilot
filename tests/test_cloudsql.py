@@ -1,4 +1,4 @@
-"""The demo database's helpers: the gcloud command lines, waiting for a state, the
+"""The demo database's helpers: the gcloud command lines, waiting for an operation, the
 reader's URL. Nothing here calls gcloud."""
 
 from __future__ import annotations
@@ -12,6 +12,8 @@ import pytest
 from copilot.deploy import gcloud
 from copilot.deploy.cloudsql import (
     GRANTS,
+    change_activation,
+    describe_operation,
     import_sql,
     new_password,
     reader_url,
@@ -25,9 +27,50 @@ def test_commands_name_the_copilots_project() -> None:
 
     assert up[1:] == [
         "sql", "instances", "patch", "facts", "--activation-policy=ALWAYS", "--async",
-        "--quiet", "--project=filings-research-copilot",
+        "--quiet", "--format=value(name)", "--project=filings-research-copilot",
     ]  # fmt: skip
+    assert describe_operation("op-1")[1:4] == ["sql", "operations", "describe"]
     assert "--user=postgres" in import_sql("gs://bucket/facts.sql.gz")
+
+
+class FakeCloudSql:
+    """Answers the three command lines a window runs, and records which ran."""
+
+    def __init__(self, statuses: list[str]) -> None:
+        self.statuses = iter(statuses)
+        self.calls: list[str] = []
+
+    def __call__(self, line: list[str]) -> str:
+        verb = " ".join(line[1:4])
+        self.calls.append(verb)
+        if verb == "sql instances patch":
+            return "op-1"
+        if verb == "sql operations describe":
+            assert "op-1" in line
+            return next(self.statuses)
+        return "RUNNABLE"  # what the instance's state read six seconds into a real start
+
+
+def test_a_window_waits_for_cloud_sqls_operation_not_the_instances_state() -> None:
+    cloud = FakeCloudSql(["RUNNING\t", "RUNNING\t", "DONE\t"])
+    naps: list[float] = []
+
+    state = change_activation("ALWAYS", cloud, sleep=naps.append)
+
+    assert state == "RUNNABLE"
+    assert naps == [10.0, 10.0]
+    assert cloud.calls == [
+        "sql instances patch",
+        *["sql operations describe"] * 3,
+        "sql instances describe",
+    ]
+
+
+def test_a_failed_operation_is_raised() -> None:
+    cloud = FakeCloudSql(["DONE\tThe instance couldn't start."])
+
+    with pytest.raises(RuntimeError, match="couldn't start"):
+        change_activation("ALWAYS", cloud, sleep=lambda _: None)
 
 
 def test_gcloud_runs_with_the_copilots_own_configuration(monkeypatch: pytest.MonkeyPatch) -> None:

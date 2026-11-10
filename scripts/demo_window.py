@@ -1,9 +1,10 @@
 """Start or stop the demo database on Cloud SQL (ADR-0031).
 
-`up` starts the instance and waits until it runs. The API's data agent turns to it
-within a minute; until then, and whenever it is stopped, the data agent answers from the
-facts file the image carries. `down` stops it; the storage stays. A Cloud Scheduler job
-stops it every night at 23:30 IST anyway, and an alert fires after four hours up.
+`up` starts the instance and waits until Cloud SQL's operation ends. The API's data agent
+turns to it within a minute; until then, and whenever it is stopped, the data agent
+answers from the facts file the image carries. `down` stops it; the storage stays. A
+Cloud Scheduler job stops it every night at 23:30 IST anyway, and an alert fires after
+four hours up.
 
 Usage: uv run poe demo-up
        uv run poe demo-down
@@ -15,7 +16,7 @@ import argparse
 import time
 from collections.abc import Sequence
 
-from copilot.deploy.cloudsql import describe_state, set_activation, wait_for
+from copilot.deploy.cloudsql import change_activation
 from copilot.deploy.gcloud import run
 
 
@@ -26,12 +27,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     up = args.action == "up"
     started = time.monotonic()
-    run(set_activation("ALWAYS" if up else "NEVER"))
-    state = wait_for(
-        lambda: run(describe_state(), capture=True),
-        (lambda s: s == "RUNNABLE") if up else (lambda s: s != "RUNNABLE"),
-        timeout_s=1500.0,  # a start has taken ten and a half minutes
-    )
+    state = change_activation("ALWAYS" if up else "NEVER", lambda line: run(line, capture=True))
     print(f"the demo database is {state}, {time.monotonic() - started:.0f} s after the request")
     if up:
         print("The data agent uses it from its next question, within a minute.")
