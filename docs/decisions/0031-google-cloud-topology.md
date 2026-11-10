@@ -160,16 +160,18 @@ All four services are on Cloud Run, scale to zero, and bill CPU only while a req
 
 ## Consequences
 
-**Estimated costs,** measured in step 8.9:
+**Costs before credits:** estimated here, then measured in step 8.9 from the billing export ([report](../eval/deployment.md#costs)).
 
-| | Idle month | Per demo hour |
-|---|---|---|
-| Cloud SQL | About $2 (10 GB SSD; no public address) | About $0.01 |
-| Artifact Registry | About $0.30 (a few versions of two images, layers shared) | |
-| Secret Manager | About $0.40 (ten secrets; six versions are free per billing account) | |
-| Monitoring alerts | About $0.50, if charged (five conditions) | |
-| Cloud Run, Firestore, Pub/Sub, Scheduler, Logging, Cloud Storage | Within the free tiers | Within the free tiers |
-| **Total** | **About $3 to $4** | **About $0.02** |
+| | Idle month, estimated | Idle month, measured | Per demo hour, measured |
+|---|---|---|---|
+| Cloud SQL | About $2 (10 GB SSD; no public address) | $2.07, the storage | $0.0126 an hour of instance time. Billing starts at the start request, so the ten-minute start is paid too |
+| Artifact Registry | About $0.30 (a few versions of two images, layers shared) | About $0.04: four images, 0.38 GiB once the cleanup policy had run. Until the start check stopped downloading the API image, each deploy also paid $0.04 of egress | |
+| Secret Manager | About $0.40 (ten secrets; six versions are free per billing account) | $0 so far: nine versions; up to $0.18 by the price list | |
+| Monitoring alerts | About $0.50, if charged (five conditions) | $0 so far: four conditions, $0.40 once charged | |
+| Cloud Run | Within the free tier | $0.06, within the free tier. An open UI page costs $0.09 an hour | $0.0012 |
+| Cloud Storage | Within the free tier | $0.01: Mumbai has no free tier | |
+| Firestore, Pub/Sub, Scheduler, Logging | Within the free tiers | $0 | |
+| **Total** | **About $3 to $4** | **About $2.10**, at most $2.70 | **$0.0138** |
 
 - **Figures work at any hour.** In a demo window, the data agent's SQL runs on Cloud SQL, and each answer records the SQL the server ran.
 - **The image carries the data.** It is larger, but it starts with nothing to download and is identical everywhere. CI needs read access to the data bucket.
