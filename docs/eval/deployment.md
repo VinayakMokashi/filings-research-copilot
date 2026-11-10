@@ -1,6 +1,6 @@
-# The deployment on Google Cloud: releases, a demo window, load, and security
+# The deployment on Google Cloud: releases, a demo window, load, security and costs
 
-Phase 8, steps 8.5 to 8.8, measured on the live services on 2 November 2026. The costs (step 8.9) follow once the billing export has an idle week to read.
+Phase 8, steps 8.5 to 8.9. Steps 8.5 to 8.8 were measured on the live services on 2 November 2026. The costs come from the billing export, 2 to 10 November.
 
 ## Question
 
@@ -10,6 +10,7 @@ Does the deployment of [ADR-0031](../decisions/0031-google-cloud-topology.md) wo
 - The demo database starts and stops on demand and every night.
 - One API instance serves the public demo under load.
 - Every account holds only what it uses.
+- An idle month costs close to nothing, and a demo little more.
 
 ## Setup
 
@@ -56,8 +57,8 @@ Five deploys ran on 2 November. Two failed, and both failures changed the pipeli
 
 | Step | Time |
 |---|---|
-| `demo-up`: start the instance | 10 min 27 s |
-| `demo-down`: stop it | 42 s |
+| `demo-up`: start the instance | 10 min 27 s; 10 min 12 s on 10 November |
+| `demo-down`: stop it | 42 s; 46 s on 10 November |
 | The nightly job, run by hand: stop it | within a minute; the job answered 200 |
 
 - **The data agent on PostgreSQL.** During the window, a fresh data question was answered in 5.4 s:
@@ -65,6 +66,7 @@ Five deploys ran on 2 November. Two failed, and both failures changed the pipeli
   - Cloud SQL counted transactions on the `facts` database in the minutes of the question (9, then 22), after 0 the minute before.
 - **Outside the window,** the API logged its fallback to the file, and answered from it.
 - **The weekly keep-alive job,** run by hand, read the API's `/ready` and answered 200.
+- **A second window, on 10 November,** was the demo hour whose cost is measured below. Three fresh data questions were answered on the data route in 3.8 to 4.3 s, and Cloud SQL counted 35 transactions on `facts` in those minutes.
 
 ### Load
 
@@ -139,16 +141,116 @@ The UI counts a visitor's quota by the last address in `X-Forwarded-For` ([ADR-0
 | An apply lost its token midway (gcloud's cached token had minutes left) | The kept state was pushed after a `force-unlock`; the runbook says how to check a token's life |
 | Every plan wanted to update the dashboard | The dashboard is written the way Cloud Monitoring stores it |
 | A UI example asked about a filing the corpus lacks | An example the copilot answers |
+| `demo-up` reported the database running 6 s into a 10-minute start: the instance's state reads RUNNABLE before the start has ended | The script waits for Cloud SQL's operation to end, not for the state |
+| Each deploy's start check downloaded the 0.38 GB API image back from the registry, billed as internet egress | The build loads the image into the runner's Docker as it pushes |
 
 ## Costs
 
-Pending: step 8.9 reads them from the billing export, once it has an idle week, and adds them here. Measured so far:
+**How they were read.** Google Cloud's billing export to BigQuery (standard usage cost) holds one row per SKU and hour of use.
+
+- Days are UTC days of use. Prices are those charged in `asia-south1` (Mumbai).
+- "Gross" is the cost before credits. Until 22 December 2026 the trial's credit pays it, so the net bill so far is $0.00.
+- The request and scheduler logs explained each hour that cost more than a quiet one.
+- A day was complete 11 to 19 hours after it ended (7 to 9 November).
+
+**Since going live** (2 November to 10 November, 12:00 UTC), the deployment cost $0.90 gross:
+
+- the trial's credit paid $0.78;
+- Cloud Run's free tier paid $0.12;
+- the go-live day alone cost $0.31, two thirds of it the deploys' image downloads (below).
+
+### An idle week
+
+3 to 9 November, with no deploy and no demo window:
+
+| Service: SKU | Week, gross | Note |
+|---|---|---|
+| Cloud SQL: storage | $0.4753 | The stopped database's 10 GB SSD, $0.0679 every day |
+| Cloud Run: CPU and memory | $0.0685 | A visit on 4 November made $0.0520 of it |
+| Cloud SQL: instance time | $0.0094 | Part of the demo hour of 10 November, booked on 9 November (below) |
+| Artifact Registry: storage | $0.0040 | From 9 November, when the free tier ran out |
+| Cloud Storage: Standard, Mumbai | $0.0014 | Mumbai has no free tier |
+| Cloud Run: internet egress | $0.0003 | |
+| Firestore, BigQuery, Logging, uptime checks, Scheduler, Secret Manager, Cloud Run's requests | $0 | Within their free tiers |
+| **Total** | **$0.5588** | |
+
+- **A quiet day** (3, 5, 6, 7 and 8 November) cost $0.0695 to $0.0705:
+  - the database's storage;
+  - $0.0014 to $0.0024 of Cloud Run, for the UI answering Monitoring's uptime check 576 times a day (every 15 minutes, from six regions);
+  - $0.0002 of Cloud Storage.
+- **Every Monday** the keep-alive job wakes the API to read from Qdrant. It costs $0.0018: 68 CPU-seconds, a cold start included.
+- **Not idle:**
+  - the visit (one tab for 33 minutes, $0.0520);
+  - the demo hour's instance time ($0.0094);
+  - a check run from the laptop on 9 November ($0.0028).
+
+  Without them the week costs $0.4946: **$2.15 a month, 96% of it the stopped database's storage.**
+
+### An idle month, after the trial
+
+| | A month | Basis |
+|---|---|---|
+| Cloud SQL storage | $2.07 | Measured |
+| Cloud Run | $0.06 gross, $0 net | Measured. The month's 2,500 or so CPU-seconds are within the free tier's 180,000 |
+| Artifact Registry storage | About $0.04 | Measured: 0.38 GiB at $0.10 a GiB a month. The free 0.5 GB is shared across the billing account, and was used up on 9 November |
+| Cloud Storage | $0.01 | Measured |
+| Secret Manager | $0 so far | Price list: nine active versions, six free a month, $0.06 for each one beyond, so up to $0.18 |
+| Monitoring's alert conditions | $0 so far | Price list: $0.10 a condition a month once charged; four conditions, $0.40 |
+| **Total** | **About $2.10**, at most $2.70 | |
+
+The budget, $15 a month with emails at 50%, 90% and 100%, stays well above it.
+
+### A demo hour
+
+On 10 November the database ran from 00:00:36 to 01:01:17 UTC, and three fresh data questions were answered on it:
+
+| | Use | Gross |
+|---|---|---|
+| Cloud SQL: db-f1-micro instance time | 3,607 s | $0.0126 |
+| Cloud Run: the API's cold start and three questions | 43 CPU-seconds above a quiet hour | $0.0012 |
+| Cloud SQL: traffic between zones | 10 KB | $0 |
+| **Total** | | **$0.0138** |
+
+- **Billing runs from the start request to the stop request.** The 3,607 s match, to the second, the time from the start operation's beginning to the stop operation's beginning. The start's ten minutes are paid too, so an hour's demo bills 70 minutes: about $0.015.
+- **The export spreads instance time evenly over four-hour blocks:** 21:00 to 01:00 UTC, 01:00 to 05:00, and so on. So three quarters of this hour appear on 9 November. Read a window by its blocks, not by one UTC day.
+- The model calls went to Groq's free tier.
+
+### An open tab
+
+- **Cloud Run bills while a request is open.** Request-based billing charges an instance's CPU and memory while at least one request is in flight, and an open UI page holds Streamlit's websocket.
+  - The UI has 1 vCPU and 512 MiB. The export charges $0.000024 a vCPU-second and $0.0000025 a GiB-second.
+  - So an open page costs **$0.09 an hour.**
+- **The one visit since going live** held its websocket for 1,961 s (33 minutes) and cost $0.0520.
+- **The bound.** Cloud Run closes a websocket at the UI's 3,600-second request timeout, and Streamlit's page then reconnects. So a forgotten tab costs about $2.20 a day.
+  - That is an estimate: no visit has stayed open past the timeout.
+  - Cloud Run's free tier covers about 50 such hours a month.
+  - Tabs held by one instance share its time.
+
+### A deploy
+
+- **The registry download.** Each deploy's start check ran the API image on GitHub's runner. The build had pushed the image without keeping a copy, so the runner pulled it back from Artifact Registry: 0.376 GB of internet egress.
+  - That cost $0.042 a deploy, and $0.21 for the five deploys on the go-live day.
+  - The build now loads the image into the runner's Docker as it pushes, in 11 s. On the next deploy the start check pulled nothing.
+- **Storage.** Each deploy pushes four images: the API, MCP server and worker images at 0.376 GB each, and the UI's at 0.187 GB, sharing most layers.
+  - The cleanup policy keeps each image's three newest versions and deletes the rest after a week.
+  - The registry held 1.92 GiB from 3 to 9 November, then 0.38 GiB.
+- **The rest.** GitHub Actions is free for a public repository. On the go-live day, Cloud Run's $0.05 (five deploys, two load tests and the checks) fell within its free tier.
+
+### Credits, and the models
+
+| Credit (type in the export) | Pays for | Until |
+|---|---|---|
+| The trial's credit, carried over at the upgrade to a paid account (PROMOTION) | Everything the free tiers don't cover | 22 December 2026 |
+| Cloud Run's free tier: "CPU Allocation Time" and "Memory Allocation Time" (DISCOUNT) | 180,000 vCPU-seconds and 360,000 GiB-seconds a month, per billing account | No end |
 
 - **Cerebras:** $0.1996, the paid fallback during the load tests and their warm-ups.
-- **Google Cloud:** from the billing export, pending.
+- **Groq:** the free tier.
 
 ## Limits
 
 - **One laptop, one day.** The load came from one machine in India. The latencies are what one visitor nearby sees, not a global measure.
 - **Cached answers only.** The load test measures Cloud Run, Firestore and the API's code. A fresh answer's time is set by the models: [copilot v2's latency](copilot-v2.md) is 4.0 s at the median and 47 s at the 95th percentile.
 - **Two smoke-tested paths aren't in the load:** the MCP server and the worker. Each was checked once.
+- **One idle week, one demo hour.** The month extrapolates seven days.
+  - Three free tiers are shared with any other project on the billing account: Artifact Registry's, Secret Manager's and Cloud Run's. What they cover depends on that other use.
+  - The open tab's daily figure is computed from the measured price, not observed.
