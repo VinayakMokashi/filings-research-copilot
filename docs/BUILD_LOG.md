@@ -15,6 +15,61 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-10 · Phase 8 · Phase 8 complete
+
+- **Goal:** close Phase 8: every step measured and documented, and the plan, the README and the project page up to date.
+- **Done:**
+  - the plan ticks 8.9, marks Phase 8 done, and adds the open page's cost to its risks;
+  - the README's status and deployment row carry the costs;
+  - the project page says Phase 8 is done. It gives the idle month's and the demo hour's costs and the load test's latency, and lists the tools in use after Phase 8.
+- **Results:** Phase 8 in nine steps, all done. Live on Google Cloud since 2 November:
+  - four Cloud Run services;
+  - keyless deploys with a start check, smoke tests and rollback: eight deploys, two of them failed safely;
+  - demo windows on Cloud SQL: starts of about ten minutes, stops under a minute, and a nightly stop;
+  - a load test of 3,540 requests with no failure;
+  - the security pass;
+  - an idle month of about $2.10 before credits.
+
+  Three ADRs (0031 to 0033), four guides and three runbooks.
+- **Problems and fixes:** none new.
+- **Next:** Phase 9, online evaluation and feedback. First, an idle limit in the UI, so that a forgotten tab stops billing.
+
+### 2026-11-10 · Phase 8 · What the deployment costs, and deploys that stop downloading their own image
+
+- **Goal:** step 8.9's second sitting:
+  - read the billing export for the idle week and the demo hour;
+  - explain every hour that cost more than a quiet one;
+  - merge the held updates.
+- **Done:**
+  - **The costs,** read from the export by SKU and hour. The request and scheduler logs explained each hour that cost more. They are in:
+    - the report's [Costs](eval/deployment.md#costs) section;
+    - ADR-0031's table, measured beside its estimate;
+    - the demo-windows runbook's prices;
+    - a new guide, [cloud-costs.md](concepts/cloud-costs.md).
+  - **The deploy's start check** runs the API image the build loaded into the runner (#97), instead of pulling it back from the registry.
+  - **Merged and deployed:** the demo-window fix (#96), the Dockerfile's uv 0.13.7 (#94) and ten Python packages (#95).
+- **Commands:** `bq query --use_legacy_sql=false` on the export's tables by UTC day, SKU and hour; `gcloud logging read` for the requests and the scheduler's runs; `gcloud artifacts docker images list` for the images' sizes.
+- **Results:**
+  - **An idle week** (3 to 9 November): $0.5588 gross.
+    - Without a visit, the demo hour's spill-over and a check: $0.4946, which is $2.15 a month. 96% of it is the stopped database's 10 GB SSD, $0.0679 a day.
+    - After the trial: about $2.10 a month, or at most $2.70 if Secret Manager's versions and the alert conditions are charged.
+  - **A demo hour:** $0.0138.
+    - The database billed 3,607 s, exactly from the start request to the stop request, at $0.0126 an hour.
+    - Cloud Run: $0.0012.
+  - **An open page:** $0.09 an hour (1 vCPU at $0.000024 a second, and 512 MiB). The one visit since going live held its websocket for 33 minutes and cost $0.052.
+  - **A deploy:** $0.042 of registry egress until #97.
+    - The images are 0.376 GB (the API, the MCP server, the worker) and 0.187 GB (the UI).
+    - The registry held 1.92 GiB until the cleanup policy cut it to 0.38 GiB on 9 and 10 November.
+  - **Since going live:** $0.90 gross. The trial's credit paid $0.78 and Cloud Run's free tier $0.12.
+- **Problems and fixes:**
+  - **Each deploy downloaded the image it had just built.** The build pushed the API image without loading it, so the start check's `docker run` pulled 0.376 GB back over the internet. The go-live day's five deploys made $0.21 of its $0.31.
+    - `load: true` keeps a copy on the runner (#97).
+    - On the next deploy (#94), the build sent the image to the runner's Docker in 11 s, and the start check pulled nothing.
+  - **The export spreads Cloud SQL's instance time over four-hour blocks.** Three quarters of the demo hour (00:00 to 01:01 UTC on 10 November) is booked on 9 November, so the week is read with it taken out.
+  - **The registry's free tier ran out on 9 November,** before this project alone had used it: the billing account's other projects share it.
+- **Decisions:** ADR-0031's costs measured. The open page's cost goes into the plan's risks, with an idle limit in the UI still to do.
+- **Next:** the Phase 8 close.
+
 ### 2026-11-10 · Phase 8 · A demo hour, and demo windows that wait for Cloud SQL
 
 - **Goal:** step 8.9's first sitting: check the billing export, run one demo hour for its cost, and keep the measured day free of deploys.
