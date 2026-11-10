@@ -39,5 +39,6 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 33 | [cloud-run.md](cloud-run.md) | Containers, services, revisions, scaling to zero; what Cloud Run's contract changed in the code | Cloud Run docs | 8 | Written |
 | 34 | [terraform-basics.md](terraform-basics.md) | Infrastructure as code, state, plans; two roots, and who owns which part of the deployment | Terraform docs | 8 | Written |
 | 35 | [workload-identity-federation.md](workload-identity-federation.md) | Deploying without stored keys: GitHub's OIDC token traded for an hour of the deployer's access | Google Cloud docs, Workload Identity Federation with deployment pipelines | 8 | Written |
+| 36 | [cloud-costs.md](cloud-costs.md) | Reading the bill from the billing export: gross, credits and free tiers; what stored, running and moving resources bill for; an idle month, a demo hour and an open tab | Google Cloud docs, exporting billing data to BigQuery | 8 | Written |
 | 36 | `online-evaluation.md` | Nightly evals, interleaving, drift checks | Chapelle et al., interleaved evaluation (2012) | 9 | Planned |
 | 37 | `preference-data.md` | From thumbs-up/down to preference tuning | Rafailov et al., DPO (2023) | 9 | Planned |
