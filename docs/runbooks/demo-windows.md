@@ -5,8 +5,8 @@ The deployment's Cloud SQL instance holds the facts tables for the data agent an
 | | |
 |---|---|
 | Instance | `facts`: PostgreSQL 18, db-f1-micro, 10 GB SSD, private address only |
-| Running | about $0.01 an hour |
-| Stopped | about $2 a month for its storage; no IP charge, since it has no public address |
+| Running | $0.0126 an hour, billed from the start request to the stop request, so a start's ten minutes are paid ([costs](../eval/deployment.md#a-demo-hour)) |
+| Stopped | $2.07 a month for its storage; no IP charge, since it has no public address |
 | Nightly stop | Cloud Scheduler, 23:30 IST, whatever was left running |
 | Alert | an email after four hours up |
 
