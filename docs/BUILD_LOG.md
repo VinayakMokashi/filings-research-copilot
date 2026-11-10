@@ -15,6 +15,31 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-10 · Phase 8 · A demo hour, and demo windows that wait for Cloud SQL
+
+- **Goal:** step 8.9's first sitting: check the billing export, run one demo hour for its cost, and keep the measured day free of deploys.
+- **Done:**
+  - **The billing export** runs. The owner turned it on, its table appeared on 7 November, and its backfill reaches the deployment's first day. It's read at the second sitting, once Google has exported the last day measured.
+  - **One demo hour** on 10 November (UTC): `demo-up` at 00:00:30, three fresh data questions from 00:11 to 00:13, and `demo-down` at 01:00:34.
+  - **Demo windows wait for Cloud SQL's operation,** not for the instance's state (below).
+  - **Dependabot:**
+    - merged ruff's pre-commit hook and two actions, which don't deploy;
+    - held the Dockerfile's uv and ten Python packages for the next day, with this fix, so that no deploy lands on the day being measured.
+- **Results:**
+  - **The start:** Cloud SQL's operation took 10 min 5 s (10 min 12 s from the command).
+  - **The questions:** all three were answered on the data route in 3.8 to 4.3 s. The `facts` database committed 35 transactions during them, and the API logged no fallback to the facts file.
+  - **The stop:** 46 s from the request; Cloud SQL's operation took 33 s.
+- **Problems and fixes:**
+  - **`demo-up` reported success six seconds into a ten-minute start.**
+    - Since the switch to `--async` (#87) it had waited for the instance's state, and this was its first live run.
+    - The state read RUNNABLE six seconds in, then MAINTENANCE, then RUNNABLE again about two and a half minutes before the operation ended.
+    - Now `--format=value(name)` returns the operation's name, and the script waits until that operation is done, raises its error if it has one, and then reads the state.
+    - Two new tests: an early RUNNABLE no longer ends the wait, and a failed operation raises. The fixed `demo-down` stopped the database at the end of the hour.
+- **Next:** the second sitting, once Google has exported 10 November:
+  - the quiet week and the demo hour's cost, the report's Costs section and ADR-0031's table;
+  - this fix and the held updates, which deploy;
+  - the close of Phase 8.
+
 ### 2026-11-02 · Phase 8 · Load, the security pass, and the deployment's report
 
 - **Goal:** steps 8.7 and 8.8 on the live deployment, and the report on Phase 8 so far.
