@@ -6,7 +6,7 @@
 <title>Filings Research Copilot</title>
 <meta name="description" content="An agentic research copilot for public-company filings, in development: cited answers from 10-K and 10-Q text and Text-to-SQL over XBRL financial facts, evaluated on FinanceBench, to be deployed on Google Cloud.">
 <meta property="og:title" content="Filings Research Copilot">
-<meta property="og:description" content="In development: cited answers from SEC filings and Text-to-SQL over XBRL financial facts, evaluated on FinanceBench; routed, combined and checked by one LangGraph copilot with an API, a web UI and an MCP server; next come fine-tuned components and a Google Cloud deployment that scales to zero.">
+<meta property="og:description" content="In development: cited answers from SEC filings and Text-to-SQL over XBRL financial facts, evaluated on FinanceBench; routed, combined and checked by one LangGraph copilot with an API, a web UI and an MCP server; deployed on Google Cloud, where it scales to zero and an idle month costs about $2.10.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://vinayakmokashi.github.io/filings-research-copilot/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%2314202A'/%3E%3Crect x='6' y='8' width='20' height='6' fill='%23F5D547'/%3E%3Crect x='6' y='18' width='20' height='2' fill='%2367BE95'/%3E%3Crect x='6' y='22' width='20' height='2' fill='%2367BE95'/%3E%3C/svg%3E">
@@ -207,7 +207,7 @@ td.metric{font-weight:600;white-space:nowrap}
 <header class="sheet cover">
   <div class="cover-top">
     <span class="kicker">Personal project · Build in progress</span>
-    <span class="kicker">Updated 2 November 2026</span>
+    <span class="kicker">Updated 10 November 2026</span>
   </div>
   <h1>Filings Research Copilot</h1>
   <p class="lede">Ask about a public company. The copilot answers from its SEC filings and reported financials, and <span class="hl">cites every claim to the page it came from</span><sup class="fn">1</sup>.</p>
@@ -217,7 +217,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><dt>Sources</dt><dd>10-K and 10-Q text · XBRL company facts</dd></div>
     <div><dt>Benchmark</dt><dd>FinanceBench public sample</dd></div>
     <div><dt>Target platform</dt><dd>Google Cloud Run, scaling to zero · Qdrant · open models on Groq</dd></div>
-    <div><dt>Status</dt><dd>Phases 0 to 7 done; Phase 8 live on Google Cloud (<a href="https://ui-499690143794.asia-south1.run.app">try it</a>), with its costs being measured</dd></div>
+    <div><dt>Status</dt><dd>Phases 0 to 8 done, and live on Google Cloud (<a href="https://ui-499690143794.asia-south1.run.app">try it</a>) for about $2.10 an idle month; Phase 9, online evaluation, next</dd></div>
   </dl>
   <div class="actions">
     <a class="btn btn-primary" href="#architecture">See the architecture</a>
@@ -437,7 +437,7 @@ td.metric{font-weight:600;white-space:nowrap}
             <tr><td class="metric">Execution accuracy</td><td>Generated SQL returns the gold result</td><td>42 hand-verified SQL questions</td><td>4</td><td><span class="pill pill-done">1.00 on held-out test</span></td></tr>
             <tr><td class="metric">Routing accuracy</td><td>Each question reaches the right specialist</td><td>198 labelled queries</td><td>5, 7</td><td><span class="pill pill-done">1.00 on held-out test</span> <span class="pill pill-done">0.95 for the CPU classifier</span></td></tr>
             <tr><td class="metric">Brief coverage</td><td>A brief covers what its request asks for, every sentence checked</td><td>12 brief requests of our own, with rubrics</td><td>7</td><td><span class="pill pill-done">0.86 of rubric items, 0.92 of sentences supported</span></td></tr>
-            <tr><td class="metric">p95 latency, cost</td><td>Fast and cheap enough to run in public</td><td>All suites, plus a load test</td><td>6, 8</td><td><span class="pill pill-done">$0.005 a question</span> <span class="pill pill-now">Latency under load in Phase 8</span></td></tr>
+            <tr><td class="metric">p95 latency, cost</td><td>Fast and cheap enough to run in public</td><td>All suites, plus a load test</td><td>6, 8</td><td><span class="pill pill-done">$0.005 a question</span> <span class="pill pill-done">Cached answers in 65 ms at p95 under load</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -571,7 +571,7 @@ td.metric{font-weight:600;white-space:nowrap}
     </figure>
     <aside class="note" aria-label="Demo windows">
       <span class="eyebrow">Demo windows</span>
-      <p>Cloud Run scales the services to zero, so they stay deployed and <b>cost nothing while idle</b>. The database, the one part that costs money idle, runs only in demo windows: one command starts it and another stops it, and a nightly job stops it whatever was left running. The costs of an idle month and of a demo are being measured.</p>
+      <p>Cloud Run scales the services to zero, so they stay deployed and <b>cost nothing while idle</b>. The database, the one part that costs money idle, runs only in demo windows: one command starts it and another stops it, and a nightly job stops it whatever was left running. Measured from the billing export, an idle month costs about $2.10 before credits, almost all of it the stopped database's storage, and an hour's demo $0.014.</p>
       <p>Its storage stays between demos, with backups in Cloud Storage. Day to day, the project runs locally with Docker Compose.</p>
     </aside>
   </div>
@@ -584,7 +584,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <p class="intro">Every phase ends with tests, an evaluation wherever quality changes, and documentation: a build log entry, decision records and concept guides.</p>
   </div>
   <div class="strip" aria-hidden="true">
-    <span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg now"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
+    <span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg done"></span><span class="seg"></span><span class="seg"></span>
   </div>
   <div class="strip-scale" aria-hidden="true"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
   <div class="legend"><span><i class="sw done"></i>Done</span><span><i class="sw now"></i>In progress</span><span><i class="sw"></i>Planned</span></div>
@@ -600,7 +600,7 @@ td.metric{font-weight:600;white-space:nowrap}
         <tr><td><span class="ph">5</span>Orchestration</td><td>LangGraph graph, LLM router, hybrid answers with a planner, validator loop, memory</td><td>One copilot routes, combines and checks</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">6</span>Product surface</td><td>FastAPI with streaming, quotas and guardrails, Streamlit UI, MCP server, Docker Compose stack, Langfuse traces</td><td>People and AI tools can use it</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">7</span>Fine-tuning</td><td>LoRA router (on Hugging Face), copilot v2 and the brief crew adopted; a domain embedder, a DSPy prompt search and bandit routing measured and not adopted</td><td>Each change earns its place on the eval set</td><td><span class="pill pill-done">Done</span></td></tr>
-        <tr><td><span class="ph">8</span>Cloud deployment</td><td>Terraform, Cloud Run, Cloud SQL, Pub/Sub, keyless deploys, demo-up and demo-down</td><td>It runs in production shape and costs nothing idle</td><td><span class="pill pill-now">Live; costs next</span></td></tr>
+        <tr><td><span class="ph">8</span>Cloud deployment</td><td>Terraform, Cloud Run, Cloud SQL, Pub/Sub, keyless deploys, demo-up and demo-down</td><td>It runs in production shape for about $2.10 an idle month</td><td><span class="pill pill-done">Done</span></td></tr>
         <tr><td><span class="ph">9</span>Online evaluation</td><td>Nightly evals, feedback as preference data, drift checks</td><td>Quality stays visible over time</td><td><span class="pill">Planned</span></td></tr>
         <tr><td><span class="ph">10</span>Showcase</td><td>Final README, demo video, this page with measured numbers</td><td>The work is explained and verifiable</td><td><span class="pill">Planned</span></td></tr>
       </tbody>
@@ -623,7 +623,7 @@ td.metric{font-weight:600;white-space:nowrap}
         <tr><td>XBRL tags differ between companies</td><td>A tested mapping from each company's tags to canonical metrics.</td></tr>
         <tr><td>PDF tables flatten badly</td><td>Numbers come from XBRL. Page-sized chunks keep each financial statement whole, which ranked statement evidence first far more often (MRR 0.60 against 0.42 with 480-token chunks).</td></tr>
         <tr><td>No CUDA GPU on the development machine</td><td>Fine-tuning runs on free Kaggle or Colab GPUs; small models are served on CPU with ONNX.</td></tr>
-        <tr><td>Cloud costs</td><td>A budget alert comes first, Cloud Run scales to zero, the database runs only in demo windows, and a scheduled job stops it if it is left running.</td></tr>
+        <tr><td>Cloud costs</td><td>A budget alert comes first, Cloud Run scales to zero, the database runs only in demo windows, and a scheduled job stops it if it is left running. Measured: about $2.10 an idle month before credits. An open page costs $0.09 an hour, so an idle limit in the UI comes next.</td></tr>
       </tbody>
     </table>
   </div>
@@ -642,13 +642,13 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><h3>Serving</h3><div class="chips"><span class="chip">FastAPI</span><span class="chip">SSE</span><span class="chip">Streamlit</span><span class="chip">MCP Python SDK</span><span class="chip">Langfuse</span></div></div>
     <div><h3>Infrastructure</h3><div class="chips"><span class="chip">Docker</span><span class="chip">Terraform</span><span class="chip">GitHub Actions</span><span class="chip">Cloud Run</span><span class="chip">Cloud SQL</span><span class="chip">Cloud Storage</span><span class="chip">Pub/Sub</span><span class="chip">Firestore</span><span class="chip">Secret Manager</span><span class="chip">Cloud Logging</span></div></div>
   </div>
-  <p class="tnote">In use after Phases 0 to 6: LiteLLM with Groq (gpt-oss-120b for answers and SQL, Qwen for rewrites, table selection and judging), Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts queried through text2sql-analyst and sqlglot, the evaluation harness, pypdfium2, FastEmbed's bge-small, BM25 and cross-encoder models on ONNX Runtime, LangGraph, FastAPI with server-sent events, Streamlit, the MCP Python SDK, Langfuse, and Docker images run by Compose. The rest is confirmed in a decision record when its phase lands.</p>
+  <p class="tnote">In use after Phases 0 to 8: LiteLLM with Groq (gpt-oss-120b for answers and SQL, Qwen for rewrites, table selection and judging), Docker Compose with local Qdrant and Postgres, GitHub Actions and Dependabot, an SEC EDGAR client, a SQLite database of XBRL facts queried through text2sql-analyst and sqlglot, the evaluation harness, pypdfium2, FastEmbed's bge-small, BM25 and cross-encoder models on ONNX Runtime, LangGraph, FastAPI with server-sent events, Streamlit, the MCP Python SDK, Langfuse, Docker images run by Compose, LoRA adapters trained with PEFT on Kaggle GPUs, DSPy's MIPROv2, and, on Google Cloud, Terraform, Cloud Run, Cloud SQL, Firestore, Pub/Sub, Secret Manager and Artifact Registry, deployed from GitHub Actions through Workload Identity Federation, with Cerebras as a capped paid fallback. The rest is confirmed in a decision record when its phase lands.</p>
 </section>
 </main>
 
 <footer class="sheet foot">
   <p>Built by Vinayak Mokashi · <a href="https://github.com/VinayakMokashi/filings-research-copilot">Source on GitHub</a> · The data agent builds on <a href="https://github.com/VinayakMokashi/text2sql-analyst">text2sql-analyst</a>, an earlier project</p>
-  <p>Updated 2 November 2026</p>
+  <p>Updated 10 November 2026</p>
 </footer>
 
 <script>
