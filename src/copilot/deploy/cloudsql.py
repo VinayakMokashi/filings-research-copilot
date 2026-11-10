@@ -1,7 +1,8 @@
 """The demo database on Cloud SQL (ADR-0031): demo windows, and the facts loaded into it.
 
-- **Demo windows.** `demo-up` starts the instance and waits until it runs; `demo-down`
-  stops it. The API's `FactsExecutor` notices within a minute either way. A Cloud
+- **Demo windows.** `demo-up` starts the instance and waits until Cloud SQL's operation
+  ends; `demo-down` stops it the same way. The API's `FactsExecutor` notices within a
+  minute either way. A Cloud
   Scheduler job stops the instance every night whatever was left running, and an alert
   fires after four hours up.
 - **Loading the facts.** The local PostgreSQL copy (`poe load-facts-postgres`) is dumped,
@@ -49,17 +50,52 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO {READER};
 def set_activation(policy: Literal["ALWAYS", "NEVER"]) -> list[str]:
     """Start (ALWAYS) or stop (NEVER) the instance; its storage stays either way.
 
-    `--async` returns at once and the caller waits for the state: gcloud's own wait gives
-    up after about ten minutes, and the first start took ten and a half.
+    `--async` returns at once with the operation's name, which `change_activation` waits
+    for: gcloud's own wait gives up after about ten minutes, and the first start took ten
+    and a half.
     """
     return command(
         "sql", "instances", "patch", INSTANCE, f"--activation-policy={policy}",
-        "--async", "--quiet",
+        "--async", "--quiet", "--format=value(name)",
     )  # fmt: skip
 
 
 def describe_state() -> list[str]:
     return command("sql", "instances", "describe", INSTANCE, "--format=value(state)")
+
+
+def describe_operation(name: str) -> list[str]:
+    """An operation's status (PENDING, RUNNING or DONE) and its first error, if any."""
+    return command(
+        "sql", "operations", "describe", name, "--format=value(status,error.errors[0].message)"
+    )
+
+
+def change_activation(
+    policy: Literal["ALWAYS", "NEVER"],
+    gcloud: Callable[[list[str]], str],
+    *,
+    timeout_s: float = 1500.0,  # a start has taken ten and a half minutes
+    sleep: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.monotonic,
+) -> str:
+    """Start or stop the instance and wait until Cloud SQL's operation ends; returns the
+    instance's state then. `gcloud` runs a command line and returns its output.
+
+    The state is no guide while the operation runs: a ten-minute start read RUNNABLE six
+    seconds in, then MAINTENANCE, then RUNNABLE again with two and a half minutes to go.
+    """
+    operation = gcloud(set_activation(policy))
+    status = wait_for(
+        lambda: gcloud(describe_operation(operation)),
+        lambda line: line.split("\t", 1)[0] == "DONE",
+        timeout_s=timeout_s,
+        sleep=sleep,
+        clock=clock,
+    )
+    if error := status.partition("\t")[2].strip():
+        raise RuntimeError(f"Cloud SQL's operation failed: {error}")
+    return gcloud(describe_state())
 
 
 def private_address() -> list[str]:
@@ -92,7 +128,7 @@ def reader_url(address: str, password: str) -> str:
 
 
 def wait_for(
-    read_state: Callable[[], str],
+    read: Callable[[], str],
     done: Callable[[str], bool],
     *,
     timeout_s: float = 900.0,
@@ -100,12 +136,12 @@ def wait_for(
     sleep: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.monotonic,
 ) -> str:
-    """Poll the instance's state until `done` accepts it; returns that state."""
+    """Poll `read` (a state or an operation's status) until `done` accepts it; returns it."""
     deadline = clock() + timeout_s
     while True:
-        state = read_state()
-        if done(state):
-            return state
+        value = read()
+        if done(value):
+            return value
         if clock() >= deadline:
-            raise TimeoutError(f"the instance is still {state or 'unknown'}")
+            raise TimeoutError(f"still {value.strip() or 'unknown'} after {timeout_s:.0f} s")
         sleep(every_s)
