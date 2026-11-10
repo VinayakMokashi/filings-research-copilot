@@ -277,10 +277,16 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 - [x] 8.6 CD: build and push, deploy, smoke tests; roll back to the previous Cloud Run revision when needed. Five deploys on 2026-11-02. Two failed safely (a missing file, and Cloud Run's front end answering `/healthz` itself), and both changed the pipeline: a start check before any rollout, and `/health` and `/ready`. A rollback by hand took 10 s ([report](eval/deployment.md)).
 - [x] 8.7 Load test with Locust and size the services from the results. 30 visitors for 10 minutes: 3,540 requests, none failed, cached answers in 49 ms at the median and 130 ms at the 99th percentile, one API instance at 6% CPU and half its memory; the sizes stay ([report](eval/deployment.md)).
 - [x] 8.8 Security pass: least-privilege service accounts, a read-only SQL user, dependency and image scans. The deployer may roll out the four services only, the scheduler holds a two-permission role, and the default Compute account lost Editor; the SQL reader, checked on the instance, may only read; Trivy found no fixable HIGH or CRITICAL; the registry's own scan was skipped (gcloud's on-demand scan doesn't run on Windows) ([report](eval/deployment.md)).
-- [ ] 8.9 Measure and document the cost of an idle month and of one demo, inside the free-trial credit's 90 days.
+- [x] 8.9 Measure and document the cost of an idle month and of one demo, inside the free-trial credit's 90 days. Measured from the billing export:
+  - an idle month costs about $2.10 before credits, 96% of it the stopped database's storage;
+  - a demo hour costs $0.014;
+  - an open UI page costs $0.09 an hour of Cloud Run time;
+  - the deploy's start check no longer downloads the image it built, which had cost $0.04 a deploy.
+
+  ([report](eval/deployment.md#costs))
 
 **Done when:** the public URLs work, dashboards and alerts work, `demo-up` and `demo-down` start and stop the database, and an idle month costs close to nothing.
-**Docs:** ADRs on the Google Cloud topology ([ADR-0031](decisions/0031-google-cloud-topology.md)) and CI/CD; runbooks for demo-up, demo-down, rollback, key rotation and provider outages; guides `cloud-run.md`, `terraform-basics.md`, `workload-identity-federation.md`.
+**Docs:** ADRs on the Google Cloud topology ([ADR-0031](decisions/0031-google-cloud-topology.md)) and CI/CD; runbooks for demo-up, demo-down, rollback, key rotation and provider outages; guides `cloud-run.md`, `terraform-basics.md`, `workload-identity-federation.md`, `cloud-costs.md`.
 **Manual steps:** a Google Cloud project with billing enabled; a domain, only if a custom one is wanted.
 
 ### Phase 9: Online evaluation and feedback (M)
@@ -326,7 +332,8 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | XBRL tags differ across companies | A canonical `metrics` mapping with tests |
 | PDF tables flatten badly | Table-aware parsing experiment; numbers come from XBRL instead |
 | Development machine has no CUDA GPU | Train on Kaggle or Colab GPUs; serve small models on CPU with ONNX |
-| Cloud costs | Budget alert first; Cloud Run scales to zero; the database runs only in demo windows, with a scheduled stop; Phase 8's measurements run inside the free-trial credit |
+| Cloud costs | Budget alert first; Cloud Run scales to zero; the database runs only in demo windows, with a scheduled stop; Phase 8's measurements run inside the free-trial credit. Measured: about $2.10 an idle month before credits ([report](eval/deployment.md#costs)) |
+| An open UI page bills Cloud Run's CPU while its websocket lasts, about $0.09 an hour, and Streamlit reconnects after the 3,600 s timeout | Cloud Run's free tier covers about 50 such hours a month, and the budget's emails start at $7.50. Still to do: an idle limit in the UI, so a forgotten tab stops billing |
 | Qdrant Cloud free clusters may pause when idle | Collection snapshots in Cloud Storage; restore during `demo-up` |
 | FinanceBench licence | Used for evaluation only; licence checked in Phase 1 |
 | Scope | Each phase delivers standalone value; stretch items are marked |
@@ -372,6 +379,9 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-11-02 | The deployment is live; the API falls back to Cerebras, capped at $0.50 a day, when Groq refuses | The owner's choice ([ADR-0033](decisions/0033-capped-paid-fallback.md)): Groq's per-minute limit could turn a visitor away with the day's quota unspent |
 | 2026-11-02 | Health endpoints renamed `/health` and `/ready` | Cloud Run's front end answers `/healthz` itself ([report](eval/deployment.md)) |
 | 2026-11-02 | Artifact Registry's one-off scan skipped | gcloud's on-demand scan doesn't run on Windows, and automatic scanning would rescan every push; Trivy scans every build ([report](eval/deployment.md)) |
+| 2026-11-10 | `demo-up` and `demo-down` wait for Cloud SQL's operation to end, not for the instance's state | The state read RUNNABLE six seconds into a ten-minute start ([runbook](runbooks/demo-windows.md)) |
+| 2026-11-10 | The deploy's start check runs the image the build loaded into the runner | Pulling it back from the registry cost $0.04 of internet egress a deploy ([report](eval/deployment.md#a-deploy)) |
+| 2026-11-10 | Step 8.9 done, and Phase 8 closed | The billing export measured about $2.10 for an idle month before credits, $0.014 for a demo hour and $0.09 an hour for an open UI page; ADR-0031's estimate was $3 to $4 ([report](eval/deployment.md#costs)) |
 
 ## 11. Status tracker
 
@@ -385,6 +395,6 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 5 Orchestration | Done | 2026-10-24 | 2026-10-27 |
 | 6 API, UI, MCP, observability | Done | 2026-10-26 | 2026-10-27 |
 | 7 Fine-tuning and optimisation | Done | 2026-10-27 | 2026-10-28 |
-| 8 Google Cloud deployment | In progress: live since 2026-11-02; the costs remain | 2026-10-28 | |
+| 8 Google Cloud deployment | Done | 2026-10-28 | 2026-11-10 |
 | 9 Online evaluation | Planned | | |
 | 10 Showcase and polish | Planned | | |
