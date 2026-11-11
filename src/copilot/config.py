@@ -88,6 +88,11 @@ class Settings(BaseSettings):
         gt=0,
         description="Tokens a minute each model allows; batch jobs pause to stay under it.",
     )
+    # A spending cap for a batch run (ADR-0034): every call that reaches a model adds its
+    # cost to the ledger file, which the run's processes share, and once the total reaches
+    # the cap, calls are refused (copilot.llm.budget). 0 turns it off.
+    llm_budget_usd: float = Field(default=0.0, ge=0.0)
+    llm_budget_file: Path | None = None
 
     # Local data: downloads under data/raw, built databases under data/processed
     data_dir: Path = Path("data")

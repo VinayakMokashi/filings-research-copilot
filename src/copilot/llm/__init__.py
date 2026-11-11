@@ -1,6 +1,7 @@
 """LLM access: one gateway for every model call, plus a fake for tests."""
 
 from copilot.llm.base import (
+    BudgetSpentError,
     LLMClient,
     LLMError,
     LLMResponse,
@@ -14,6 +15,7 @@ from copilot.llm.fake import FakeLLM
 from copilot.llm.gateway import LLMGateway, build_router
 
 __all__ = [
+    "BudgetSpentError",
     "FakeLLM",
     "LLMClient",
     "LLMError",
