@@ -293,14 +293,20 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 
 **Goal:** keep quality visible over time.
 
-- [ ] 9.1 A nightly eval job (GitHub Actions against the local stack, or during demo windows) with regression alerts and a trend chart.
+- [ ] 9.0 An idle limit in the web UI, from step 8.9's costs: after 15 minutes without input, the page leaves for a static "Paused" page, which closes its websocket, so a forgotten tab stops keeping the UI's CPU billed.
+- [ ] 9.1 A nightly eval job in GitHub Actions, keyless, on Cerebras in Phase 7's evaluation setup, within a hard cap of $0.40 a night and $1.20 on Sundays ([ADR-0034](decisions/0034-nightly-evaluation.md)):
+  - every night, a fixed slice of 40 FinanceBench dev questions, and the routing and SQL sets' dev splits;
+  - on Sundays, all 100 dev questions instead of the slice;
+  - metrics only, never question or answer text, with a trend chart on the project page;
+  - a regression (a paired test against the last full run) fails the run and opens an issue.
 - [ ] 9.2 Feedback stored as preference pairs (chosen vs rejected) for future preference tuning.
-- [ ] 9.3 Bandit routing online, with a cost guardrail.
-- [ ] 9.4 Stretch: a search page that interleaves two retrievers and logs clicks.
+- [ ] 9.3 Bandit routing online, with a cost guardrail: its own cap of $0.25 a day, after which answers return to the fixed model; compared with the fixed arm, with intervals, after two weeks.
+- [ ] 9.4 Stretch, built last: a search page that interleaves two retrievers and logs clicks.
 - [ ] 9.5 Drift checks on retrieval scores, refusal rate and latency.
 
 **Done when:** the nightly trend is visible and feedback is being stored.
-**Docs:** guides `online-evaluation.md`, `preference-data.md`.
+**Docs:** ADR-0034; guides `online-evaluation.md`, `preference-data.md`.
+**Money:** the nightly eval at most about $15 a month, the bandit at most $0.25 a day and the paid fallback at most $0.50 a day, all billed by Cerebras; Google Cloud unchanged.
 
 ### Phase 10: Showcase and polish (M)
 
@@ -382,6 +388,9 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-11-10 | `demo-up` and `demo-down` wait for Cloud SQL's operation to end, not for the instance's state | The state read RUNNABLE six seconds into a ten-minute start ([runbook](runbooks/demo-windows.md)) |
 | 2026-11-10 | The deploy's start check runs the image the build loaded into the runner | Pulling it back from the registry cost $0.04 of internet egress a deploy ([report](eval/deployment.md#a-deploy)) |
 | 2026-11-10 | Step 8.9 done, and Phase 8 closed | The billing export measured about $2.10 for an idle month before credits, $0.014 for a demo hour and $0.09 an hour for an open UI page; ADR-0031's estimate was $3 to $4 ([report](eval/deployment.md#costs)) |
+| 2026-11-11 | Step 9.0 added: an idle limit in the web UI | An open page keeps the UI's CPU billed while its websocket lasts, and Streamlit reconnects after Cloud Run's timeout, so a forgotten tab could cost about $2.20 a day ([report](eval/deployment.md#an-open-tab)) |
+| 2026-11-11 | Step 9.1 runs in GitHub Actions on Cerebras, within $0.40 a night and $1.20 on Sundays, on a 40-question slice with the full dev set on Sundays | Keyless and free to run for a public repository; Phase 7's evaluation setup keeps each night comparable with copilot v2's dev results and leaves Groq's free quota to visitors ([ADR-0034](decisions/0034-nightly-evaluation.md)) |
+| 2026-11-11 | Step 9.3's bandit may spend up to $0.25 a day on Cerebras, and step 9.4 comes last | The owner's choice: a bandit can only learn from answers it pays for, with its own cap like the paid fallback's ([ADR-0033](decisions/0033-capped-paid-fallback.md)); the search page makes no model calls and needs traffic to show anything |
 
 ## 11. Status tracker
 
@@ -396,5 +405,5 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 6 API, UI, MCP, observability | Done | 2026-10-26 | 2026-10-27 |
 | 7 Fine-tuning and optimisation | Done | 2026-10-27 | 2026-10-28 |
 | 8 Google Cloud deployment | Done | 2026-10-28 | 2026-11-10 |
-| 9 Online evaluation | Planned | | |
+| 9 Online evaluation | In progress | 2026-11-11 | |
 | 10 Showcase and polish | Planned | | |
