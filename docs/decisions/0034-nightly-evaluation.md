@@ -29,14 +29,14 @@ The constraints:
 
 1. **Where.** A GitHub Actions workflow runs every night at 20:30 UTC (02:00 IST), from source with uv, so no image is pulled from the registry. It authenticates through workload identity federation as a new `eval` service account, which may read the data bundle and four secrets only: the Groq and Cerebras keys, and Qdrant Cloud's address and read-only key.
 2. **What.** Each night:
-   - the copilot answers a fixed slice of 40 FinanceBench dev questions, stratified by route and question type;
+   - the copilot answers a fixed slice of 32 FinanceBench dev questions, stratified by route and question type (sized from a measured night; see Evidence);
    - the LLM router decides the routing set's 138 dev questions;
    - the data agent answers the SQL set's 28 dev questions.
 
    The run that starts at 02:00 IST on a Sunday answers all 100 dev questions instead. The test split stays closed.
 3. **How it is graded.** As in Phase 7: the strong and fast roles run on Cerebras and the small role on Groq (ADR-0024). The correctness judge (prompt 2) and the faithfulness check (prompt 1) run on Cerebras's Qwen with reasoning off. No cache carries over from one night to the next, so every night's calls are fresh.
 4. **A hard cap.** At most $0.40 a night and $1.20 on Sundays, about $15 a month, enforced by the run itself.
-   - The gateway counts each call's cost in a ledger the night's steps share, and refuses calls once the total reaches the cap.
+   - The gateway counts each call's cost in a ledger the night's steps share, and refuses calls once the total reaches the cap. Groq's free calls count at their list price too, so the cap is slightly stricter than the money spent.
    - Each step has its own share of the cap, so a run cut short still grades what it answered.
    - A run stopped by the cap is recorded as partial and draws no verdict.
    - The slice's size comes from one measured run: if a night costs more than the cap allows, the slice shrinks and the cap stays.
@@ -48,23 +48,26 @@ The constraints:
 
 ## Evidence
 
-The sizing estimate, from copilot v2's dev run on Cerebras ([report](../eval/copilot-v2.md)):
+The first estimate, from copilot v2's dev run on Cerebras ([report](../eval/copilot-v2.md)), put a night of 40 questions at about $0.40, at the cap. So one night was run by hand on 11 November, from an empty cache, before the schedule started ([report](../eval/nightly.md)):
 
-| Step | Estimate a night |
-|---|---|
-| 40 answers at about $0.005 | about $0.20 |
-| The judge and the faithfulness check | about $0.07 |
-| The routing set's 138 decisions | about $0.10 |
-| The SQL set's 28 answers | about $0.04 |
-| **Total** | **about $0.40** |
+| Step | Spent | Night so far |
+|---|---|---|
+| 40 answers | $0.1909 | $0.1909 |
+| The judge | $0.0268 | $0.2177 |
+| The faithfulness check | $0.0325 | $0.2502 |
+| The routing set's 138 decisions | $0.0586 | $0.3088 |
+| The SQL set's 28 answers | $0.0693 | $0.3781 |
 
-That is at the cap, so the first run is made by hand and measured before the schedule starts. Its numbers will be added here.
+- **The answers came out right.** Correct was 0.65, as in copilot v2's dev run.
+- **The cost left too little room.** $0.378 of $0.40 leaves 5.5% for nights that cost more, and a night cut short draws no verdict. So the slice is 32 questions, about $0.33 a night.
+- **The steps' shares** follow the measured costs: 50%, 57%, 65%, 82% and 100% of the cap.
+- **A full run** should cost about $0.75 of its $1.20.
 
 ## Consequences
 
 - **Quality becomes a time series.** A drop shows within a day of its cause, with the commit that was on `main` that night.
-- **The month's model spend** is at most about $15 at Cerebras's prices, and nothing on Google Cloud: the secrets are read a few times a night, within Secret Manager's free operations.
-- **A 40-question slice detects only large drops.** With 40 paired questions and the night's tests adjusted together, a fall needs to be roughly 15 to 20 points to be significant; the Sunday run's 100 questions see smaller ones. The trend shows the rest.
+- **The month's model spend** is about $12 by the measured night, and at most about $15 by the caps, at Cerebras's prices. Google Cloud bills nothing for it: the secrets are read a few times a night, within Secret Manager's free operations.
+- **A 32-question slice detects only large drops.** With the night's four tests adjusted together, a drop is significant only when at least 8 questions change, all the same way: 25 points on the slice, 8 points on the Sunday run's 100. The slice's nights show the trend and catch a breakage; the full run is the finer test.
 - **Fresh calls vary.** Temperature 0 doesn't make every reply identical, so a night can differ from the last with nothing changed. The family-wise test keeps false alarms to about one night in twenty.
 - **The small role uses Groq's free tier** in the rolling 24 hours visitors share, a few dozen checks a night, at the quietest hour.
 - **The bundle and the questions are downloaded each night,** from the project's own bucket and FinanceBench's repository. The bundle is cached by its checksum.
