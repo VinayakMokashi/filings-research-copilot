@@ -15,6 +15,38 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-11 · Phase 9 · The nightly evaluation: a run's spending cap, a measured night, and the schedule
+
+- **Goal:** step 9.1: evaluate the copilot every night within a hard cap, keep metrics only, show the trend, and flag regressions ([ADR-0034](decisions/0034-nightly-evaluation.md)).
+- **Done:**
+  - **A spending cap for a run (#101).** The gateway counts each real call's cost in a ledger the night's steps share, and at the cap refuses calls with `BudgetSpentError`, which reads as a spent quota and is never retried.
+  - **The nightly runner (#101),** `poe nightly-eval`:
+    - five steps: the answers, the judge, the faithfulness check, the routing set and the SQL set, each under a cumulative share of the cap;
+    - metrics only, with exact intervals where a share reaches 0 or 1;
+    - paired tests against the last full run, adjusted together.
+  - **The account (#102),** `github-eval`, reached by workload identity federation from `main`. It reads the data bundle and four secrets. Applied: 3 resources in bootstrap, 4 in prod.
+  - **The workflow (#104).** It runs every night at 02:00 IST, with the full dev set on Sundays, and pushes the metrics to the `eval-history` branch. A regression opens an issue, and a trial cap lets the pipeline be tested for cents.
+  - **A measured night,** run by hand on 11 November, is the history's first.
+  - **The trend on the project page:** one panel a metric, read from `eval-history`.
+- **Commands:**
+  - `uv run poe nightly-eval --set slice --budget 0.40 --out dist/nightly/2026-11-11-slice`, from an empty data folder;
+  - `terraform plan` and `apply` on both roots;
+  - `gh variable set GCP_EVAL_SA`.
+- **Results:**
+  - **The measured night cost $0.378 of $0.40:** answers $0.191, judge $0.027, faithfulness $0.033, routing set $0.059, SQL set $0.069.
+  - **Its scores:** correct 0.65 (0.50 to 0.80), answered 0.925, faithful 0.81, routing 1.00 and SQL 1.00 ([report](eval/nightly.md)).
+- **Problems and fixes:**
+  - **A cached run measures nothing.** The laptop's caches held the same calls from Phase 7, so the measured night ran from an empty data folder with only the bundle and the question files, as a CI runner has.
+  - **Too little headroom.** At 40 questions only 5.5% of the cap was left, so the slice is 32, and the steps' shares follow the measured costs.
+  - **Collapsed intervals.** Bootstrap intervals collapsed to [1.00, 1.00] on the routing and SQL sets; they are now exact (Clopper-Pearson) where a share reaches 0 or 1.
+  - **Public logs.** A public repository's Actions logs can be read by anyone, so each step's output stays on the runner, and a failed step reports only its exception's class.
+  - **No empty choice.** A GitHub `choice` input can't be empty, so `auto` picks the set by the IST weekday.
+- **Decisions:** ADR-0034, with the measured night; the plan's change log (32 questions).
+- **Next:**
+  - the first scheduled night, at 02:00 IST on 12 November;
+  - the first full run, at 02:00 IST on Sunday 15 November, which becomes the baseline;
+  - then feedback as preference pairs (step 9.2).
+
 ### 2026-11-11 · Phase 9 · An idle limit for the web UI, and Phase 9's plan
 
 - **Goal:** stop a forgotten UI tab from billing, the risk step 8.9 found, and plan Phase 9.

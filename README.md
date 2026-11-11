@@ -6,7 +6,7 @@
 
 An agentic research copilot for public-company filings. Ask a question about a company and get an answer built from its 10-K and 10-Q text and its XBRL financial facts, with every claim cited to the page or query it came from.
 
-> **Status:** in active development. Phases 0 to 6 are done (foundations, data and evaluation sets, the retrieval baseline, the doc agent with cited answers, the data agent with Text-to-SQL, orchestration with LangGraph, and the API, web UI, MCP server, container stack and traces); Phase 7, fine-tuning and optimisation, is done too. Phase 8, deployment on Google Cloud, is done: live since 2 November 2026, with an idle month measured at about $2.10 before credits. Phase 9, online evaluation and feedback, is next, of 11 phases numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
+> **Status:** in active development. Phases 0 to 6 are done (foundations, data and evaluation sets, the retrieval baseline, the doc agent with cited answers, the data agent with Text-to-SQL, orchestration with LangGraph, and the API, web UI, MCP server, container stack and traces); Phase 7, fine-tuning and optimisation, is done too. Phase 8, deployment on Google Cloud, is done: live since 2 November 2026, with an idle month measured at about $2.10 before credits. Phase 9, online evaluation and feedback, is under way: since 11 November the copilot is evaluated every night within a hard cap, and its trend is on the project page. That is 11 phases, numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
 >
 > **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/
 >
