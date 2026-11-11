@@ -19,6 +19,7 @@
 | [Routing: semantic and LLM routers](routing.md) | 5 | Which router should choose each question's route, by embedding similarity, by asking a model, or both, and at what latency and cost |
 | [The facts tables on PostgreSQL](facts-postgres.md) | 8 | Whether the data agent's queries give the same results and the same answers on PostgreSQL as on the SQLite file it was built and evaluated on |
 | [The deployment on Google Cloud](deployment.md) | 8 | Whether releases, demo windows, one API instance under load, and every account's roles work as the topology intends |
+| [The nightly evaluation](nightly.md) | 9 | What one night of the nightly evaluation costs, step by step, and how many FinanceBench questions a night can answer within its cap |
 
 One report per experiment, with these sections:
 
