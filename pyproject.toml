@@ -89,6 +89,8 @@ scan-injections = { cmd = "python scripts/scan_injections.py", help = "Count wha
 eval-semantic-cache = { cmd = "python scripts/eval_semantic_cache.py", help = "Measure a similarity cache on routing-set pairs: paraphrases against measure swaps (no model calls)" }
 run-memory = { cmd = "python scripts/run_memory.py", help = "Run the memory set: follow-up rewriting and notes about users, turn by turn (--run)" }
 run-copilot = { cmd = "python scripts/run_copilot.py", help = "Run FinanceBench dev questions through the copilot's graph, resumably, with agent metrics (--run)" }
+nightly-slice = { cmd = "python scripts/choose_nightly_slice.py", help = "Choose the nightly evaluation's dev questions by route and question type, into eval/nightly/slice.json (ids only)" }
+nightly-eval = { cmd = "python scripts/nightly_eval.py", help = "The nightly evaluation under a spending cap: answers, judges, routing and SQL sets; metrics only, and a paired test against the last full run (--set, --budget, --out, --baseline)" }
 run-briefs = { cmd = "python scripts/run_briefs.py", help = "Write the brief set's briefs with the crew or one specialist, resumably, and grade them with rubrics and the faithfulness check (--system, --run)" }
 jury-briefs = { cmd = "python scripts/jury_briefs.py", help = "Grade a brief run's rubrics again with a second judge, and report their agreement and kappa (--run, --role)" }
 fetch-sec = { cmd = "python scripts/fetch_sec.py", help = "Match the companies to SEC filers and download their XBRL company facts" }
