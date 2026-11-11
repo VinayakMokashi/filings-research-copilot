@@ -61,6 +61,7 @@ ORDER BY day, gross DESC
 | `infra/terraform/bootstrap/main.tf` | The $15 monthly budget, before credits; the export's dataset; the registry's cleanup policy (three newest versions kept, the rest deleted after a week) |
 | `infra/terraform/modules/cloud-run-service/main.tf` | Request-based billing (`cpu_idle = true`) and scaling to zero |
 | `infra/terraform/envs/prod/services.tf` | Each service's CPU, memory and request timeout. The UI's 3,600 s bounds one websocket |
+| `src/copilot/ui/app.py`, `src/copilot/ui/static/paused.html` | The UI's idle limit: a page without input for 15 minutes (`FRC_UI_IDLE_MINUTES`) leaves for a static page, which closes its websocket |
 | `infra/terraform/envs/prod/scheduler.tf` | The nightly database stop and the weekly keep-alive |
 | `.github/workflows/deploy.yml` | The start check, which runs the image the build loaded instead of downloading it |
 
@@ -71,13 +72,15 @@ The [deployment report](../eval/deployment.md#costs) has the full tables:
 - **An idle week,** 3 to 9 November: $0.56 gross. Without one visit, the demo hour's spill-over and one check, it was $0.49, which is $2.15 a month. 96% of that is the stopped database's storage.
 - **A demo hour** on 10 November: $0.0138. Of that, $0.0126 is instance time: 3,607 s, matching the start-to-stop requests to the second.
 - **One visit** on 4 November: one tab open for 33 minutes, $0.052. An open page costs $0.09 an hour.
+- **The idle limit** on 11 November: a page left without input held its websocket for 900.7 s, then went to the paused page and opened no other. A forgotten tab now costs about $0.023 once.
 - **A deploy** paid $0.042 of registry egress until the start check stopped downloading the image.
 
 ## Pitfalls we hit
 
 - **The trial hides everything.** The net was $0.00 every day; only the gross and the credits' types say what comes after the trial.
 - **The export spreads instance time over four-hour blocks.** Three quarters of the demo hour of 10 November (00:00 to 01:01 UTC) is booked on 9 November.
-- **A websocket is a request.** With request-based billing, an open Streamlit page keeps the UI's CPU billed. A tab left open for a day would cost about 30 times what the rest of the idle deployment does.
+- **A websocket is a request.** With request-based billing, an open Streamlit page keeps the UI's CPU billed. A tab left open for a day would have cost about 30 times what the rest of the idle deployment does. Streamlit has no idle timeout of its own, so the page now leaves for a static page after 15 minutes without input; leaving a page is what closes its websocket.
+- **A browser may decide first.** Measuring the idle limit in an ordinary Chrome tab failed once: Chrome discarded the background tab after about 11 minutes to save memory, which closed the websocket too. A headless browser, which discards nothing, measured the limit itself.
 - **A check downloaded what it had just built.** The deploy's start check ran the API image from the registry, because the build pushed without loading it: 0.376 GB of egress a deploy.
 - **Free tiers are shared.** The registry's storage started costing on 9 November, before this project alone had used the free 0.5 GB: the account's other projects draw on it too.
 

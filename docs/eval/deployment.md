@@ -143,6 +143,7 @@ The UI counts a visitor's quota by the last address in `X-Forwarded-For` ([ADR-0
 | A UI example asked about a filing the corpus lacks | An example the copilot answers |
 | `demo-up` reported the database running 6 s into a 10-minute start: the instance's state reads RUNNABLE before the start has ended | The script waits for Cloud SQL's operation to end, not for the state |
 | Each deploy's start check downloaded the 0.38 GB API image back from the registry, billed as internet egress | The build loads the image into the runner's Docker as it pushes |
+| An open UI page kept the UI's CPU billed for as long as it stayed open, reconnecting after each timeout | An idle limit (step 9.0): after 15 minutes without input the page leaves for a static one, which holds no websocket |
 
 ## Costs
 
@@ -221,10 +222,17 @@ On 10 November the database ran from 00:00:36 to 01:01:17 UTC, and three fresh d
   - The UI has 1 vCPU and 512 MiB. The export charges $0.000024 a vCPU-second and $0.0000025 a GiB-second.
   - So an open page costs **$0.09 an hour.**
 - **The one visit since going live** held its websocket for 1,961 s (33 minutes) and cost $0.0520.
-- **The bound.** Cloud Run closes a websocket at the UI's 3,600-second request timeout, and Streamlit's page then reconnects. So a forgotten tab costs about $2.20 a day.
+- **The bound, until 11 November.** Cloud Run closes a websocket at the UI's 3,600-second request timeout, and Streamlit's page then reconnects. So a forgotten tab could cost about $2.20 a day.
   - That is an estimate: no visit has stayed open past the timeout.
   - Cloud Run's free tier covers about 50 such hours a month.
   - Tabs held by one instance share its time.
+- **The idle limit, since 11 November** (step 9.0). A page that gets no input for 15 minutes (no pointer, key, scroll or touch) leaves for a static "Paused" page. Leaving the page closes its websocket, and the static page holds none; its **Continue** button starts the app again.
+  - **Measured on the live UI.** A browser with no input opened the UI at 00:50:42 UTC on 11 November.
+    - Its websocket lasted 900.7 s.
+    - The paused page was requested at 01:05:44.989, 60 ms before the websocket ended.
+    - No websocket opened after it.
+  - **So a forgotten tab now bills about 15 minutes once,** about $0.023 before the free tier.
+  - **A browser can close it sooner.** In a first try, Chrome discarded the background tab after 648.7 s to save memory, which closed the websocket as well.
 
 ### A deploy
 
