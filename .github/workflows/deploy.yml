@@ -200,10 +200,15 @@ jobs:
             | tee mcp.txt
           grep -q '"serverInfo"' mcp.txt
 
-      - name: "Smoke test: the web UI is up"
+      - name: "Smoke test: the web UI is up, and serves the page an idle tab goes to"
         run: |
           curl -fsS --retry 5 --retry-all-errors --retry-delay 5 \
             "${{ steps.rollout.outputs.ui_url }}/_stcore/health"
+          curl -fsS --retry 3 --retry-all-errors --retry-delay 5 -o paused.html \
+            -w '%{content_type}\n' "${{ steps.rollout.outputs.ui_url }}/app/static/paused.html" \
+            | tee paused.type
+          grep -q '^text/html' paused.type
+          grep -q 'Continue' paused.html
 
       - name: Roll back to the previous revisions
         if: failure() && steps.rollout.outcome != 'skipped'
