@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-11 · Phase 9 · An idle limit for the web UI, and Phase 9's plan
+
+- **Goal:** stop a forgotten UI tab from billing, the risk step 8.9 found, and plan Phase 9.
+- **Done:**
+  - **The idle limit (#99, deployed).** After 15 minutes without input (pointer, keys, scroll or touch), the page leaves for a static "Paused" page; **Continue** starts the app again. `FRC_UI_IDLE_MINUTES` sets the limit, and 0 turns it off. The deploy's smoke test also fetches the paused page.
+  - **The plan (#100).** PLAN §7 lists Phase 9's steps with the decisions made on 10 November, and [ADR-0034](decisions/0034-nightly-evaluation.md) records the nightly evaluation's design.
+- **Commands:** `gcloud logging read` on the UI's request log; a headless Chrome on the live UI.
+- **Results:**
+  - **On the live UI**, a page given no input held its websocket for 900.7 s, then requested the paused page and opened no other websocket.
+  - So a forgotten tab now bills about 15 minutes once, $0.023 before the free tier, where it could cost about $2.20 a day ([report](eval/deployment.md#an-open-tab)).
+- **Problems and fixes:**
+  - **Streamlit has no idle timeout of its own.**
+    - A script in the page itself does the watching: `st.html` with JavaScript allowed, which isn't put in an iframe.
+    - Streamlit 1.66's static file serving, on its Starlette server, serves the paused page as HTML from the app's own address.
+  - **The script's empty element pushed the page down** by a row's gap. A style scoped to its own container hides it.
+  - **The first live measurement ended early.** In an ordinary Chrome tab, the websocket closed after 648.7 s, because Chrome discarded the background tab to save memory. A headless Chrome with a throwaway profile measured the limit itself.
+- **Decisions:** [ADR-0034](decisions/0034-nightly-evaluation.md), and four rows in the plan's change log.
+- **Next:** the nightly evaluation (step 9.1).
+
 ### 2026-11-10 · Phase 8 · Phase 8 complete
 
 - **Goal:** close Phase 8: every step measured and documented, and the plan, the README and the project page up to date.
