@@ -115,6 +115,17 @@ def test_the_summary_gives_each_metric_with_its_interval() -> None:
     assert (night["median_seconds"], night["p95_seconds"]) == (10.5, 20.0)
 
 
+def test_a_share_at_one_gets_the_exact_interval() -> None:
+    night = summary([], [{"accuracy": 1.0}] * 138, [{"accuracy": 1.0}] * 27 + [{"accuracy": 0.0}])
+
+    routing, sql = night["routing_accuracy"], night["sql_accuracy"]
+    assert routing["mean"] == 1.0
+    assert routing["high"] == 1.0
+    assert 0.97 < routing["low"] < 0.98  # Clopper-Pearson for 138 of 138
+    assert sql["high"] < 1.0  # 27 of 28: the bootstrap would reach 1.0
+    assert night["correct"] is None
+
+
 def night_of(correct: list[float]) -> dict[str, Any]:
     return {
         "run": "n",
