@@ -97,6 +97,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "date": args.date,
         "set": args.set,
         "run": run,
+        "runner": "github-actions" if os.environ.get("GITHUB_ACTIONS") else "local",
         "commit": commit(),
         "started": started.isoformat(timespec="seconds"),
         "finished": datetime.now(UTC).isoformat(timespec="seconds"),
