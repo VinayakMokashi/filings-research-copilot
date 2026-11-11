@@ -116,6 +116,10 @@ class Settings(BaseSettings):
     # Send a Google ID token for the API's address with each call (Cloud Run, where only
     # the UI's and the MCP server's accounts may call the API)
     api_id_token: bool = False
+    # Minutes without input (pointer, keys, scroll or touch) before the web UI leaves for a
+    # static page, which closes its websocket: on Cloud Run an open page keeps the UI's CPU
+    # billed, at $0.09 an hour (step 8.9); 0 turns the limit off
+    ui_idle_minutes: float = Field(default=15.0, ge=0.0)
     # Every run's events appended to data/traces/api.jsonl; off in the deployment, where
     # the file system is the instance's memory and traces go to Langfuse
     api_trace_file: bool = True

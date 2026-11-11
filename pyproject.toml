@@ -119,7 +119,7 @@ kaggle-router = { cmd = "python scripts/kaggle_router.py", help = "Train the cla
 publish-router = { cmd = "python scripts/publish_router.py", help = "Publish a trained classifier router on Hugging Face as a public model (--model-dir, --repo; --dry-run)" }
 kaggle-embedder = { cmd = "python scripts/kaggle_embedder.py", help = "Fine-tune the domain embedder on a Kaggle GPU from a private dataset, and download the model and the corpus's vectors (--user, --ref, --name; --prepare-only)" }
 check-faithfulness = { cmd = "python scripts/check_faithfulness.py", help = "Check that each answer sentence is supported by the sources it cites (--run NAME)" }
-ui = { cmd = "streamlit run src/copilot/ui/app.py --server.address 127.0.0.1 --server.port 8501 --browser.gatherUsageStats false --client.toolbarMode minimal", help = "Serve the web UI on 127.0.0.1:8501; it talks to the API at FRC_API_URL (default http://127.0.0.1:8000)" }
+ui = { cmd = "streamlit run src/copilot/ui/app.py --server.address 127.0.0.1 --server.port 8501 --server.enableStaticServing true --browser.gatherUsageStats false --client.toolbarMode minimal", help = "Serve the web UI on 127.0.0.1:8501; it talks to the API at FRC_API_URL (default http://127.0.0.1:8000)" }
 self-consistency = { cmd = "python scripts/self_consistency.py", help = "Sample more answers to a run's figure questions, vote on the figure, and keep a new run (--source, --k, --run)" }
 validate-answers = { cmd = "python scripts/validate_answers.py", help = "Run the validator over a run's stored answers and keep the result as a new run, resumably (--source, --run)" }
 analyse-errors = { cmd = "python scripts/analyse_errors.py", help = "Sort a run's answers into outcomes and error categories, with cost and latency" }
