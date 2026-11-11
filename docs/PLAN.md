@@ -295,7 +295,7 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 
 - [x] 9.0 An idle limit in the web UI, from step 8.9's costs: after 15 minutes without input, the page leaves for a static "Paused" page, which closes its websocket, so a forgotten tab stops keeping the UI's CPU billed. Done: on the live UI, a page left without input held its websocket for 900.7 s, then loaded the paused page and opened no other, so a forgotten tab bills about $0.023 once instead of about $2.20 a day ([report](eval/deployment.md#an-open-tab)).
 - [ ] 9.1 A nightly eval job in GitHub Actions, keyless, on Cerebras in Phase 7's evaluation setup, within a hard cap of $0.40 a night and $1.20 on Sundays ([ADR-0034](decisions/0034-nightly-evaluation.md)):
-  - every night, a fixed slice of 40 FinanceBench dev questions, and the routing and SQL sets' dev splits;
+  - every night, a fixed slice of 32 FinanceBench dev questions, and the routing and SQL sets' dev splits;
   - on Sundays, all 100 dev questions instead of the slice;
   - metrics only, never question or answer text, with a trend chart on the project page;
   - a regression (a paired test against the last full run) fails the run and opens an issue.
@@ -391,6 +391,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-11-11 | Step 9.0 added: an idle limit in the web UI | An open page keeps the UI's CPU billed while its websocket lasts, and Streamlit reconnects after Cloud Run's timeout, so a forgotten tab could cost about $2.20 a day ([report](eval/deployment.md#an-open-tab)) |
 | 2026-11-11 | Step 9.1 runs in GitHub Actions on Cerebras, within $0.40 a night and $1.20 on Sundays, on a 40-question slice with the full dev set on Sundays | Keyless and free to run for a public repository; Phase 7's evaluation setup keeps each night comparable with copilot v2's dev results and leaves Groq's free quota to visitors ([ADR-0034](decisions/0034-nightly-evaluation.md)) |
 | 2026-11-11 | Step 9.3's bandit may spend up to $0.25 a day on Cerebras, and step 9.4 comes last | The owner's choice: a bandit can only learn from answers it pays for, with its own cap like the paid fallback's ([ADR-0033](decisions/0033-capped-paid-fallback.md)); the search page makes no model calls and needs traffic to show anything |
+| 2026-11-11 | Step 9.1's slice is 32 questions, not 40 | One night of 40, measured by hand from an empty cache, cost $0.378 of its $0.40 cap, too close to it; at 32 a night should cost about $0.33 ([report](eval/nightly.md)) |
 
 ## 11. Status tracker
 
