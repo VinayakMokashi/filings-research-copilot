@@ -7,9 +7,10 @@ pause, or, when it knows the limit, the time the limit takes to earn back the to
 call used, whichever is longer. An answer call of 4,000 tokens under a limit of 8,000 a
 minute waits 30 seconds; a short rewrite waits the fixed pause. It also retries a
 rate-limited call after a growing pause, and adds up the latency and tokens of the calls
-it makes, in all and by model, so a run can report what it cost. Interactive use asks for
-one attempt: a quick fallback or apology beats minutes of waiting for a quota. The counts
-are kept under a lock, since the brief crew's writers share a client across threads.
+it makes, in all and by model, so a run can report what it cost. A run's spent budget
+(`BudgetSpentError`) is never retried: no wait lifts it. Interactive use asks for one attempt: a
+quick fallback or apology beats minutes of waiting for a quota. The counts are kept under a
+lock, since the brief crew's writers share a client across threads.
 """
 
 from __future__ import annotations
@@ -20,10 +21,14 @@ import time
 from collections.abc import Sequence
 from typing import Any
 
-from copilot.llm.base import LLMClient, LLMError, LLMResponse, Message, ModelRole
+from copilot.llm.base import BudgetSpentError, LLMClient, LLMError, LLMResponse, Message, ModelRole
 
 ATTEMPTS = 4
 RETRY_PAUSE_S = 30.0
+
+
+def _retryable(exc: LLMError, attempt: int, attempts: int) -> bool:
+    return exc.rate_limited and not isinstance(exc, BudgetSpentError) and attempt < attempts
 
 
 class PacedLLM:
@@ -87,7 +92,7 @@ class PacedLLM:
                 )
                 break
             except LLMError as exc:
-                if not exc.rate_limited or attempt == self._attempts:
+                if not _retryable(exc, attempt, self._attempts):
                     raise
                 time.sleep(RETRY_PAUSE_S * attempt)
         self._count(response)
@@ -111,7 +116,7 @@ class PacedLLM:
                 )
                 break
             except LLMError as exc:
-                if not exc.rate_limited or attempt == self._attempts:
+                if not _retryable(exc, attempt, self._attempts):
                     raise
                 await asyncio.sleep(RETRY_PAUSE_S * attempt)
         self._count(response)

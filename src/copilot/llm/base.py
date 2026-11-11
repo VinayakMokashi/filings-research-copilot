@@ -60,6 +60,17 @@ class LLMError(RuntimeError):
         self.rate_limited = rate_limited
 
 
+class BudgetSpentError(LLMError):
+    """A run's spending cap is reached (`copilot.llm.budget`).
+
+    It reads as a spent quota, so a batch run stops and keeps what it has, but no wait lifts
+    it, so it is never retried.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, rate_limited=True)
+
+
 class LLMClient(Protocol):
     """What the rest of the system depends on: the real gateway and the fake both fit."""
 

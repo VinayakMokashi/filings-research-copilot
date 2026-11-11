@@ -2,7 +2,9 @@
 
 Every call names a role (`strong`, `fast` or `small`) rather than a model. The gateway
 maps roles to LiteLLM model ids from settings, retries transient failures, walks the
-fallback chain, and reports tokens, cost and latency for each call.
+fallback chain, and reports tokens, cost and latency for each call. With a run's spending
+cap set (`FRC_LLM_BUDGET_USD`), it counts each call's cost and refuses calls once the cap
+is reached (`copilot.llm.budget`).
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from litellm.types.utils import ModelResponse
 
 from copilot.config import Settings
 from copilot.llm.base import LLMError, LLMResponse, Message, ModelRole
+from copilot.llm.budget import RunBudget
 from copilot.llm.reasoning import split_reasoning
 from copilot.logs import get_logger
 
@@ -140,6 +143,11 @@ class LLMGateway:
             )
             if secret is not None and secret.get_secret_value()
         ]
+        self._budget: RunBudget | None = None
+        if settings.llm_budget_usd > 0:
+            if settings.llm_budget_file is None:
+                raise ValueError("A spending cap (FRC_LLM_BUDGET_USD) needs FRC_LLM_BUDGET_FILE.")
+            self._budget = RunBudget(settings.llm_budget_file, settings.llm_budget_usd)
 
     def complete(
         self,
@@ -150,7 +158,10 @@ class LLMGateway:
         max_tokens: int | None = None,
         **extra: Any,
     ) -> LLMResponse:
-        """One chat completion. Raises `LLMError` when retries and fallbacks are exhausted."""
+        """One chat completion. Raises `LLMError` when retries and fallbacks are exhausted,
+        and `BudgetSpentError` when the run's spending cap is reached."""
+        if self._budget is not None:
+            self._budget.check()
         kwargs = self._call_kwargs(temperature, max_tokens, extra)
         started = time.perf_counter()
         try:
@@ -169,6 +180,8 @@ class LLMGateway:
         **extra: Any,
     ) -> LLMResponse:
         """Async version of `complete`."""
+        if self._budget is not None:
+            self._budget.check()
         kwargs = self._call_kwargs(temperature, max_tokens, extra)
         started = time.perf_counter()
         try:
@@ -204,6 +217,8 @@ class LLMGateway:
 
     def _finish(self, raw: object, role: ModelRole, latency_s: float) -> LLMResponse:
         response = _to_response(raw, role, latency_s)
+        if self._budget is not None:
+            self._budget.add(response)
         log.info(
             "llm.call",
             role=role,
