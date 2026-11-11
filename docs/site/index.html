@@ -29,6 +29,7 @@
   --hl-fg:#14202A;
   --link:#1D57A6;
   --step-1:#8EBBA3;--step-2:#6AA386;--step-3:#4D8B6E;--step-4:#35745A;--step-5:#245F47;
+  --trend:#1E7B52;
   --font-display:"Archivo","Helvetica Neue",Arial,sans-serif;
   --font-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
@@ -40,6 +41,7 @@
     --ledger:#67BE95;--ledger-soft:#16302A;--mark:#E6C43B;--on-mark:#14202A;
     --hl-bg:#6A560F;--hl-fg:#FFF4CC;--link:#86B4F2;
     --step-1:#2F5A47;--step-2:#3E745C;--step-3:#4F9072;--step-4:#5EAB86;--step-5:#6FC79B;
+    --trend:#47A878;
     color-scheme:dark;
   }
 }
@@ -48,6 +50,7 @@
   --ledger:#67BE95;--ledger-soft:#16302A;--mark:#E6C43B;--on-mark:#14202A;
   --hl-bg:#6A560F;--hl-fg:#FFF4CC;--link:#86B4F2;
   --step-1:#2F5A47;--step-2:#3E745C;--step-3:#4F9072;--step-4:#5EAB86;--step-5:#6FC79B;
+  --trend:#47A878;
   color-scheme:dark;
 }
 
@@ -163,6 +166,33 @@ table{width:100%;border-collapse:collapse;font-size:.94rem}
 th,td{text-align:left;vertical-align:top;padding:11px 14px 11px 0;border-bottom:1px solid var(--line)}
 thead th{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:nowrap}
 td.metric{font-weight:600;white-space:nowrap}
+/* Every night: small multiples, one metric a panel, read from the eval-history branch */
+.night{margin-top:34px}
+.night-lede{color:var(--muted);font-size:.94rem;line-height:1.55;max-width:78ch;margin-top:6px}
+.night-stats{display:flex;flex-wrap:wrap;gap:12px 32px;margin:16px 0 4px;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.04em;color:var(--muted)}
+.night-stats b{display:block;font-family:var(--font-display);font-size:1.35rem;letter-spacing:0;color:var(--ink);font-weight:700}
+.multiples{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:14px}
+.panel{position:relative;background:var(--surface);border:1px solid var(--line);padding:12px 12px 6px}
+.panel h4{font-size:.9rem;font-weight:700;margin:0}
+.panel .sub{font-family:var(--font-mono);font-size:.68rem;color:var(--muted);margin:2px 0 0}
+.panel svg{display:block;width:100%;height:auto;margin-top:6px;overflow:visible}
+.panel svg:focus{outline:none}
+.panel svg:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.panel .grid{stroke:var(--line);stroke-width:1}
+.panel .axis{fill:var(--muted);font-family:var(--font-mono);font-size:10px}
+.panel .band{fill:var(--trend);opacity:.12}
+.panel .whisker{stroke:var(--trend);stroke-width:2;opacity:.35;stroke-linecap:round}
+.panel .line{fill:none;stroke:var(--trend);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.panel .dot{fill:var(--trend);stroke:var(--surface);stroke-width:2}
+.panel .dot.partial{fill:var(--surface);stroke:var(--trend)}
+.panel .end{fill:var(--ink);font-family:var(--font-mono);font-size:11px;font-weight:600}
+.panel .cross{stroke:var(--muted);stroke-width:1}
+.panel .tip{position:absolute;z-index:2;pointer-events:none;background:var(--surface);border:1px solid var(--line);padding:6px 9px;font-size:.76rem;line-height:1.4;color:var(--muted);white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.panel .tip strong{display:block;font-family:var(--font-display);font-size:1rem;color:var(--ink)}
+.night details{margin-top:14px}
+.night summary{cursor:pointer;font-size:.9rem;color:var(--link)}
+.night details .table-wrap{margin-top:10px}
+.night td.num{font-family:var(--font-mono);font-size:.84rem;white-space:nowrap}
 .t-eval{min-width:700px}
 .t-road{min-width:720px}
 .t-road td:first-child{white-space:nowrap;font-weight:600}
@@ -207,7 +237,7 @@ td.metric{font-weight:600;white-space:nowrap}
 <header class="sheet cover">
   <div class="cover-top">
     <span class="kicker">Personal project · Build in progress</span>
-    <span class="kicker">Updated 10 November 2026</span>
+    <span class="kicker">Updated 11 November 2026</span>
   </div>
   <h1>Filings Research Copilot</h1>
   <p class="lede">Ask about a public company. The copilot answers from its SEC filings and reported financials, and <span class="hl">cites every claim to the page it came from</span><sup class="fn">1</sup>.</p>
@@ -217,7 +247,7 @@ td.metric{font-weight:600;white-space:nowrap}
     <div><dt>Sources</dt><dd>10-K and 10-Q text · XBRL company facts</dd></div>
     <div><dt>Benchmark</dt><dd>FinanceBench public sample</dd></div>
     <div><dt>Target platform</dt><dd>Google Cloud Run, scaling to zero · Qdrant · open models on Groq</dd></div>
-    <div><dt>Status</dt><dd>Phases 0 to 8 done, and live on Google Cloud (<a href="https://ui-499690143794.asia-south1.run.app">try it</a>) for about $2.10 an idle month; Phase 9, online evaluation, next</dd></div>
+    <div><dt>Status</dt><dd>Phases 0 to 8 done, and live on Google Cloud (<a href="https://ui-499690143794.asia-south1.run.app">try it</a>) for about $2.10 an idle month; Phase 9, online evaluation, under way: <a href="#nightly">evaluated every night</a></dd></div>
   </dl>
   <div class="actions">
     <a class="btn btn-primary" href="#architecture">See the architecture</a>
@@ -448,6 +478,22 @@ td.metric{font-weight:600;white-space:nowrap}
       <p>In <b>text2sql-analyst</b>, an earlier project, the same code scored 100% and then 95% on a re-run. Small eval sets need confidence intervals.</p>
     </aside>
   </div>
+  <div class="night" id="nightly">
+    <h3>Every night</h3>
+    <p class="night-lede">From 12 November a scheduled job evaluates the copilot every night: a fixed slice of 32 FinanceBench dev questions (all 100 on Sundays), the 138 routing and 28 SQL dev questions, on Cerebras, within a hard cap of $0.40 a night ($1.20 on Sundays). The first night, run by hand on 11 November to size the job, answered 40. Each point is one night with its 95% interval; a hollow point is a night its cap cut short. A significant drop against the last full run fails the run and opens an issue (<a href="https://github.com/VinayakMokashi/filings-research-copilot/blob/main/docs/decisions/0034-nightly-evaluation.md">ADR-0034</a>).</p>
+    <div class="night-stats" id="night-stats"></div>
+    <div class="multiples" id="night-panels"></div>
+    <details>
+      <summary>Every night as a table</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Night</th><th>Set</th><th>Correct</th><th>Faithful</th><th>Routing</th><th>SQL</th><th>Cerebras</th><th>Note</th></tr></thead>
+          <tbody id="night-rows"></tbody>
+        </table>
+      </div>
+    </details>
+    <p class="tnote" id="night-status">Reading the history from the <a href="https://github.com/VinayakMokashi/filings-research-copilot/tree/eval-history/nightly">eval-history branch</a>.</p>
+  </div>
 </section>
 
 <section class="item sheet" id="controls" aria-labelledby="h-controls">
@@ -648,7 +694,7 @@ td.metric{font-weight:600;white-space:nowrap}
 
 <footer class="sheet foot">
   <p>Built by Vinayak Mokashi · <a href="https://github.com/VinayakMokashi/filings-research-copilot">Source on GitHub</a> · The data agent builds on <a href="https://github.com/VinayakMokashi/text2sql-analyst">text2sql-analyst</a>, an earlier project</p>
-  <p>Updated 10 November 2026</p>
+  <p>Updated 11 November 2026</p>
 </footer>
 
 <script>
@@ -695,6 +741,175 @@ td.metric{font-weight:600;white-space:nowrap}
         }
       });
     });
+  }
+
+  // Every night: the history the nightly evaluation keeps on its own branch (ADR-0034).
+  // Its lines are data from the network, so text goes in with textContent only.
+  const nightly = document.getElementById("nightly");
+  if (nightly) {
+    const HISTORY = "https://raw.githubusercontent.com/VinayakMokashi/filings-research-copilot/eval-history/nightly/history.jsonl";
+    const METRICS = [
+      ["correct", "Correct", "judged against the reference"],
+      ["faithful", "Faithful", "cited sentences, checked"],
+      ["routing_accuracy", "Routing", "138 questions, LLM router"],
+      ["sql_accuracy", "SQL", "28 questions, data agent"]
+    ];
+    const NS = "http://www.w3.org/2000/svg";
+    const W = 300, H = 138, L = 30, R = 38, T = 10, B = 22;
+    const svgEl = (tag, attrs) => {
+      const node = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, String(v)));
+      return node;
+    };
+    const htmlEl = (tag, cls, text) => {
+      const node = document.createElement(tag);
+      if (cls) node.className = cls;
+      if (text != null) node.textContent = text;
+      return node;
+    };
+    const two = (v) => (v == null || !Number.isFinite(Number(v)) ? "–" : Number(v).toFixed(2));
+    const day = (iso) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+    const cerebras = (n) => Object.entries(n.spent_by_model || {})
+      .filter(([model]) => model.startsWith("cerebras/"))
+      .reduce((sum, [, usd]) => sum + Number(usd || 0), 0);
+    const metric = (n, key) => {
+      const m = n.summary && n.summary[key];
+      return m && Number.isFinite(Number(m.mean)) ? m : null;
+    };
+
+    const panel = (nights, [key, title, sub]) => {
+      const fig = htmlEl("figure", "panel");
+      fig.append(htmlEl("h4", "", title), htmlEl("p", "sub", sub));
+      const points = nights.map((n) => ({ n, m: metric(n, key) })).filter((p) => p.m);
+      const times = nights.map((n) => Date.parse(n.date + "T00:00:00Z"));
+      const t0 = Math.min(...times), t1 = Math.max(...times);
+      const x = (n) => (t1 > t0 ? L + ((Date.parse(n.date + "T00:00:00Z") - t0) / (t1 - t0)) * (W - L - R) : (L + W - R) / 2);
+      const y = (v) => T + (1 - Math.max(0, Math.min(1, v))) * (H - T - B);
+      const label = points.map((p) => `${p.n.date} ${two(p.m.mean)}`).join(", ");
+      const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", tabindex: 0, "aria-label": `${title} by night: ${label || "no nights yet"}` });
+      [0, 0.5, 1].forEach((t) => {
+        svg.append(svgEl("line", { class: "grid", x1: L, x2: W - R, y1: y(t), y2: y(t) }));
+        const tick = svgEl("text", { class: "axis", x: L - 6, y: y(t) + 3, "text-anchor": "end" });
+        tick.textContent = t.toFixed(1);
+        svg.append(tick);
+      });
+      const first = nights[0], last = nights[nights.length - 1];
+      [[first, "start"], ...(last !== first ? [[last, "end"]] : [])].forEach(([n, anchor]) => {
+        const tick = svgEl("text", { class: "axis", x: x(n), y: H - 6, "text-anchor": t1 > t0 ? anchor : "middle" });
+        tick.textContent = day(n.date);
+        svg.append(tick);
+      });
+      if (points.length > 1) {
+        const upper = points.map((p) => `${x(p.n)},${y(p.m.high)}`);
+        const lower = points.slice().reverse().map((p) => `${x(p.n)},${y(p.m.low)}`);
+        svg.append(svgEl("polygon", { class: "band", points: upper.concat(lower).join(" ") }));
+        svg.append(svgEl("polyline", { class: "line", points: points.map((p) => `${x(p.n)},${y(p.m.mean)}`).join(" ") }));
+      } else if (points.length === 1) {
+        const p = points[0];
+        svg.append(svgEl("line", { class: "whisker", x1: x(p.n), x2: x(p.n), y1: y(p.m.low), y2: y(p.m.high) }));
+      }
+      points.forEach((p) => svg.append(svgEl("circle", { class: p.n.partial ? "dot partial" : "dot", cx: x(p.n), cy: y(p.m.mean), r: 4 })));
+      if (points.length) {
+        const p = points[points.length - 1];
+        const end = svgEl("text", { class: "end", x: x(p.n) + 8, y: y(p.m.mean) + 4 });
+        end.textContent = two(p.m.mean);
+        svg.append(end);
+      }
+      fig.append(svg);
+
+      // The crosshair finds the nearest night; the same readout follows the arrow keys.
+      const cross = svgEl("line", { class: "cross", y1: T, y2: H - B, visibility: "hidden" });
+      svg.append(cross);
+      const tip = htmlEl("div", "tip");
+      tip.hidden = true;
+      fig.append(tip);
+      let shown = -1;
+      const show = (index) => {
+        if (!points.length) return;
+        shown = Math.max(0, Math.min(points.length - 1, index));
+        const p = points[shown];
+        cross.setAttribute("x1", x(p.n));
+        cross.setAttribute("x2", x(p.n));
+        cross.setAttribute("visibility", "visible");
+        tip.replaceChildren(
+          htmlEl("strong", "", two(p.m.mean)),
+          htmlEl("span", "", `${day(p.n.date)} · ${p.n.set}${p.n.partial ? " · cut short" : ""}`),
+          htmlEl("br"),
+          htmlEl("span", "", `${two(p.m.low)} to ${two(p.m.high)} · ${p.m.n} questions`)
+        );
+        tip.hidden = false;
+        const box = svg.getBoundingClientRect(), frame = fig.getBoundingClientRect();
+        const px = box.left - frame.left + (x(p.n) / W) * box.width;
+        const left = Math.min(Math.max(8, px + 10), frame.width - tip.offsetWidth - 8);
+        tip.style.left = `${left}px`;
+        tip.style.top = `${box.top - frame.top + 4}px`;
+      };
+      const hide = () => {
+        cross.setAttribute("visibility", "hidden");
+        tip.hidden = true;
+      };
+      svg.addEventListener("pointermove", (e) => {
+        const box = svg.getBoundingClientRect();
+        const at = ((e.clientX - box.left) / box.width) * W;
+        let best = 0;
+        points.forEach((p, i) => { if (Math.abs(x(p.n) - at) < Math.abs(x(points[best].n) - at)) best = i; });
+        show(best);
+      });
+      svg.addEventListener("pointerleave", hide);
+      svg.addEventListener("focus", () => show(points.length - 1));
+      svg.addEventListener("blur", hide);
+      svg.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          e.preventDefault();
+          show(shown + (e.key === "ArrowLeft" ? -1 : 1));
+        } else if (e.key === "Escape") hide();
+      });
+      return fig;
+    };
+
+    const status = document.getElementById("night-status");
+    const say = (text) => {
+      const link = status.querySelector("a");
+      status.replaceChildren(document.createTextNode(text + " "), link, document.createTextNode("."));
+    };
+    const parse = (line) => {
+      try { return JSON.parse(line); } catch { return null; }
+    };
+    fetch(HISTORY, { cache: "no-cache" })
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
+      .then((text) => {
+        const nights = text.split("\n").filter((line) => line.trim()).map(parse)
+          .filter((n) => n && typeof n.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(n.date))
+          .sort((a, b) => a.date.localeCompare(b.date) || String(a.started).localeCompare(String(b.started)));
+        if (!nights.length) {
+          say("No night is recorded yet; the first runs at 02:00 IST.");
+          return;
+        }
+        document.getElementById("night-panels").replaceChildren(...METRICS.map((m) => panel(nights, m)));
+        const last = nights[nights.length - 1];
+        const month = last.date.slice(0, 7);
+        const spent = nights.filter((n) => n.date.startsWith(month)).reduce((sum, n) => sum + cerebras(n), 0);
+        const stat = (value, name) => {
+          const div = htmlEl("div", "", null);
+          div.append(htmlEl("b", "", value), document.createTextNode(name));
+          return div;
+        };
+        document.getElementById("night-stats").replaceChildren(
+          stat(day(last.date), `last night, ${last.set}`),
+          stat(two((metric(last, "correct") || {}).mean), "correct, last night"),
+          stat(`$${spent.toFixed(2)}`, `on Cerebras in ${new Date(month + "-01T00:00:00Z").toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" })}`),
+          stat(String(nights.length), nights.length === 1 ? "night recorded" : "nights recorded")
+        );
+        document.getElementById("night-rows").replaceChildren(...nights.slice().reverse().map((n) => {
+          const tr = document.createElement("tr");
+          const note = n.regression ? "regression" : n.partial ? "cut short by its cap" : "";
+          [day(n.date), n.set, ...METRICS.map(([key]) => two((metric(n, key) || {}).mean)), `$${cerebras(n).toFixed(3)}`, note]
+            .forEach((value, i) => tr.append(htmlEl("td", i >= 2 && i <= 6 ? "num" : "", value)));
+          return tr;
+        }));
+        say(`${nights.length} ${nights.length === 1 ? "night" : "nights"}, read from the`);
+      })
+      .catch(() => say("The history couldn't be loaded here; it is on the"));
   }
 
 })();
