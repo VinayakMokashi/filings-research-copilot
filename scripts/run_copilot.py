@@ -24,6 +24,7 @@ and time per task, by route.
 Usage (needs Qdrant, the facts database and GROQ_API_KEY):
   uv run poe run-copilot --run copilot-v1
   uv run poe run-copilot --run copilot-smoke --limit 2
+  uv run poe run-copilot --run nightly-slice --ids eval/nightly/slice.json  # the nightly slice
 """
 
 from __future__ import annotations
@@ -160,12 +161,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--run", required=True, help="run name")
     parser.add_argument("--limit", type=int, help="only the first N dev questions")
+    parser.add_argument(
+        "--ids", type=Path, help="only the dev questions a JSON file's `ids` list names"
+    )
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
 
     settings = get_settings()
     configure_logging(settings.log_level, settings.log_format)
-    questions = load_split("dev", settings.data_dir / "raw" / "financebench")[: args.limit]
+    questions = load_split("dev", settings.data_dir / "raw" / "financebench")
+    if args.ids is not None:
+        wanted = set(json.loads(args.ids.read_text(encoding="utf-8"))["ids"])
+        questions = [question for question in questions if question.id in wanted]
+    questions = questions[: args.limit]
     answers_root = settings.data_dir / "processed" / "answers"
     out_path = answers_root / args.run / "dev" / "answers.jsonl"
     drafts_path = answers_root / f"{args.run}-drafts" / "dev" / "answers.jsonl"
