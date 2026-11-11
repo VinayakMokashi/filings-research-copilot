@@ -40,5 +40,5 @@ One guide per concept, written when its component lands. Each guide follows [_te
 | 34 | [terraform-basics.md](terraform-basics.md) | Infrastructure as code, state, plans; two roots, and who owns which part of the deployment | Terraform docs | 8 | Written |
 | 35 | [workload-identity-federation.md](workload-identity-federation.md) | Deploying without stored keys: GitHub's OIDC token traded for an hour of the deployer's access | Google Cloud docs, Workload Identity Federation with deployment pipelines | 8 | Written |
 | 36 | [cloud-costs.md](cloud-costs.md) | Reading the bill from the billing export: gross, credits and free tiers; what stored, running and moving resources bill for; an idle month, a demo hour and an open tab | Google Cloud docs, exporting billing data to BigQuery | 8 | Written |
-| 36 | `online-evaluation.md` | Nightly evals, interleaving, drift checks | Chapelle et al., interleaved evaluation (2012) | 9 | Planned |
-| 37 | `preference-data.md` | From thumbs-up/down to preference tuning | Rafailov et al., DPO (2023) | 9 | Planned |
+| 37 | [online-evaluation.md](online-evaluation.md) | Measuring the running system on a schedule: fixed questions, fresh calls, one capped ledger, paired tests against the last full run, a trend; drift and interleaving to come | Sculley et al. (2015); Breck et al., the ML Test Score (2017) | 9 | Written: the nightly evaluation |
+| 38 | `preference-data.md` | From thumbs-up/down to preference tuning | Rafailov et al., DPO (2023) | 9 | Planned |
