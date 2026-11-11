@@ -28,7 +28,8 @@ locals {
     for name in ["api", "ui", "mcp", "worker", "scheduler", "pubsub"] :
     name => "${name}-runtime@${var.project_id}.iam.gserviceaccount.com"
   }
-  deployer = "github-deployer@${var.project_id}.iam.gserviceaccount.com"
+  deployer  = "github-deployer@${var.project_id}.iam.gserviceaccount.com"
+  evaluator = "github-eval@${var.project_id}.iam.gserviceaccount.com"
   # Cloud Run's deterministic address for a service, known before it exists.
   host = { for name in ["api", "ui", "mcp", "worker"] : name => "${name}-${data.google_project.this.number}.${var.region}.run.app" }
 }

@@ -33,11 +33,14 @@ locals {
     FRC_QDRANT_API_KEY = "qdrant-write-api-key"
     SEC_USER_AGENT     = "sec-user-agent"
   }
+  # The nightly evaluation's run (ADR-0034): the model keys and Qdrant, read-only.
+  evaluator_secrets = ["groq-api-key", "cerebras-api-key", "qdrant-url", "qdrant-read-api-key"]
 
   secret_readers = merge(
     { for secret in values(local.api_secrets) : "api/${secret}" => { sa = local.sa.api, secret = secret } },
     { for secret in values(local.mcp_secrets) : "mcp/${secret}" => { sa = local.sa.mcp, secret = secret } },
     { for secret in values(local.worker_secrets) : "worker/${secret}" => { sa = local.sa.worker, secret = secret } },
+    { for secret in local.evaluator_secrets : "eval/${secret}" => { sa = local.evaluator, secret = secret } },
   )
 }
 
