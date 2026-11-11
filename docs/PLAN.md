@@ -293,7 +293,7 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 
 **Goal:** keep quality visible over time.
 
-- [ ] 9.0 An idle limit in the web UI, from step 8.9's costs: after 15 minutes without input, the page leaves for a static "Paused" page, which closes its websocket, so a forgotten tab stops keeping the UI's CPU billed.
+- [x] 9.0 An idle limit in the web UI, from step 8.9's costs: after 15 minutes without input, the page leaves for a static "Paused" page, which closes its websocket, so a forgotten tab stops keeping the UI's CPU billed. Done: on the live UI, a page left without input held its websocket for 900.7 s, then loaded the paused page and opened no other, so a forgotten tab bills about $0.023 once instead of about $2.20 a day ([report](eval/deployment.md#an-open-tab)).
 - [ ] 9.1 A nightly eval job in GitHub Actions, keyless, on Cerebras in Phase 7's evaluation setup, within a hard cap of $0.40 a night and $1.20 on Sundays ([ADR-0034](decisions/0034-nightly-evaluation.md)):
   - every night, a fixed slice of 40 FinanceBench dev questions, and the routing and SQL sets' dev splits;
   - on Sundays, all 100 dev questions instead of the slice;
@@ -339,7 +339,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | PDF tables flatten badly | Table-aware parsing experiment; numbers come from XBRL instead |
 | Development machine has no CUDA GPU | Train on Kaggle or Colab GPUs; serve small models on CPU with ONNX |
 | Cloud costs | Budget alert first; Cloud Run scales to zero; the database runs only in demo windows, with a scheduled stop; Phase 8's measurements run inside the free-trial credit. Measured: about $2.10 an idle month before credits ([report](eval/deployment.md#costs)) |
-| An open UI page bills Cloud Run's CPU while its websocket lasts, about $0.09 an hour, and Streamlit reconnects after the 3,600 s timeout | Cloud Run's free tier covers about 50 such hours a month, and the budget's emails start at $7.50. Still to do: an idle limit in the UI, so a forgotten tab stops billing |
+| An open UI page bills Cloud Run's CPU while its websocket lasts, about $0.09 an hour, and Streamlit reconnects after the 3,600 s timeout | An idle limit (step 9.0): after 15 minutes without input the page leaves for a static one, which holds no websocket; measured on the live UI, a forgotten tab now bills 900.7 s once, about $0.023 ([report](eval/deployment.md#an-open-tab)) |
 | Qdrant Cloud free clusters may pause when idle | Collection snapshots in Cloud Storage; restore during `demo-up` |
 | FinanceBench licence | Used for evaluation only; licence checked in Phase 1 |
 | Scope | Each phase delivers standalone value; stretch items are marked |
