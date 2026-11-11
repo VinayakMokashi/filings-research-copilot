@@ -91,6 +91,29 @@ resource "google_service_account_iam_member" "deployer_acts_as_runtime" {
   member             = google_service_account.deployer.member
 }
 
+# The nightly evaluation (ADR-0034) runs as an account of its own, from this repository's
+# main branch like the deployer: it reads the data bundle here, and envs/prod lets it read
+# the model keys and Qdrant's read-only key. It may deploy nothing.
+resource "google_service_account" "evaluator" {
+  account_id   = "github-eval"
+  display_name = "GitHub Actions nightly evaluation"
+  description  = "Runs the nightly evaluation from main: reads the data bundle and four secrets"
+
+  depends_on = [google_project_service.this]
+}
+
+resource "google_service_account_iam_member" "evaluator_from_github" {
+  service_account_id = google_service_account.evaluator.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository_id/${var.github_repository_id}"
+}
+
+resource "google_storage_bucket_iam_member" "evaluator_reads_data" {
+  bucket = google_storage_bucket.data.name
+  role   = "roles/storage.objectViewer"
+  member = google_service_account.evaluator.member
+}
+
 # Enabling Compute gives its default service account Editor on the project. Nothing here
 # runs as it (each service, the scheduler and Pub/Sub have their own accounts), so it
 # keeps no role on the project.
