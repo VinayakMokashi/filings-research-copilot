@@ -35,6 +35,7 @@ A dated journal of every working session, newest first. Each entry uses this tem
 - **Results:**
   - **The measured night cost $0.378 of $0.40:** answers $0.191, judge $0.027, faithfulness $0.033, routing set $0.059, SQL set $0.069.
   - **Its scores:** correct 0.65 (0.50 to 0.80), answered 0.925, faithful 0.81, routing 1.00 and SQL 1.00 ([report](eval/nightly.md)).
+  - **A trial of the workflow** ($0.02 cap, nothing kept) passed every step in 3 min 21 s. Three of its five steps stopped at their shares, as designed, and the night spent $0.0213, one call in flight over its cap.
 - **Problems and fixes:**
   - **A cached run measures nothing.** The laptop's caches held the same calls from Phase 7, so the measured night ran from an empty data folder with only the bundle and the question files, as a CI runner has.
   - **Too little headroom.** At 40 questions only 5.5% of the cap was left, so the slice is 32, and the steps' shares follow the measured costs.
