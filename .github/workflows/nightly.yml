@@ -1,0 +1,205 @@
+# The nightly evaluation (ADR-0034). Every night at 02:00 IST the copilot answers a fixed
+# slice of FinanceBench's dev questions (all of them on Sundays, IST), the LLM router the
+# routing set and the data agent the SQL set, on Cerebras in Phase 7's setup and within a
+# hard cap. Metrics alone go to the eval-history branch; a regression against the last
+# full run opens an issue and fails the run. FinanceBench's text never leaves the runner:
+# the steps' own output stays in local logs, and nothing is uploaded as an artifact.
+name: Nightly evaluation
+
+on:
+  schedule:
+    - cron: "30 20 * * *" # 02:00 IST
+  workflow_dispatch:
+    inputs:
+      set:
+        description: "slice (40 questions, $0.40) or full (100, $1.20); auto: by the IST weekday"
+        type: choice
+        options: [auto, slice, full]
+        default: auto
+      budget:
+        description: "A trial's cap in dollars, at most the set's; a trial's metrics aren't kept"
+        type: string
+        default: ""
+
+permissions:
+  contents: write # the metrics, pushed to eval-history
+  issues: write # a regression's issue
+  id-token: write # workload identity federation
+
+concurrency:
+  group: nightly-evaluation
+  cancel-in-progress: false
+
+env:
+  HISTORY_BRANCH: eval-history
+  # ADR-0024's evaluation setup: strong and fast on Cerebras, small on Groq.
+  FRC_LLM_STRONG_MODEL: cerebras/gpt-oss-120b
+  FRC_LLM_FAST_MODEL: cerebras/qwen-3.8-27b
+  FRC_LLM_TOKENS_PER_MINUTE: "25000"
+  FRC_LOG_FORMAT: json
+  HF_HUB_OFFLINE: "1" # the models come with the data bundle
+
+jobs:
+  evaluate:
+    name: Evaluate
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Choose the night's set and cap
+        id: plan
+        env:
+          ASKED: ${{ inputs.set }}
+          TRIAL_BUDGET: ${{ inputs.budget }}
+        run: |
+          set="${ASKED:-auto}" # a scheduled run has no inputs
+          if [ "$set" = auto ]; then
+            if [ "$(TZ=Asia/Kolkata date +%u)" = 7 ]; then set=full; else set=slice; fi
+          fi
+          if [ "$set" = full ]; then budget=1.20; else budget=0.40; fi
+          trial=false
+          if [ -n "$TRIAL_BUDGET" ]; then
+            awk -v b="$TRIAL_BUDGET" -v cap="$budget" 'BEGIN { exit !(b + 0 > 0 && b + 0 <= cap) }' \
+              || { echo "A trial's budget must be above 0 and at most $budget."; exit 1; }
+            budget="$TRIAL_BUDGET"
+            trial=true
+          fi
+          {
+            echo "set=$set"
+            echo "budget=$budget"
+            echo "trial=$trial"
+            echo "date=$(TZ=Asia/Kolkata date +%F)"
+            echo "bundle=$(jq -r .object infra/data-bundle.json)"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_EVAL_SA }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      # The eval account may read these four secrets and nothing else (infra/terraform).
+      - name: Read the run's keys
+        run: |
+          for pair in GROQ_API_KEY=groq-api-key CEREBRAS_API_KEY=cerebras-api-key \
+                      FRC_QDRANT_URL=qdrant-url FRC_QDRANT_API_KEY=qdrant-read-api-key; do
+            value="$(gcloud secrets versions access latest --secret="${pair#*=}" --project="$PROJECT")"
+            echo "::add-mask::$value"
+            echo "${pair%%=*}=$value" >> "$GITHUB_ENV"
+          done
+
+      # Cached by its name, which carries its checksum, so it leaves Cloud Storage once.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: bundle
+        with:
+          path: ${{ runner.temp }}/bundle.tar.gz
+          key: data-bundle-${{ steps.plan.outputs.bundle }}
+
+      - name: Fetch the data bundle
+        if: steps.bundle.outputs.cache-hit != 'true'
+        run: |
+          gcloud storage cp "gs://${{ vars.GCP_DATA_BUCKET }}/${{ steps.plan.outputs.bundle }}" \
+            "$RUNNER_TEMP/bundle.tar.gz"
+
+      - name: Unpack the data
+        run: |
+          echo "$(jq -r .sha256 infra/data-bundle.json)  $RUNNER_TEMP/bundle.tar.gz" \
+            | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/bundle.tar.gz" -C data
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --locked --no-default-groups
+
+      - name: Fetch FinanceBench's questions
+        run: uv run --no-sync python scripts/fetch_financebench.py --pdfs none
+
+      - name: Check out the history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.HISTORY_BRANCH }}
+          path: history
+
+      - name: Evaluate
+        id: night
+        env:
+          SET: ${{ steps.plan.outputs.set }}
+          BUDGET: ${{ steps.plan.outputs.budget }}
+          NIGHT: ${{ steps.plan.outputs.date }}
+        run: |
+          baseline=()
+          if [ -f history/nightly/latest-full.json ]; then
+            baseline=(--baseline history/nightly/latest-full.json)
+          fi
+          set +e
+          uv run --no-sync python scripts/nightly_eval.py --set "$SET" --budget "$BUDGET" \
+            --date "$NIGHT" --out "$RUNNER_TEMP/night" "${baseline[@]}"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Summarise the night
+        if: always() && steps.night.outputs.exit != ''
+        run: |
+          night="$RUNNER_TEMP/night/night.json"
+          [ -f "$night" ] || { echo "No night.json was written."; exit 1; }
+          jq -r '"| Metric | Mean | 95% interval | Questions |", "|---|---|---|---|",
+                 (.summary | to_entries[] | select(.value | type == "object")
+                  | "| \(.key) | \(.value.mean * 1000 | round / 1000) | \(.value.low * 1000 | round / 1000) to \(.value.high * 1000 | round / 1000) | \(.value.n) |"),
+                 "", "Spent $\(.spent_usd) of $\(.budget_usd); partial: \(.partial); regression: \(.regression).",
+                 "", "| Step | Exit | Spent by then | Cap | Seconds |", "|---|---|---|---|---|",
+                 (.steps[] | "| \(.step) | \(.exit) | $\(.spent_usd) | $\(.cap_usd) | \(.seconds) |")' \
+            "$night" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the night's metrics
+        if: always() && steps.night.outputs.exit != '' && steps.plan.outputs.trial == 'false'
+        env:
+          SET: ${{ steps.plan.outputs.set }}
+          NIGHT: ${{ steps.plan.outputs.date }}
+        run: |
+          night="$RUNNER_TEMP/night"
+          [ -f "$night/night.json" ] || { echo "No night.json was written."; exit 1; }
+          mkdir -p history/nightly/runs
+          cp "$night/night.json" "history/nightly/runs/$NIGHT-$SET.json"
+          cat "$night/history.json" >> history/nightly/history.jsonl
+          if [ "$SET" = full ] && [ "$(jq -r .partial "$night/night.json")" = false ]; then
+            cp "$night/night.json" history/nightly/latest-full.json
+          fi
+          cd history
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nightly
+          git commit -q -m "chore(eval): the night of $NIGHT ($SET)"
+          git push -q origin "HEAD:$HISTORY_BRANCH"
+
+      - name: Open an issue on a regression
+        if: steps.night.outputs.exit == '3' && steps.plan.outputs.trial == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NIGHT: ${{ steps.plan.outputs.date }}
+        run: |
+          body="$(jq -r '"The night of \(.date) (\(.set), commit \(.commit[0:7])) fell below the last full run, \(.baseline):",
+                 "", "| Metric | Questions | Baseline | Night | Difference | p (Holm) |", "|---|---|---|---|---|---|",
+                 (.tests[] | "| \(.metric) | \(.questions) | \(.baseline) | \(.night) | \(.difference) | \(.p_holm * 1000 | round / 1000) |"),
+                 "", "Per-question scores: `nightly/runs/\(.date)-\(.set).json` on the eval-history branch."' \
+                 "$RUNNER_TEMP/night/night.json")"
+          gh label create nightly-regression --color B60205 \
+            --description "The nightly evaluation found a significant drop" 2>/dev/null || true
+          open="$(gh issue list --label nightly-regression --state open --json number --jq '.[0].number')"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh issue create --title "Nightly evaluation: a regression on $NIGHT" \
+              --label nightly-regression --body "$body"
+          fi
+
+      - name: Fail on a regression or a failed step
+        if: steps.night.outputs.exit != '0'
+        run: exit "${{ steps.night.outputs.exit || 1 }}"
