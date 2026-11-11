@@ -81,4 +81,4 @@ USER copilot
 ARG GIT_SHA=unknown
 ENV FRC_GIT_SHA=${GIT_SHA}
 EXPOSE 8501
-CMD ["sh", "-c", "exec streamlit run src/copilot/ui/app.py --server.address 0.0.0.0 --server.port ${PORT:-8501} --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --client.toolbarMode minimal"]
+CMD ["sh", "-c", "exec streamlit run src/copilot/ui/app.py --server.address 0.0.0.0 --server.port ${PORT:-8501} --server.headless true --server.fileWatcherType none --server.enableStaticServing true --browser.gatherUsageStats false --client.toolbarMode minimal"]

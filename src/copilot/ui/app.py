@@ -8,6 +8,10 @@
   the steps with their times, and thumbs up or down, kept through `POST /v1/feedback`.
 - **Results:** the headline numbers of the evaluations, read from eval/results.
 
+An open page holds a websocket, which on Cloud Run keeps the UI's CPU billed, so after
+`FRC_UI_IDLE_MINUTES` without input the page leaves for a static one (`static/paused.html`,
+served with `server.enableStaticServing`), and its "Continue" starts the app again.
+
 Run `poe ui` (Streamlit on 127.0.0.1:8501) while `poe api` serves the API; `FRC_API_URL`
 points it elsewhere.
 """
@@ -30,6 +34,10 @@ SETTINGS = Settings()
 API_URL = SETTINGS.api_url
 RESULTS = Path(__file__).resolve().parents[3] / "eval" / "results"
 DATABASE = "facts-database"
+# Where a page left without input goes: static/paused.html, beside this script
+PAUSED_PAGE = "/app/static/paused.html"
+# What counts as input for that limit
+ACTIVITY = ("pointermove", "pointerdown", "keydown", "wheel", "scroll", "touchstart")
 
 EXAMPLES = (
     "What was 3M's capital expenditure in 2018?",
@@ -323,10 +331,41 @@ def interval(value: dict[str, Any], n: int) -> tuple[float, float]:
     return low, high
 
 
+def idle_limit(minutes: float) -> str:
+    """A script that sends the page to PAUSED_PAGE after `minutes` without input.
+
+    Leaving the page closes its websocket. The window keeps one timer across reruns and page
+    switches; every 10 s it checks how long ago the last input came (a background tab may
+    slow the check to once a minute). The style hides the script's empty element, which
+    would otherwise push the page down by a row's gap."""
+    return f"""<style>
+[data-testid="stElementContainer"]:has(> [data-testid="stHtml"] > #idle-limit) {{
+  display: none;
+}}
+</style>
+<script id="idle-limit">
+(() => {{
+  if (window.frcIdleLimit) return;
+  let last = Date.now();
+  const active = () => {{ last = Date.now(); }};
+  for (const kind of {json.dumps(ACTIVITY)}) {{
+    window.addEventListener(kind, active, {{ capture: true, passive: true }});
+  }}
+  window.frcIdleLimit = setInterval(() => {{
+    if (Date.now() - last < {round(minutes * 60_000)}) return;
+    clearInterval(window.frcIdleLimit);
+    window.location.replace("{PAUSED_PAGE}?after={minutes:g}");
+  }}, 10000);
+}})();
+</script>"""
+
+
 def main() -> None:
     st.set_page_config(
         page_title="Filings Research Copilot", page_icon=":material/plagiarism:", layout="wide"
     )
+    if SETTINGS.ui_idle_minutes:
+        st.html(idle_limit(SETTINGS.ui_idle_minutes), unsafe_allow_javascript=True)
     navigation = st.navigation(
         [
             st.Page(ask_page, title="Ask", icon=":material/chat:", default=True),

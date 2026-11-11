@@ -100,3 +100,37 @@ def test_a_brief_says_how_it_was_made_and_what_it_left_out() -> None:
     assert "2 unsupported sentences cut" in note
     assert note.endswith("Not covered: Outlook.")
     assert briefed({}) == ""
+
+
+def test_an_idle_page_leaves_for_the_paused_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(CopilotClient, "ready", lambda self: {"ready": True, "checks": {}})
+
+    app = AppTest.from_file(str(APP), default_timeout=60).run()
+
+    script = app.html[0].value
+    assert "< 900000) return;" in script  # 15 minutes, the default
+    assert 'location.replace("/app/static/paused.html?after=15")' in script
+    for kind in ("pointermove", "keydown", "scroll", "touchstart"):
+        assert f'"{kind}"' in script
+
+
+def test_the_idle_limit_can_be_turned_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FRC_UI_IDLE_MINUTES", "0")
+    monkeypatch.setattr(CopilotClient, "ready", lambda self: {"ready": True, "checks": {}})
+
+    app = AppTest.from_file(str(APP), default_timeout=60).run()
+
+    assert not app.exception
+    assert len(app.html) == 0
+
+
+def test_the_paused_page_is_served_and_continues_to_the_app() -> None:
+    from copilot.ui.app import PAUSED_PAGE
+
+    page = (APP.parent / "static" / Path(PAUSED_PAGE).name).read_text(encoding="utf-8")
+
+    assert '<a class="continue" href="/">Continue</a>' in page
+    assert "A conversation in progress isn't kept." in page
+    # Streamlit serves static/ only when told to, in the image and in `poe ui`
+    for config in ("Dockerfile", "pyproject.toml"):
+        assert "--server.enableStaticServing true" in Path(config).read_text(encoding="utf-8")
