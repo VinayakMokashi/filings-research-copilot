@@ -30,10 +30,12 @@ from pathlib import Path
 from typing import Any
 
 from copilot.eval.labels import stratified_sample
-from copilot.eval.stats import bootstrap_ci, holm, paired_test
+from copilot.eval.stats import bootstrap_ci, exact_interval, holm, paired_test
 from copilot.llm.budget import RunBudget
 
-SLICE_SIZE = 40
+# 32 questions: a measured night of 40 (11 November) cost $0.378 of its $0.40 cap, too
+# close to it; 32 leave about a fifth of the cap for nights that cost more (ADR-0034)
+SLICE_SIZE = 32
 SLICE_SEED = 20261111
 ALPHA = 0.05
 # The metrics a night is tested on: per question, 1 or 0
@@ -73,10 +75,10 @@ def steps(run: str, results_dir: Path, ids_file: Path | None = None) -> list[Ste
     ids = ("--ids", str(ids_file)) if ids_file is not None else ()
     routing = ("--router", "llm", "--role", "strong", "--run", f"{run}-routing")
     return [
-        Step("answers", 0.55, "scripts/run_copilot.py", ("--run", run, *ids, *results)),
-        Step("judge", 0.63, "scripts/judge_answers.py", ("--run", run, *results)),
-        Step("faithfulness", 0.72, "scripts/check_faithfulness.py", ("--run", run, *results)),
-        Step("routing", 0.90, "scripts/run_router.py", (*routing, *results)),
+        Step("answers", 0.50, "scripts/run_copilot.py", ("--run", run, *ids, *results)),
+        Step("judge", 0.57, "scripts/judge_answers.py", ("--run", run, *results)),
+        Step("faithfulness", 0.65, "scripts/check_faithfulness.py", ("--run", run, *results)),
+        Step("routing", 0.82, "scripts/run_router.py", (*routing, *results)),
         Step("sql", 1.0, "scripts/run_sql_agent.py", ("--run", f"{run}-sql", *results)),
     ]
 
@@ -199,11 +201,16 @@ def set_rows(results_dir: Path, suite: str, run: str, keep: Sequence[str]) -> li
 
 
 def _mean(rows: Sequence[Mapping[str, Any]], key: str) -> dict[str, float] | None:
+    """The mean with its 95% interval: the bootstrap's, or the exact binomial one when a
+    share of 1s and 0s reaches 0 or 1, where the bootstrap collapses (ADR-0007)."""
     values = [float(row[key]) for row in rows if row.get(key) is not None]
     if not values:
         return None
     interval = bootstrap_ci(values)
-    return {"mean": interval.mean, "low": interval.low, "high": interval.high, "n": len(values)}
+    low, high = interval.low, interval.high
+    if set(values) <= {0.0, 1.0} and (low <= 0.0 or high >= 1.0):
+        low, high = exact_interval(round(sum(values)), len(values))
+    return {"mean": interval.mean, "low": low, "high": high, "n": len(values)}
 
 
 def summary(
