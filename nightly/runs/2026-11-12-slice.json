@@ -1,0 +1,1659 @@
+{
+ "date": "2026-11-12",
+ "set": "slice",
+ "run": "nightly-2026-11-12-slice",
+ "runner": "github-actions",
+ "commit": "c518f32a8facb0622e02a43233f1bfe5d0cdc93b",
+ "started": "2026-11-12T01:57:19+00:00",
+ "finished": "2026-11-12T02:33:21+00:00",
+ "models": {
+  "strong": "cerebras/gpt-oss-120b",
+  "fast": "cerebras/qwen-3.8-27b",
+  "small": "groq/openai/gpt-oss-20b"
+ },
+ "budget_usd": 0.4,
+ "spent_usd": 0.3478,
+ "spent_by_model": {
+  "cerebras/gpt-oss-120b": 0.1901,
+  "cerebras/qwen-3.8-27b": 0.1481,
+  "groq/openai/gpt-oss-20b": 0.0095
+ },
+ "questions": 32,
+ "partial": false,
+ "steps": [
+  {
+   "step": "answers",
+   "exit": 0,
+   "cap_usd": 0.2,
+   "spent_usd": 0.1651,
+   "stopped_by_cap": false,
+   "failed": false,
+   "seconds": 1269.3
+  },
+  {
+   "step": "judge",
+   "exit": 0,
+   "cap_usd": 0.228,
+   "spent_usd": 0.1867,
+   "stopped_by_cap": false,
+   "failed": false,
+   "seconds": 101.7
+  },
+  {
+   "step": "faithfulness",
+   "exit": 0,
+   "cap_usd": 0.26,
+   "spent_usd": 0.2196,
+   "stopped_by_cap": false,
+   "failed": false,
+   "seconds": 92.5
+  },
+  {
+   "step": "routing",
+   "exit": 0,
+   "cap_usd": 0.328,
+   "spent_usd": 0.2782,
+   "stopped_by_cap": false,
+   "failed": false,
+   "seconds": 457.1
+  },
+  {
+   "step": "sql",
+   "exit": 0,
+   "cap_usd": 0.4,
+   "spent_usd": 0.3478,
+   "stopped_by_cap": false,
+   "failed": false,
+   "seconds": 240.9
+  }
+ ],
+ "summary": {
+  "correct": {
+   "mean": 0.59375,
+   "low": 0.4375,
+   "high": 0.75,
+   "n": 32
+  },
+  "answered": {
+   "mean": 0.9375,
+   "low": 0.7919305701049926,
+   "high": 0.9923392636535435,
+   "n": 32
+  },
+  "faithful": {
+   "mean": 0.9411764705882353,
+   "low": 0.7131106033327794,
+   "high": 0.9985118256087333,
+   "n": 17
+  },
+  "routing_accuracy": {
+   "mean": 0.9927536231884058,
+   "low": 0.9602882220071516,
+   "high": 0.999816554451495,
+   "n": 138
+  },
+  "sql_accuracy": {
+   "mean": 0.9642857142857143,
+   "low": 0.8165224024553763,
+   "high": 0.9990962012443418,
+   "n": 28
+  },
+  "cost_per_question": 0.005292,
+  "median_seconds": 33.13,
+  "p95_seconds": 107.54
+ },
+ "tests": [],
+ "regression": null,
+ "copilot": [
+  {
+   "id": "financebench_id_00499",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003249,
+   "seconds": 34.41
+  },
+  {
+   "id": "financebench_id_00807",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.014164,
+   "seconds": 107.54
+  },
+  {
+   "id": "financebench_id_01858",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00674,
+   "seconds": 49.96
+  },
+  {
+   "id": "financebench_id_02987",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003932,
+   "seconds": 17.66
+  },
+  {
+   "id": "financebench_id_07966",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003764,
+   "seconds": 17.05
+  },
+  {
+   "id": "financebench_id_07507",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003777,
+   "seconds": 17.17
+  },
+  {
+   "id": "financebench_id_01928",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003135,
+   "seconds": 29.75
+  },
+  {
+   "id": "financebench_id_01930",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00653,
+   "seconds": 48.66
+  },
+  {
+   "id": "financebench_id_01028",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.002865,
+   "seconds": 29.66
+  },
+  {
+   "id": "financebench_id_00723",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.006104,
+   "seconds": 51.29
+  },
+  {
+   "id": "financebench_id_00720",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 0.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.016126,
+   "seconds": 125.65
+  },
+  {
+   "id": "financebench_id_01964",
+   "question_type": "novel-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003566,
+   "seconds": 16.51
+  },
+  {
+   "id": "financebench_id_01981",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.011615,
+   "seconds": 91.06
+  },
+  {
+   "id": "financebench_id_02608",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003661,
+   "seconds": 16.9
+  },
+  {
+   "id": "financebench_id_00460",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003656,
+   "seconds": 37.31
+  },
+  {
+   "id": "financebench_id_07661",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003464,
+   "seconds": 16.24
+  },
+  {
+   "id": "financebench_id_01091",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.007861,
+   "seconds": 64.61
+  },
+  {
+   "id": "financebench_id_00678",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004212,
+   "seconds": 37.26
+  },
+  {
+   "id": "financebench_id_00464",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.002838,
+   "seconds": 30.82
+  },
+  {
+   "id": "financebench_id_00494",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00348,
+   "seconds": 35.74
+  },
+  {
+   "id": "financebench_id_06272",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003648,
+   "seconds": 16.85
+  },
+  {
+   "id": "financebench_id_05915",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003941,
+   "seconds": 17.82
+  },
+  {
+   "id": "financebench_id_01244",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.002904,
+   "seconds": 31.86
+  },
+  {
+   "id": "financebench_id_00822",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.006231,
+   "seconds": 47.12
+  },
+  {
+   "id": "financebench_id_03471",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003623,
+   "seconds": 16.84
+  },
+  {
+   "id": "financebench_id_00299",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.007277,
+   "seconds": 62.16
+  },
+  {
+   "id": "financebench_id_02049",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005088,
+   "seconds": 46.09
+  },
+  {
+   "id": "financebench_id_04171",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00341,
+   "seconds": 16.15
+  },
+  {
+   "id": "financebench_id_01254",
+   "question_type": "domain-relevant",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003574,
+   "seconds": 16.59
+  },
+  {
+   "id": "financebench_id_01163",
+   "question_type": "domain-relevant",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 1.0,
+   "cost_usd": 0.005168,
+   "seconds": 38.11
+  },
+  {
+   "id": "financebench_id_00215",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005851,
+   "seconds": 56.68
+  },
+  {
+   "id": "financebench_id_04784",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003881,
+   "seconds": 17.65
+  }
+ ],
+ "routing": [
+  {
+   "id": "r001",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r002",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r003",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r007",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r008",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r009",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r010",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r011",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r012",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r013",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r014",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r015",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r019",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r020",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r021",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r022",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r023",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r024",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r025",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r026",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r027",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r037",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r038",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r039",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r040",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r041",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r042",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r043",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r044",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r045",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r049",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r050",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r051",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r052",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r053",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r054",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r055",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r056",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r057",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r058",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r059",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r060",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r061",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r062",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r063",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r067",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r068",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r069",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r070",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r071",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r072",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r073",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r074",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r075",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r079",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r080",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r081",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r082",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r083",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r084",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r091",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r092",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r093",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r094",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r095",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r096",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r097",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r098",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r099",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r103",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r104",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r105",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r109",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r110",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r111",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r112",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r113",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r114",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r115",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r116",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r117",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r124",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r125",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r126",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r127",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r128",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r129",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r130",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r131",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r132",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r133",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r134",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r135",
+   "accuracy": 0.0,
+   "route": "brief",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r139",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r140",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r141",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r142",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r143",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r144",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r145",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r146",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r147",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r151",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r152",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r153",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r154",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r155",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r156",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r157",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r158",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r159",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r160",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r161",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r162",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r166",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r167",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r168",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r169",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r170",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r171",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r181",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r182",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r183",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r184",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r185",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r186",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r187",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r188",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r189",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r190",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r191",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r192",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r193",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r194",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r195",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r196",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r197",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r198",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  }
+ ],
+ "sql": [
+  {
+   "id": "s01",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s03",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s04",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s05",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s09",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s12",
+   "accuracy": 1.0,
+   "category": "comparison",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s13",
+   "accuracy": 1.0,
+   "category": "trend",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s14",
+   "accuracy": 1.0,
+   "category": "aggregate",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s15",
+   "accuracy": 1.0,
+   "category": "aggregate",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s16",
+   "accuracy": 1.0,
+   "category": "ratio",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s17",
+   "accuracy": 1.0,
+   "category": "growth",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s18",
+   "accuracy": 1.0,
+   "category": "ratio",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s21",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s22",
+   "accuracy": 1.0,
+   "category": "ranking",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s23",
+   "accuracy": 1.0,
+   "category": "trend",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s24",
+   "accuracy": 1.0,
+   "category": "ranking",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s26",
+   "accuracy": 1.0,
+   "category": "ranking",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s28",
+   "accuracy": 1.0,
+   "category": "provenance",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s29",
+   "accuracy": 1.0,
+   "category": "provenance",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s30",
+   "accuracy": 0.0,
+   "category": "ratio",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s32",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s33",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "easy",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s34",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s36",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "easy",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s37",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "easy",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s38",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s39",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s40",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  }
+ ]
+}
