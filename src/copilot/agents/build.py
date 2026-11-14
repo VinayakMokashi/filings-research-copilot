@@ -16,7 +16,9 @@
   user on the `small` role, kept in `store` (in memory unless one is given). Batch runs
   answer independent questions, so they keep no notes;
 - the brief crew (step 7.6): its planner and editor on the `strong` role, the doc agent
-  and the hybrid as its writers, and the validator's checker as its critic.
+  and the hybrid as its writers, and the validator's checker as its critic;
+- in the API with the answer bandit on (step 9.3), its chooser of the doc agent's answer
+  arms, whose paid client's tokens count in the usage events too.
 
 Every component's model calls go through a disk cache of its own under data/cache/, so a
 repeated question costs nothing. `batch=True` paces the calls for the free tier's
@@ -51,6 +53,7 @@ from copilot.agents.router import (
     entity_mask,
 )
 from copilot.answer.agent import build_agent
+from copilot.answer.bandit import OnlineChooser
 from copilot.answer.hybrid_v2 import HybridAgentV2
 from copilot.config import Settings
 from copilot.eval.routing import load_queries
@@ -102,6 +105,7 @@ def build_components(
     batch: bool = False,
     store: BaseStore | None = None,
     spend: SpendStore | None = None,
+    arms: OnlineChooser | None = None,
 ) -> Components:
     """The copilot's parts over the evaluation corpus; see the module docstring."""
 
@@ -121,7 +125,7 @@ def build_components(
     doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes, briefs = (
         client(name) for name in names
     )
-    doc = build_agent(settings, llm=doc_llm)
+    doc = build_agent(settings, llm=doc_llm, arms=arms)
     data = DataAgent.build(settings, sql_llm, analysis_model="strong")
     companies = read_companies()
     matcher = CompanyMatcher(
@@ -145,6 +149,9 @@ def build_components(
         fallback_on_error=not batch,
     )
     hybrid = HybridAgentV2(doc, data)
+    meters = [doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes, briefs]
+    if arms is not None and isinstance(arms.llm, PacedLLM):
+        meters.append(arms.llm)
     return Components(
         router=router,
         doc=doc,
@@ -153,7 +160,7 @@ def build_components(
         matcher=matcher,
         chat=chat,
         companies=[company.name for company in companies],
-        meters=[doc_llm, sql_llm, router_llm, chat, checker, rewriter, notes, briefs],
+        meters=meters,
         strict=batch,
         checker=checker,
         writer=doc_llm,

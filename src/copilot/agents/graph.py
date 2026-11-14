@@ -14,7 +14,8 @@ Each question runs through the same nodes:
 - The specialists answer: the doc agent, the data agent, the hybrid of the two, the
   brief crew (step 7.6, `copilot.agents.brief`; a short note when none is set), a reply to
   small talk, or a polite decline. A caller may ask for a route (`requested_route`, as
-  `/v1/brief` does), and the router isn't asked. When
+  `/v1/brief` does), and the router isn't asked, and may name an arm the doc agent mustn't
+  write with (`avoid_arm`), for a second answer to the same question (step 9.2). When
   the data agent finds nothing to answer with (it declines, fails, or its query returns
   no rows), the question goes on to the doc agent (step 7.7), since the filings' text
   holds much the facts database doesn't.
@@ -109,6 +110,7 @@ class Turn(TypedDict):
 class CopilotState(TypedDict, total=False):
     question: str  # as asked, this turn
     requested_route: str  # a route the caller asks for this turn, or "" to ask the router
+    avoid_arm: str  # an arm the doc agent mustn't answer with this turn, or ""
     standalone: str  # after follow-up rewriting
     cues: dict[str, Any]  # the companies, periods and forms the question names
     decision: dict[str, Any]  # the router's RouteDecision
@@ -147,7 +149,7 @@ class Router(Protocol):
 
 
 class DocAnswerer(Protocol):
-    def answer(self, question: str) -> AgentAnswer: ...
+    def answer(self, question: str, avoid: str | None = None) -> AgentAnswer: ...
 
 
 class DataAsker(Protocol):
@@ -516,8 +518,9 @@ def build_graph(
             data = before["data"]
             handoff = {"from": "data", "status": data["status"], "reason": data["answer"][:300]}
             emit("doc", "handed on", **handoff)
+        avoid = state.get("avoid_arm") or None
         try:
-            agent_answer = parts.doc.answer(state["standalone"])
+            agent_answer = parts.doc.answer(state["standalone"], avoid=avoid)
         except LLMError as exc:
             return quota("doc", exc)
         record = answer_record(agent_answer.answer)
@@ -530,10 +533,12 @@ def build_graph(
             cited=len(record["citations"]),
             filings=filings,
             arm=agent_answer.arm,
+            assignment=agent_answer.assignment,
         )
         result = {"kind": "doc", "answer": record, "retried": agent_answer.retried}
         if agent_answer.arm is not None:
             result["arm"] = agent_answer.arm
+            result["assignment"] = agent_answer.assignment
         if handoff is not None:
             result["handoff"] = handoff
         return {"result": result | {"filings": filings}}
@@ -566,6 +571,9 @@ def build_graph(
             pages_cited=found.pages_cited,
         )
         result = {"kind": "hybrid", "answer": record, "data": data, "path": found.path}
+        if found.arm is not None:  # the doc agent's path, written by a bandit's arm
+            result["arm"] = found.arm
+            result["assignment"] = found.assignment
         return {"result": result | {"filings": found.retrieval.filings}}
 
     def brief(state: CopilotState) -> dict[str, Any]:
@@ -699,6 +707,7 @@ def build_graph(
             "chart": draft.get("chart"),
             "handoff": state.get("result", {}).get("handoff"),
             "brief": state.get("result", {}).get("brief"),
+            "arm": state.get("result", {}).get("arm"),  # None: the fixed path
             "validation": {
                 key: value
                 for key, value in state.get("validation", {}).items()

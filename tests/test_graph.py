@@ -85,11 +85,16 @@ class FakeDoc:
     def __init__(self, reply: Answer | LLMError) -> None:
         self.reply = reply
         self.questions: list[str] = []
+        self.avoided: list[str | None] = []
 
-    def answer(self, question: str) -> AgentAnswer:
+    def answer(self, question: str, avoid: str | None = None) -> AgentAnswer:
         self.questions.append(question)
+        self.avoided.append(avoid)
         if isinstance(self.reply, LLMError):
             raise self.reply
+        if avoid is not None:  # a second answer, by another arm
+            retrieval = Retrieval(["NETFLIX_2022_10K"], [], [])
+            return AgentAnswer(self.reply, retrieval, arm="fast", assignment="retry")
         return AgentAnswer(self.reply, Retrieval(["NETFLIX_2022_10K"], [], []))
 
 
@@ -707,3 +712,40 @@ def test_to_draft_keeps_a_briefs_citations_and_what_it_left_out() -> None:
     assert draft["citations"] == result["citations"]
     assert draft["missing"] == "Outlook; Capital returns"
     assert isinstance(Brief, type)
+
+
+def test_a_second_answer_avoids_the_first_ones_arm_for_that_turn_only() -> None:
+    doc = FakeDoc(answer("Netflix names intense competition as a risk [1]."))
+    pilot = copilot(["doc", "doc"], doc=doc)
+
+    again = pilot.ask("What risks does Netflix name?", thread_id="t", avoid_arm="strong")
+    later = pilot.ask("And what else?", thread_id="t")
+
+    assert doc.avoided == ["strong", None]
+    assert again["arm"] == "fast"
+    assert later["arm"] is None  # the fixed path
+
+
+def test_details_hold_the_turns_sources_and_its_draft_before_the_first_check() -> None:
+    doc = FakeDoc(answer("Turn one says competition [1]."))
+    checker = FakeLLM([FAIL, PASS, PASS, FAIL, PASS])
+    writer = FakeLLM([revision("Turn one revised [1]."), revision("Turn three revised [1].")])
+    pilot = copilot(["doc", "doc", "doc"], doc=doc, checker=checker, writer=writer)
+
+    pilot.ask("What risks does Netflix name?", thread_id="t")
+    first = pilot.details("t")
+    doc.reply = answer("Turn two passes [1].")
+    pilot.ask("Anything else?", thread_id="t")
+    second = pilot.details("t")
+    doc.reply = answer("Turn three says piracy [1].")
+    pilot.ask("And piracy?", thread_id="t")
+    third = pilot.details("t")
+
+    assert first["revisions"] == 1
+    assert first["draft"]["answer"]["text"] == "Turn one says competition [1]."
+    assert first["result"]["answer"]["text"] == "Turn one revised [1]."
+    assert first["result"]["answer"]["sources"][0]["text"] == PAGE.text
+    assert first["decision"]["route"] == "doc"
+    assert (second["revisions"], second["draft"]) == (0, None)
+    assert third["draft"]["answer"]["text"] == "Turn three says piracy [1]."  # not turn one's
+    assert third["result"]["answer"]["text"] == "Turn three revised [1]."
