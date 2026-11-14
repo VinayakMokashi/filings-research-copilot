@@ -94,3 +94,29 @@ def test_a_brief_goes_to_the_brief_endpoint() -> None:
     list(client(httpx.MockTransport(handler)).ask("What was 3M's capex?"))
 
     assert paths == ["/v1/brief", "/v1/ask"]
+
+
+def test_a_second_answer_and_a_pick() -> None:
+    seen: list[tuple[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.url.path, json.loads(request.content)))
+        if request.url.path == "/v1/preference":
+            return httpx.Response(201, json={"id": 1})
+        if "long-gone" in request.content.decode():
+            return httpx.Response(404, json={"detail": "That answer is no longer held here."})
+        return httpx.Response(200, text=STREAM, headers={"content-type": "text/event-stream"})
+
+    api = client(httpx.MockTransport(handler))
+    list(api.ask("What was 3M's capex?", retry_of="r1"))
+    gone = list(api.ask("What was 3M's capex?", retry_of="long-gone"))
+
+    assert api.preference("r1", "r2", "second") is True
+    assert seen[0] == ("/v1/ask", {"question": "What was 3M's capex?", "retry_of": "r1"})
+    assert gone == [Event("error", {"error": "That answer is no longer held here."})]
+    assert seen[-1] == ("/v1/preference", {"first": "r1", "second": "r2", "chosen": "second"})
+
+    def down(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused")
+
+    assert client(httpx.MockTransport(down)).preference("r1", "r2", "first") is False

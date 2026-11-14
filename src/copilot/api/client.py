@@ -1,5 +1,6 @@
 """The API from Python, for the web UI and the MCP server: questions streamed as server-sent
-events, feedback, cited pages and readiness (ADR-0020).
+events, second answers and a reader's pick between two (step 9.2), feedback, cited pages
+and readiness (ADR-0020).
 
 `parse_sse` reads a stream's lines into events, skipping the keep-alive comments; a refused
 question (a 429 over a quota, a 422 for a malformed one) becomes an `error` event, so a
@@ -162,15 +163,23 @@ class CopilotClient:
         self._http = httpx.Client(base_url=base_url, transport=transport, timeout=30.0, auth=signer)
 
     def ask(
-        self, question: str, thread_id: str | None = None, *, brief: bool = False
+        self,
+        question: str,
+        thread_id: str | None = None,
+        *,
+        brief: bool = False,
+        retry_of: str | None = None,
     ) -> Iterator[Event]:
         """The answer's events as they arrive; a refused question is one `error` event.
 
-        `brief=True` asks `/v1/brief` for a research brief on the request instead.
+        `brief=True` asks `/v1/brief` for a research brief on the request instead, and
+        `retry_of` (an earlier answer's request id) a second answer to that answer's question.
         """
         body: dict[str, Any] = {"question": question}
         if thread_id:
             body["thread_id"] = thread_id
+        if retry_of:
+            body["retry_of"] = retry_of
         headers = {"X-Visitor-ID": self.visitor_id}
         path, timeout = ("/v1/brief", BRIEF_TIMEOUT_S) if brief else ("/v1/ask", ASK_TIMEOUT_S)
         try:
@@ -192,6 +201,15 @@ class CopilotClient:
         body = {"thread_id": thread_id, "turn": turn, "rating": rating, "request_id": request_id}
         try:
             return self._http.post("/v1/feedback", json=body).status_code == 201
+        except httpx.HTTPError:
+            return False
+
+    def preference(self, first: str, second: str, chosen: str) -> bool:
+        """Keep a reader's pick between an answer and its second answer (`first`, `second` or
+        `neither`, by request id); whether it was kept."""
+        body = {"first": first, "second": second, "chosen": chosen}
+        try:
+            return self._http.post("/v1/preference", json=body).status_code == 201
         except httpx.HTTPError:
             return False
 
@@ -224,4 +242,6 @@ def _refusal(response: httpx.Response) -> dict[str, Any]:
         return {"error": reason, "retry_after": response.headers.get("retry-after")}
     if response.status_code == 422:
         return {"error": "The question couldn't be accepted: it may be empty or too long."}
+    if response.status_code == 404:
+        return {"error": detail or "That answer is no longer held; ask the question again."}
     return {"error": f"The copilot answered with HTTP {response.status_code}."}

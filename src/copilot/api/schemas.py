@@ -34,6 +34,15 @@ class AskRequest(BaseModel):
             "nothing is noted about them."
         ),
     )
+    retry_of: str | None = Field(
+        default=None,
+        pattern=ID_PATTERN,
+        description=(
+            "An earlier answer's request id: answer its question again, as it was read, with "
+            "another model setting, in a conversation of its own and never from the cache "
+            "(step 9.2). `question` is then ignored."
+        ),
+    )
 
     @field_validator("question")
     @classmethod
@@ -59,6 +68,17 @@ class FeedbackRequest(BaseModel):
 
 class FeedbackReceipt(BaseModel):
     id: int
+
+
+class PreferenceRequest(BaseModel):
+    """A reader's pick between an answer and a second answer to the same question."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    first: str = Field(pattern=ID_PATTERN, description="The first answer's request id.")
+    second: str = Field(pattern=ID_PATTERN, description="The second answer's request id.")
+    chosen: Literal["first", "second", "neither"]
+    comment: str = Field(default="", max_length=MAX_QUESTION)
 
 
 class SourcePage(BaseModel):
