@@ -177,7 +177,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add nightly
           git commit -q -m "chore(eval): the night of $NIGHT ($SET)"
-          git push -q origin "HEAD:$HISTORY_BRANCH"
+          # The daily canary pushes to the same branch, other files: rebase on it.
+          for attempt in 1 2 3; do
+            git push -q origin "HEAD:$HISTORY_BRANCH" && exit 0
+            git pull -q --rebase origin "$HISTORY_BRANCH"
+          done
+          exit 1
 
       - name: Open an issue on a regression
         if: steps.night.outputs.exit == '3' && steps.plan.outputs.trial == 'false'
