@@ -18,7 +18,12 @@ from copilot.api.services import readiness
 from copilot.config import Settings
 from copilot.llm import LLMError, LLMGateway, user
 from copilot.llm.base import LLMResponse, Message, ModelRole
-from copilot.llm.fallback import UNKNOWN_COST_USD, CappedFallback, MemorySpend
+from copilot.llm.fallback import (
+    UNKNOWN_COST_USD,
+    CappedFallback,
+    MemorySpend,
+    SpendingClient,
+)
 from copilot.llm.gateway import build_router, paid_settings
 
 DAY = date(2026, 11, 2)
@@ -242,3 +247,20 @@ def test_readiness_needs_the_paid_key_only_when_the_fallback_is_on(tmp_path: Any
     assert "paid_llm_key" not in readiness(off)
     assert readiness(on)["paid_llm_key"] is False
     assert readiness(keyed)["paid_llm_key"] is True
+
+
+def test_a_spending_client_counts_every_call_and_refuses_none() -> None:
+    spend = MemorySpend()
+    spend.add(DAY, 9.0)  # far past any cap: counting is all it does
+    client = SpendingClient(Scripted(0.004, None), spend, "bandit", today=lambda: DAY)
+
+    client.complete([user("hi")])
+    asyncio.run(client.acomplete([user("hi")]))
+
+    assert spend.spent(DAY) == pytest.approx(9.0 + 0.004 + UNKNOWN_COST_USD)
+
+
+def test_a_spending_client_returns_a_reply_whose_cost_cant_be_recorded() -> None:
+    client = SpendingClient(Scripted(0.004), BrokenSpend(), "bandit", today=lambda: DAY)
+
+    assert client.complete([user("hi")]).text == "ok"
