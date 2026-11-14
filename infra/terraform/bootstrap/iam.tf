@@ -114,6 +114,23 @@ resource "google_storage_bucket_iam_member" "evaluator_reads_data" {
   member = google_service_account.evaluator.member
 }
 
+# The daily canary (ADR-0036) asks the private API a few of the project's own questions,
+# from this repository's main branch. envs/prod lets it call the API; it reads no secret
+# and no data, and deploys nothing.
+resource "google_service_account" "canary" {
+  account_id   = "github-canary"
+  display_name = "GitHub Actions daily canary"
+  description  = "Asks the private API the day's canary questions from main; nothing else"
+
+  depends_on = [google_project_service.this]
+}
+
+resource "google_service_account_iam_member" "canary_from_github" {
+  service_account_id = google_service_account.canary.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository_id/${var.github_repository_id}"
+}
+
 # Enabling Compute gives its default service account Editor on the project. Nothing here
 # runs as it (each service, the scheduler and Pub/Sub have their own accounts), so it
 # keeps no role on the project.
