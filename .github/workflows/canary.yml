@@ -74,6 +74,13 @@ jobs:
       - name: Install
         run: uv sync --locked --no-default-groups
 
+      # Before asking, so the day's drift checks can read the earlier days.
+      - name: Check out the history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.HISTORY_BRANCH }}
+          path: history
+
       - name: Ask the day's questions
         id: day
         env:
@@ -83,7 +90,7 @@ jobs:
         run: |
           set +e
           uv run --no-sync python scripts/canary.py --api-url "$API_URL" --date "$DAY" \
-            --per-day "$QUESTIONS" --out "$RUNNER_TEMP/canary"
+            --per-day "$QUESTIONS" --out "$RUNNER_TEMP/canary" --history history/canary
           echo "exit=$?" >> "$GITHUB_OUTPUT"
 
       - name: Summarise the day
@@ -94,14 +101,8 @@ jobs:
           jq -r '"| Question | Route | Arm | Group | Answered | Judged | Faithful | Seconds | Error |",
                  "|---|---|---|---|---|---|---|---|---|",
                  (.rows[] | "| \(.id) | \(.route // "") | \(.arm // "") | \(.assignment // "") | \(.answered // "") | \(.judged // "") | \(.faithful // "") | \(.seconds) | \(.error // "") |"),
-                 "", "Summary: \(.summary | tostring)"' "$day" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Check out the history
-        if: always() && steps.day.outputs.exit != '' && steps.plan.outputs.trial == 'false'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.HISTORY_BRANCH }}
-          path: history
+                 "", "Summary: \(.summary | tostring)",
+                 "", "Drift: \(.drift.checks // {} | tostring)"' "$day" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep the day's metrics
         if: always() && steps.day.outputs.exit != '' && steps.plan.outputs.trial == 'false'
