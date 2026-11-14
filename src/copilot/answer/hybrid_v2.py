@@ -157,7 +157,15 @@ class HybridAgentV2:
     def answer(self, question: str) -> HybridAnswer:
         if one_filing(question, self.doc) is not None:
             alone = self.doc.answer(question)
-            return HybridAnswer(alone.answer, None, alone.retrieval, path="doc", first=alone.first)
+            return HybridAnswer(
+                alone.answer,
+                None,
+                alone.retrieval,
+                path="doc",
+                first=alone.first,
+                arm=alone.arm,
+                assignment=alone.assignment,
+            )
 
         plan = make_plan(self.doc.llm, question)
         data: DataAnswer | None = None

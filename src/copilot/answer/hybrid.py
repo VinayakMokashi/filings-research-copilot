@@ -109,7 +109,8 @@ class HybridAnswer:
 
     Version 2 (`copilot.answer.hybrid_v2`) also records which path it took (`split`, both
     agents; `doc`, the doc agent alone, with no data result), the two questions it split
-    the question into, and the answer it wrote before a retry, if it retried.
+    the question into, and the answer it wrote before a retry, if it retried. On the doc
+    agent's path, the arm that wrote it, as the doc agent reports it (step 9.3).
     """
 
     answer: Answer
@@ -119,6 +120,8 @@ class HybridAnswer:
     figures_question: str = ""
     reasons_question: str = ""
     first: Answer | None = None
+    arm: str | None = None
+    assignment: str | None = None
 
     @property
     def retried(self) -> bool:
