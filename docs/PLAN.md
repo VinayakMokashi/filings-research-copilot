@@ -299,11 +299,11 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
   - on Sundays, all 100 dev questions instead of the slice;
   - metrics only, never question or answer text, with a trend chart on the project page;
   - a regression (a paired test against the last full run) fails the run and opens an issue.
-- [ ] 9.2 Feedback stored as preference pairs (chosen vs rejected) for future preference tuning ([ADR-0035](decisions/0035-preference-pairs.md)):
+- [x] 9.2 Feedback stored as preference pairs (chosen vs rejected) for future preference tuning ([ADR-0035](decisions/0035-preference-pairs.md)). Done: on the live API, a rating kept its exchange, a second answer came from another arm in a new conversation, and the pick kept both; the export found 37 validator pairs in local runs, and none from readers yet ([guide](concepts/preference-data.md)):
   - a rating keeps the exchange it rates (the question as read, the answer, its sources, the arm, the validator's verdict), and the UI says so;
   - after a thumbs down, "Try another answer" writes a fresh answer with another arm, and the visitor's pick makes a pair;
   - `poe export-preferences` writes TRL's preference format from retries, opposite ratings and the validator's revisions, each pair labelled with its source.
-- [ ] 9.3 Bandit routing online, with a cost guardrail: its own cap of $0.25 a day, after which answers return to the fixed model; compared with the fixed arm, with intervals, after two weeks ([ADR-0036](decisions/0036-bandit-online.md)):
+- [ ] 9.3 Bandit routing online, with a cost guardrail: its own cap of $0.25 a day, after which answers return to the fixed model; compared with the fixed arm, with intervals, after two weeks ([ADR-0036](decisions/0036-bandit-online.md)). Live since 15 November, with the canary; the comparison covers 15 to 28 November:
   - a coin flip sends each paid answer to the fixed arm or to the policy, so the comparison is between randomized groups;
   - rewards from thumbs, and from the faithfulness judge on half of the visitors' bandit answers and every canary answer;
   - a daily canary asks ten of the project's own doc questions through the live API, inside the same cap.
@@ -400,6 +400,7 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-11-11 | Step 9.1's slice is 32 questions, not 40 | One night of 40, measured by hand from an empty cache, cost $0.378 of its $0.40 cap, too close to it; at 32 a night should cost about $0.33 ([report](eval/nightly.md)) |
 | 2026-11-15 | Step 9.2 keeps each rated answer with what produced it, adds "Try another answer", and exports pairs from three sources | A rating without its answer can't train anything; visitors' pairs will be few at this traffic, so the validator's revisions add pairs, labelled as judged by a model ([ADR-0035](decisions/0035-preference-pairs.md)) |
 | 2026-11-15 | Step 9.3 compares the bandit with a randomized fixed arm, and a daily canary feeds it | The live API answered 3 questions from 3 to 15 November and received no rating, so two weeks of visitors would leave nothing to compare; the owner approved the canary inside the bandit's cap ([ADR-0036](decisions/0036-bandit-online.md)) |
+| 2026-11-15 | Step 9.2 done, and step 9.3's bandit switched on with its canary until 28 November | Checked on the live API: a rating kept its exchange, a second answer came from another arm in a new conversation, and the pick kept both; a canary trial of two judged answers cost the bandit $0.0103 ([ADR-0036](decisions/0036-bandit-online.md)) |
 
 ## 11. Status tracker
 
