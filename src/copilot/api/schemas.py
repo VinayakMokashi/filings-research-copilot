@@ -99,3 +99,42 @@ class Health(BaseModel):
 class Readiness(BaseModel):
     ready: bool
     checks: dict[str, bool]
+
+
+class SearchRequest(BaseModel):
+    """Words to search the filings for (step 9.4)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    query: str = Field(min_length=1, max_length=500, examples=["3M PFAS liabilities"])
+
+    @field_validator("query")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("the query is blank")
+        return value.strip()
+
+
+class SearchResult(BaseModel):
+    position: int = Field(description="Its place in the list, from 0; a click names it.")
+    label: str
+    doc_name: str
+    page: int = Field(description="0-based, as the citations count; the PDF page is one more.")
+    section: str | None
+    text: str = Field(description="The passage's first 500 characters.")
+
+
+class SearchResults(BaseModel):
+    search_id: str = Field(description="Name it with a click on one of the results.")
+    filings: list[str] | None = Field(description="The filings searched; null means all.")
+    results: list[SearchResult]
+
+
+class ClickRequest(BaseModel):
+    """A reader opened one of a search's results."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    search_id: str = Field(pattern=ID_PATTERN)
+    position: int = Field(ge=0)

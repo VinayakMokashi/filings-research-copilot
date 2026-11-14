@@ -120,3 +120,17 @@ def test_a_second_answer_and_a_pick() -> None:
         raise httpx.ConnectError("refused")
 
     assert client(httpx.MockTransport(down)).preference("r1", "r2", "first") is False
+
+
+def test_a_search_and_a_click() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/search":
+            return httpx.Response(200, json={"search_id": "s1", "filings": None, "results": []})
+        return httpx.Response(204)
+
+    api = client(httpx.MockTransport(handler))
+
+    assert api.search("3M PFAS") == {"search_id": "s1", "filings": None, "results": []}
+    assert api.click("s1", 0) is True
+    unavailable = client(httpx.MockTransport(lambda r: httpx.Response(503, json={})))
+    assert unavailable.search("3M PFAS") is None
