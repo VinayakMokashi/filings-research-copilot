@@ -55,11 +55,17 @@ log = get_logger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class Retrieval:
-    """What retrieval found for one question."""
+    """What retrieval found for one question.
+
+    `similarity` is the cosine similarity between the question and the best chunk its own
+    search found (the first search is always the question itself): the drift checks watch
+    it, since the same question should find the same pages every time (step 9.5).
+    """
 
     filings: list[str] | None  # the filings searched; None means all of them
     searches: list[Search]
     hits: list[Hit]
+    similarity: float | None = None
 
 
 class DocAgent:
@@ -121,7 +127,8 @@ class DocAgent:
             hits = rankings[0]
         else:
             hits = reciprocal_rank_fusion(rankings, weights=weights)[:FETCH]
-        return Retrieval(documents, searches, hits)
+        similarity = rankings[0][0].score if rankings and rankings[0] else None
+        return Retrieval(documents, searches, hits, similarity)
 
     def context(self, retrieval: Retrieval, budget: int | None = None) -> list[Source]:
         siblings = (lambda hit: self.searcher.neighbours(hit, 1)) if self.siblings else None
@@ -139,18 +146,19 @@ class DocAgent:
         choice = self.choose(avoid)
         retrieval = self.retrieve(question)
         answer, choice = self._write(question, self.context(retrieval), choice)
+        similarity = retrieval.similarity  # the first search's, whatever happens next
         if answer.answerable:
-            return _answered(answer, retrieval, None, choice)
+            return _answered(answer, retrieval, None, choice, similarity)
         documents = retrieval.filings
         if documents is not None:
             documents = self.company_filings(question) or documents
         widened = documents is not None and set(documents) != set(retrieval.filings or [])
         if not widened and not answer.missing.strip():
-            return _answered(answer, retrieval, None, choice)
+            return _answered(answer, retrieval, None, choice, similarity)
         second = self.retrieve(question, documents, missing=answer.missing)
         sources = self.context(second, self.retry_budget)
         final, choice = self._write(question, sources, choice)
-        return _answered(final, second, answer, choice)
+        return _answered(final, second, answer, choice, similarity)
 
     def choose(self, avoid: str | None = None) -> Choice | None:
         """The answer's arm, or None for the fixed one. A second answer always gets another
@@ -189,6 +197,7 @@ class AgentAnswer:
     first: Answer | None = None
     arm: str | None = None  # the arm that wrote it, when it wasn't the fixed path
     assignment: str | None = None  # why: "policy", "control" or "retry"
+    similarity: float | None = None  # the first retrieval's, even when it retried
 
     @property
     def retried(self) -> bool:
@@ -196,11 +205,15 @@ class AgentAnswer:
 
 
 def _answered(
-    answer: Answer, retrieval: Retrieval, first: Answer | None, choice: Choice | None
+    answer: Answer,
+    retrieval: Retrieval,
+    first: Answer | None,
+    choice: Choice | None,
+    similarity: float | None,
 ) -> AgentAnswer:
     if choice is None:
-        return AgentAnswer(answer, retrieval, first)
-    return AgentAnswer(answer, retrieval, first, choice.arm.name, choice.assignment)
+        return AgentAnswer(answer, retrieval, first, similarity=similarity)
+    return AgentAnswer(answer, retrieval, first, choice.arm.name, choice.assignment, similarity)
 
 
 # The corpus's metadata for an image that carries no FinanceBench files (`poe bundle-data`).

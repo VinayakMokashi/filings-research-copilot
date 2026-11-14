@@ -216,6 +216,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "handoff": result.get("handoff"),
                     "validation": state.get("validation", {}),
                     "revisions": state.get("revisions", 0),
+                    "similarity": result.get("similarity"),
                     "tokens_by_model": tokens,
                     "cost_usd": cost(tokens),
                     "seconds": round(time.perf_counter() - started, 2),

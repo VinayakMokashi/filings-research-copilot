@@ -534,8 +534,14 @@ def build_graph(
             filings=filings,
             arm=agent_answer.arm,
             assignment=agent_answer.assignment,
+            similarity=agent_answer.similarity,
         )
-        result = {"kind": "doc", "answer": record, "retried": agent_answer.retried}
+        result = {
+            "kind": "doc",
+            "answer": record,
+            "retried": agent_answer.retried,
+            "similarity": agent_answer.similarity,
+        }
         if agent_answer.arm is not None:
             result["arm"] = agent_answer.arm
             result["assignment"] = agent_answer.assignment
@@ -569,8 +575,15 @@ def build_graph(
             data_status=data["status"] if data else None,
             database_cited=found.database_cited,
             pages_cited=found.pages_cited,
+            similarity=found.similarity,
         )
-        result = {"kind": "hybrid", "answer": record, "data": data, "path": found.path}
+        result = {
+            "kind": "hybrid",
+            "answer": record,
+            "data": data,
+            "path": found.path,
+            "similarity": found.similarity,
+        }
         if found.arm is not None:  # the doc agent's path, written by a bandit's arm
             result["arm"] = found.arm
             result["assignment"] = found.assignment

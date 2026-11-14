@@ -186,6 +186,11 @@ def copilot_rows(
                 "handed_on": float(answer.get("handoff") is not None),
                 "cost_usd": round(float(answer.get("cost_usd") or 0.0), 6),
                 "seconds": float(answer.get("seconds", 0.0)),
+                "similarity": (
+                    round(float(answer["similarity"]), 4)
+                    if answer.get("similarity") is not None
+                    else None
+                ),
             }
         )
     return rows
