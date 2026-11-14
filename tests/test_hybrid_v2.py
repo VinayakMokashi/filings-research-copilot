@@ -11,6 +11,7 @@ from typing import cast
 import pytest
 
 from copilot.answer.agent import DocAgent
+from copilot.answer.bandit import ArmChooser
 from copilot.answer.hybrid import DATABASE, FIGURES_HINT
 from copilot.answer.hybrid_v2 import SYSTEM_PROMPT, HybridAgentV2, make_plan, one_filing
 from copilot.config import Settings
@@ -147,6 +148,18 @@ def test_a_question_one_filing_answers_goes_to_the_doc_agent_alone(facts_db: Pat
     assert result.answer.text == text
     assert len(writer.calls) == 1  # the doc agent's answer call; no plan
     assert "Facts database" not in writer.calls[0].messages[0]["content"]
+    assert (result.arm, result.assignment) == (None, None)  # the fixed path
+
+
+def test_the_doc_agents_path_keeps_the_arm_that_wrote_it(facts_db: Path) -> None:
+    text = "Acme spent more on new plants in fiscal 2022 to meet demand [1]."
+    agent, writer, _ = _agent(facts_db, [_answer(text)])
+    agent.doc.arms = ArmChooser(facts_db.parent / "arms.json", arms=("strong-low",))
+
+    result = agent.answer(TWO_YEARS)
+
+    assert (result.path, result.arm, result.assignment) == ("doc", "strong-low", "policy")
+    assert writer.calls[0].extra.get("reasoning_effort") == "low"
 
 
 def test_a_split_question_gives_each_agent_its_part(facts_db: Path) -> None:

@@ -12,11 +12,11 @@ from numpy.typing import NDArray
 from qdrant_client import QdrantClient
 
 from copilot.answer.agent import DocAgent
-from copilot.answer.bandit import ArmChooser
+from copilot.answer.bandit import ARMS, ArmChooser, Choice
 from copilot.ingest import index
 from copilot.ingest.chunking import Chunk
 from copilot.ingest.embed import HashingDense, HashingSparse
-from copilot.llm import FakeLLM, Message, ModelRole
+from copilot.llm import FakeLLM, LLMError, Message, ModelRole
 from copilot.retrieval.query import CompanyMatcher, Filing
 from copilot.retrieval.rewrite import Search
 from copilot.retrieval.search import Searcher
@@ -161,3 +161,91 @@ def test_a_bandit_chooses_the_answer_model_and_the_answer_names_its_arm(tmp_path
         .arm
         is None
     )
+
+
+def _answering(answers: list[dict[str, object]]) -> FakeLLM:
+    """Answers the answer prompt from `answers`, whatever the role, and rewrites anything else."""
+    queue = list(answers)
+
+    def reply(messages: Sequence[Message], role: ModelRole) -> str:
+        if _is_answer(messages):
+            return json.dumps(queue.pop(0))
+        return "Acme net revenue fiscal 2022"
+
+    return FakeLLM(reply)
+
+
+def _is_answer(messages: Sequence[Message]) -> bool:
+    return messages[0]["content"].startswith("You answer questions about public companies")
+
+
+class OneChoice:
+    """A bandit that always gives the same choice, and notes what it was asked to avoid."""
+
+    def __init__(self, choice: Choice | None) -> None:
+        self.choice = choice
+        self.avoided: list[str | None] = []
+
+    def choose(self, avoid: str | None = None) -> Choice | None:
+        self.avoided.append(avoid)
+        return self.choice
+
+
+REVENUE = {"answerable": True, "answer": "Revenue was $1,200 million [1].", "calculations": []}
+
+
+def test_a_second_answer_takes_another_arm_on_the_agents_own_client() -> None:
+    llm = _answering([REVENUE])
+
+    result = _agent(llm).answer("What was Acme's FY2022 revenue?", avoid="strong")
+
+    assert result.assignment == "retry"
+    assert result.arm in ("strong-low", "fast")
+    (call,) = [call for call in llm.calls if _is_answer(call.messages)]
+    assert (call.role, call.extra.get("reasoning_effort")) in (("strong", "low"), ("fast", None))
+
+
+def test_an_online_arm_writes_on_its_own_client() -> None:
+    own, paid = _answering([]), _answering([REVENUE])
+    policy = OneChoice(Choice(ARMS["fast"], "policy", paid))
+    agent = DocAgent(
+        _searcher(), CompanyMatcher(["Acme"], {"Acme": None}), FILINGS, own, arms=policy
+    )
+
+    result = agent.answer("What was Acme's FY2022 revenue?")
+
+    assert (result.arm, result.assignment) == ("fast", "policy")
+    assert [call.role for call in paid.calls] == ["fast"]
+    assert not any(_is_answer(call.messages) for call in own.calls)
+    assert policy.avoided == [None]
+
+
+def test_a_failed_paid_call_is_written_again_on_the_fixed_path() -> None:
+    def refuse(messages: Sequence[Message], role: ModelRole) -> str:
+        raise LLMError("The fast model call failed: APIConnectionError")
+
+    own = _answering([REVENUE])
+    policy = OneChoice(Choice(ARMS["fast"], "control", FakeLLM(refuse)))
+    agent = DocAgent(
+        _searcher(), CompanyMatcher(["Acme"], {"Acme": None}), FILINGS, own, arms=policy
+    )
+
+    result = agent.answer("What was Acme's FY2022 revenue?")
+
+    assert (result.arm, result.assignment) == (None, None)  # earns the bandit nothing
+    assert result.answer.answerable
+    assert [call.role for call in own.calls if _is_answer(call.messages)] == ["strong"]
+
+
+def test_a_bandit_at_its_cap_leaves_a_second_answer_to_another_arm_here() -> None:
+    llm = _answering([REVENUE])
+    policy = OneChoice(None)
+    agent = DocAgent(
+        _searcher(), CompanyMatcher(["Acme"], {"Acme": None}), FILINGS, llm, arms=policy
+    )
+
+    result = agent.answer("What was Acme's FY2022 revenue?", avoid="strong")
+
+    assert policy.avoided == ["strong"]
+    assert result.assignment == "retry"
+    assert result.arm != "strong"
