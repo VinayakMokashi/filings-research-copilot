@@ -15,5 +15,6 @@ Step-by-step operating procedures, written when something becomes operable.
 | Rolling back a deploy | Written, in [Create and change the Google Cloud deployment](deploy.md#roll-back-by-hand) |
 | [Load-test the deployed API](load-test.md) | Written; run once the deployment exists |
 | [The nightly evaluation](nightly-eval.md) | Written |
+| [The answer bandit and the daily canary](bandit-and-canary.md) | Written |
 | Rotating secrets | Phase 8 |
 | Handling an LLM provider outage | Phase 8 |
