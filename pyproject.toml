@@ -91,6 +91,9 @@ run-memory = { cmd = "python scripts/run_memory.py", help = "Run the memory set:
 run-copilot = { cmd = "python scripts/run_copilot.py", help = "Run FinanceBench dev questions through the copilot's graph, resumably, with agent metrics (--run)" }
 nightly-slice = { cmd = "python scripts/choose_nightly_slice.py", help = "Choose the nightly evaluation's dev questions by route and question type, into eval/nightly/slice.json (ids only)" }
 nightly-eval = { cmd = "python scripts/nightly_eval.py", help = "The nightly evaluation under a spending cap: answers, judges, routing and SQL sets; metrics only, and a paired test against the last full run (--set, --budget, --out, --baseline)" }
+export-preferences = { cmd = "python scripts/export_preferences.py", help = "Preference pairs in TRL's format from the deployment's ratings and picks (Firestore, as the owner) and, with --runs, local runs' validator revisions; written under data/ (--from, --out)" }
+bandit-report = { cmd = "python scripts/bandit_report.py", help = "Compare the online answer bandit with its randomized fixed arm from its Firestore log, by kind of reward, with intervals and the decision of ADR-0036 (--since, --until, --name, --from)" }
+canary = { cmd = "python scripts/canary.py", help = "Ask the API the day's canary questions, the routing set's dev doc questions in turn; metrics only, exit 2 on a failed request (--api-url, --out, --date, --per-day)" }
 run-briefs = { cmd = "python scripts/run_briefs.py", help = "Write the brief set's briefs with the crew or one specialist, resumably, and grade them with rubrics and the faithfulness check (--system, --run)" }
 jury-briefs = { cmd = "python scripts/jury_briefs.py", help = "Grade a brief run's rubrics again with a second judge, and report their agreement and kappa (--run, --role)" }
 fetch-sec = { cmd = "python scripts/fetch_sec.py", help = "Match the companies to SEC filers and download their XBRL company facts" }
