@@ -62,8 +62,19 @@ class Settings(BaseSettings):
     collection: str = "fb_page_bge-small"
 
     # How the doc agent chooses its answer model (step 7.5): always the strong role, or an
-    # epsilon-greedy bandit over copilot.answer.bandit.ARMS (its rewards come in Phase 9)
+    # epsilon-greedy bandit over copilot.answer.bandit.ARMS, its state kept in a file
     answer_policy: Literal["fixed", "epsilon-greedy"] = "fixed"
+    # The answer bandit online, in the API (step 9.3, ADR-0036): its arms on the paid models,
+    # within this many dollars a day, counted with the judge's calls in the API's state; 0
+    # turns it off. A coin flip sends an answer to the fixed arm with `bandit_control_share`,
+    # ε starts at `bandit_epsilon0` and halves after `bandit_tau` rewards, and the
+    # faithfulness judge scores `bandit_judge_share` of the visitors' answers (and every one
+    # the canary asks for)
+    bandit_daily_usd: float = Field(default=0.0, ge=0.0)
+    bandit_control_share: float = Field(default=0.5, ge=0.0, le=1.0)
+    bandit_epsilon0: float = Field(default=0.2, ge=0.0, le=1.0)
+    bandit_tau: float = Field(default=50.0, gt=0.0)
+    bandit_judge_share: float = Field(default=0.5, ge=0.0, le=1.0)
 
     # Model roles, as LiteLLM model ids ("<provider>/<model>")
     llm_strong_model: str = "groq/openai/gpt-oss-120b"
