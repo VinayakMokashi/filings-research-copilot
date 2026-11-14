@@ -22,6 +22,12 @@ variable "paid_daily_usd" {
   default     = 0.5
 }
 
+variable "bandit_daily_usd" {
+  description = "The most the API's answer bandit may spend in a day on Cerebras, its arms' calls and its judge's together (ADR-0036); 0 turns it off. Above 0, the Cerebras key's secret must have a version."
+  type        = number
+  default     = 0.25
+}
+
 variable "sql_tier" {
   description = "Cloud SQL machine type: shared-core, Enterprise edition (ADR-0031)."
   type        = string
