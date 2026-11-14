@@ -36,5 +36,7 @@
 | [0032](0032-continuous-deployment.md) | Deploy from GitHub Actions without keys, prove the new revision serves, and roll back on a failed smoke test | Accepted | 2026-10-28 |
 | [0033](0033-capped-paid-fallback.md) | When Groq refuses a call, answer on Cerebras until a daily cap | Accepted | 2026-11-02 |
 | [0034](0034-nightly-evaluation.md) | Evaluate the copilot every night in GitHub Actions, on Cerebras, within a hard cap | Accepted | 2026-11-11 |
+| [0035](0035-preference-pairs.md) | Keep each rated answer with what produced it, and turn ratings into preference pairs | Accepted | 2026-11-15 |
+| [0036](0036-bandit-online.md) | Run the answer bandit online within $0.25 a day, against a randomized fixed arm, with a daily canary | Accepted | 2026-11-15 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
