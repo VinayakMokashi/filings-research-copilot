@@ -15,6 +15,49 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-15 · Phase 9 · Feedback as preference pairs, the answer bandit online, and a daily canary
+
+- **Goal:** steps 9.2 and 9.3: keep readers' ratings as preference pairs, and run the answer bandit online within its own cap of $0.25 a day ([ADR-0035](decisions/0035-preference-pairs.md), [ADR-0036](decisions/0036-bandit-online.md)).
+- **Done:**
+  - **Checks first.** The nightly evaluation's first three scheduled nights were green: $0.348, $0.339 and $0.335, with correct 0.59, 0.50 and 0.56 on the 32-question slice. The billing export of 11 November agrees with the measured idle limit. The live API had answered 3 questions from 3 to 15 November and had never received a rating.
+  - **Seven Dependabot updates.** Four that don't deploy were merged at once (#106 to #109). The three that do (#110 to #112) were cherry-picked into #114, so that one deploy carried everything: uv 0.13.8, Streamlit 1.67.0, LiteLLM 1.108.1, four more Python packages, and opentelemetry-api 1.45.2, which closes security alert #49. Streamlit's idle limit and LiteLLM's rate-limit handling were checked first.
+  - **The plan (#113):** ADR-0035, ADR-0036 and PLAN's steps.
+  - **The code (#114, deployed):**
+    - the API remembers each exchange, keeps it with its rating, answers again with another arm (`retry_of`), and keeps a reader's pick (`/v1/preference`);
+    - the UI says what a rating keeps, and after a thumbs down offers another answer and asks which is better;
+    - `poe export-preferences` writes TRL's conversational preference format;
+    - the online chooser: a coin flip between the fixed arm and ε-greedy, the arms on Cerebras, a daily cap;
+    - the bandit's log, its judge and its rewards; `poe bandit-report`; `poe canary`.
+  - **The infrastructure (#115, applied):** a `github-canary` account, reached from `main`; its permission to call the API; `bandit_daily_usd = 0.25`.
+  - **The canary (#116):** a daily workflow. The nightly evaluation's push now rebases on the canary's.
+- **Commands:**
+  - `git cherry-pick` of the three Dependabot commits, then `uvx uv@0.13.8 lock --check`;
+  - a headless Chrome on the UI with a 30-second idle limit;
+  - `uv run poe export-preferences --runs copilot-v2 copilot-v1`;
+  - `terraform plan` and `apply` on bootstrap, then on prod after the deploy's rollout;
+  - `gh variable set GCP_CANARY_SA`;
+  - `gh workflow run canary.yml -f questions=2`.
+- **Results:**
+  - **Step 9.2 on the live API:**
+    - a doc answer got a thumbs down, and Firestore kept the rating with its exchange;
+    - a second answer came from `strong-low`, in a new conversation and not from the cache;
+    - the pick was kept with both exchanges;
+    - the check's documents were deleted afterwards.
+  - **The export** found 37 validator pairs in copilot v1's and v2's dev runs, kept in `data/`. Readers' pairs: none yet.
+  - **The bandit** was switched on at 22:38 UTC on 14 November. A canary trial of two questions went to the control arm, and both were judged faithful. The bandit spent $0.0103: about $0.002 for each answer call and $0.003 for each judge's call.
+  - `poe check`: 770 passed, 7 deselected.
+- **Problems and fixes:**
+  - **A test fixture echoed FinanceBench.** One invented fixture used a cash-flow line item worded like a FinanceBench justification. The quote scan caught it before the branch was pushed, and the commit was rewritten with an invented company.
+  - **A Dependabot title said less than its change.** #107 and #109 say google provider 8.10.0, but their lock files moved to 8.11.0. The plans showed nothing else changing.
+  - **The hybrid's one-company path dropped its arm.** A paid answer there would have gone unlogged; the hybrid now carries the arm the doc agent reports.
+  - **A saved plan carries the image it read.** With the image ignored, a prod plan made before a rollout would apply the old image, so prod was planned after the rollout and applied at once.
+  - **Two jobs push to one history branch.** The canary and the nightly run both push to `eval-history`, so each rebases and retries; their files never overlap.
+- **Decisions:** ADR-0035 and ADR-0036. The owner approved the canary, inside the bandit's cap, and the seven Dependabot updates.
+- **Next:**
+  - the first full nightly run, on 15 November, which becomes the baseline;
+  - the canary's days to 28 November, then the bandit's report and its decision;
+  - drift checks (step 9.5), then the search page (step 9.4).
+
 ### 2026-11-11 · Phase 9 · The nightly evaluation: a run's spending cap, a measured night, and the schedule
 
 - **Goal:** step 9.1: evaluate the copilot every night within a hard cap, keep metrics only, show the trend, and flag regressions ([ADR-0034](decisions/0034-nightly-evaluation.md)).
