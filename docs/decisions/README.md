@@ -38,5 +38,7 @@
 | [0034](0034-nightly-evaluation.md) | Evaluate the copilot every night in GitHub Actions, on Cerebras, within a hard cap | Accepted | 2026-11-11 |
 | [0035](0035-preference-pairs.md) | Keep each rated answer with what produced it, and turn ratings into preference pairs | Accepted | 2026-11-15 |
 | [0036](0036-bandit-online.md) | Run the answer bandit online within $0.25 a day, against a randomized fixed arm, with a daily canary | Accepted | 2026-11-15 |
+| [0037](0037-drift-checks.md) | Check for drift where each signal is clean, and report it rather than alarm | Accepted | 2026-11-15 |
+| [0038](0038-interleaved-search.md) | Compare two rankings on a search page by team-draft interleaving, and call the counts illustrative | Accepted | 2026-11-15 |
 
 New records copy [0000-template.md](0000-template.md) and take the next number.
