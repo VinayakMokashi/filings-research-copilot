@@ -10,6 +10,10 @@ Only quota refusals fall back: a bad request or an outage would spend money to f
 The day's spend is read before each paid call and added to after it, so calls already in
 flight can pass the cap by a fraction of a cent each. If the spend can't be read, nothing
 is spent: an unknown total isn't under the cap.
+
+`SpendingClient` only counts: every call's cost goes into a day's spend, for a caller that
+checks its own cap before it decides to spend, as the answer bandit does once an answer
+(ADR-0036).
 """
 
 from __future__ import annotations
@@ -151,4 +155,61 @@ class CappedFallback:
                 response = await self._paid.acomplete(messages, **call)
             except LLMError as failure:
                 raise refusal from failure
+        return await asyncio.to_thread(self._record, response)
+
+
+class SpendingClient:
+    """Counts the cost of every call `client` makes against `spend`'s day; refuses nothing.
+
+    A call whose price is unknown counts `UNKNOWN_COST_USD`. If the cost can't be recorded,
+    the reply is still returned: it is paid for already.
+    """
+
+    def __init__(
+        self,
+        client: LLMClient,
+        spend: SpendStore,
+        label: str,
+        today: Callable[[], date] = utc_today,
+    ) -> None:
+        self._client = client
+        self._spend = spend
+        self._label = label
+        self._today = today
+
+    def _record(self, response: LLMResponse) -> LLMResponse:
+        cost = UNKNOWN_COST_USD if response.cost_usd is None else response.cost_usd
+        try:
+            self._spend.add(self._today(), cost)
+        except Exception as exc:  # the call is paid for already, so still return it
+            log.warning("llm.spend.unrecorded", label=self._label, error=type(exc).__name__)
+        log.info("llm.spend", label=self._label, model=response.model, cost_usd=cost)
+        return response
+
+    def complete(
+        self,
+        messages: Sequence[Message],
+        *,
+        role: ModelRole = "fast",
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        **extra: Any,
+    ) -> LLMResponse:
+        response = self._client.complete(
+            messages, role=role, temperature=temperature, max_tokens=max_tokens, **extra
+        )
+        return self._record(response)
+
+    async def acomplete(
+        self,
+        messages: Sequence[Message],
+        *,
+        role: ModelRole = "fast",
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        **extra: Any,
+    ) -> LLMResponse:
+        response = await self._client.acomplete(
+            messages, role=role, temperature=temperature, max_tokens=max_tokens, **extra
+        )
         return await asyncio.to_thread(self._record, response)
