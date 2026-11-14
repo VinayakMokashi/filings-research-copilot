@@ -17,6 +17,9 @@ Exit codes: 0 when the night was measured, even if the cap stopped a step (it is
 Usage (the models come from the run's environment, as in ADR-0024's evaluations):
   uv run poe nightly-eval --set slice --budget 0.40 --out dist/nightly/2026-11-12
   uv run poe nightly-eval --set full --budget 1.20 --out DIR --baseline last-full/night.json
+
+With --history (the `nightly` folder of a copy of the eval-history branch), the night also
+carries the drift checks of `copilot.eval.drift` over the earlier nights and itself.
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from copilot.config import get_settings
+from copilot.eval.drift import nightly_drift
 from copilot.eval.nightly import (
     compare,
     copilot_rows,
@@ -64,6 +68,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--budget", type=float, required=True, help="the night's cap, dollars")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--baseline", type=Path, help="the last full run's night.json")
+    parser.add_argument("--history", type=Path, help="the eval-history branch's nightly folder")
     parser.add_argument("--date", default=datetime.now(IST).date().isoformat())
     parser.add_argument("--slice", type=Path, default=SLICE_FILE)
     args = parser.parse_args(argv)
@@ -121,6 +126,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         if not night["partial"]:  # a night cut short draws no verdict (ADR-0034)
             night["tests"] = compare(night, baseline)
             night["regression"] = any(test["regression"] for test in night["tests"])
+    if args.history is not None:
+        this = f"{args.date}-{args.set}"
+        try:
+            earlier = [
+                json.loads(path.read_text(encoding="utf-8"))
+                for path in sorted((args.history / "runs").glob("*.json"))
+                if path.stem != this
+            ]
+            night["drift"] = nightly_drift([*earlier, night])
+        except Exception as exc:  # the drift checks must never cost a night its metrics
+            night["drift"] = {"error": type(exc).__name__}
     (out / "night.json").write_text(
         json.dumps(night, indent=1) + "\n", encoding="utf-8", newline="\n"
     )
