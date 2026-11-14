@@ -1,0 +1,151 @@
+# The daily canary (ADR-0036). Once a day it asks the live API ten of the project's own
+# questions, the routing set's dev questions on the doc route in turn, as an account of its
+# own, so that the answer bandit has rewards to learn from and the deployed service is
+# checked end to end. The API's judge scores every answer one of the bandit's arms writes.
+# Metrics alone go to the eval-history branch; a failed request fails the run and opens an
+# issue. It runs while the bandit is on: disable it when the bandit's cap goes to 0.
+name: Daily canary
+
+on:
+  schedule:
+    - cron: "17 4 * * *" # 09:47 IST
+  workflow_dispatch:
+    inputs:
+      questions:
+        description: "How many of the day's questions to ask; fewer than 10 is a trial, and keeps nothing"
+        type: string
+        default: "10"
+
+permissions:
+  contents: write # the metrics, pushed to eval-history
+  issues: write # a failure's issue
+  id-token: write # workload identity federation
+
+concurrency:
+  group: daily-canary
+  cancel-in-progress: false
+
+env:
+  HISTORY_BRANCH: eval-history
+  API_URL: https://api-${{ vars.GCP_PROJECT_NUMBER }}.${{ vars.GCP_REGION }}.run.app
+
+jobs:
+  ask:
+    name: Ask
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Choose the day
+        id: plan
+        env:
+          ASKED: ${{ inputs.questions }}
+        run: |
+          questions="${ASKED:-10}" # a scheduled run has no inputs
+          case "$questions" in
+            '' | *[!0-9]*) echo "The number of questions must be a whole number."; exit 1 ;;
+          esac
+          trial=false
+          if [ "$questions" -lt 10 ]; then trial=true; fi
+          {
+            echo "questions=$questions"
+            echo "trial=$trial"
+            echo "date=$(TZ=Asia/Kolkata date +%F)"
+          } >> "$GITHUB_OUTPUT"
+
+      # An ID token for the private API, as the canary's account; it may call the API and
+      # nothing else (infra/terraform).
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_CANARY_SA }}
+          token_format: id_token
+          id_token_audience: ${{ env.API_URL }}
+          id_token_include_email: true
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --locked --no-default-groups
+
+      - name: Ask the day's questions
+        id: day
+        env:
+          CANARY_ID_TOKEN: ${{ steps.auth.outputs.id_token }}
+          QUESTIONS: ${{ steps.plan.outputs.questions }}
+          DAY: ${{ steps.plan.outputs.date }}
+        run: |
+          set +e
+          uv run --no-sync python scripts/canary.py --api-url "$API_URL" --date "$DAY" \
+            --per-day "$QUESTIONS" --out "$RUNNER_TEMP/canary"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Summarise the day
+        if: always() && steps.day.outputs.exit != ''
+        run: |
+          day="$RUNNER_TEMP/canary/canary.json"
+          [ -f "$day" ] || { echo "No canary.json was written."; exit 1; }
+          jq -r '"| Question | Route | Arm | Group | Answered | Judged | Faithful | Seconds | Error |",
+                 "|---|---|---|---|---|---|---|---|---|",
+                 (.rows[] | "| \(.id) | \(.route // "") | \(.arm // "") | \(.assignment // "") | \(.answered // "") | \(.judged // "") | \(.faithful // "") | \(.seconds) | \(.error // "") |"),
+                 "", "Summary: \(.summary | tostring)"' "$day" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check out the history
+        if: always() && steps.day.outputs.exit != '' && steps.plan.outputs.trial == 'false'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.HISTORY_BRANCH }}
+          path: history
+
+      - name: Keep the day's metrics
+        if: always() && steps.day.outputs.exit != '' && steps.plan.outputs.trial == 'false'
+        env:
+          DAY: ${{ steps.plan.outputs.date }}
+        run: |
+          day="$RUNNER_TEMP/canary"
+          [ -f "$day/canary.json" ] || { echo "No canary.json was written."; exit 1; }
+          mkdir -p history/canary/runs
+          cp "$day/canary.json" "history/canary/runs/$DAY.json"
+          cat "$day/history.json" >> history/canary/history.jsonl
+          cd history
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add canary
+          git commit -q -m "chore(eval): the canary of $DAY"
+          # The nightly evaluation pushes to the same branch, other files: rebase on it.
+          for attempt in 1 2 3; do
+            git push -q origin "HEAD:$HISTORY_BRANCH" && exit 0
+            git pull -q --rebase origin "$HISTORY_BRANCH"
+          done
+          exit 1
+
+      - name: Open an issue on a failure
+        if: steps.day.outputs.exit == '2' && steps.plan.outputs.trial == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAY: ${{ steps.plan.outputs.date }}
+        run: |
+          body="$(jq -r '"The canary of \(.date) (commit \(.commit[0:7])) had requests to the live API fail:",
+                 "", "| Question | Error | Seconds |", "|---|---|---|",
+                 (.rows[] | select(.ok | not) | select(.error != "busy") | "| \(.id) | \(.error) | \(.seconds) |"),
+                 "", "The day'\''s metrics: `canary/runs/\(.date).json` on the eval-history branch."' \
+                 "$RUNNER_TEMP/canary/canary.json")"
+          gh label create canary-failure --color B60205 \
+            --description "The daily canary's requests to the live API failed" 2>/dev/null || true
+          open="$(gh issue list --label canary-failure --state open --json number --jq '.[0].number')"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh issue create --title "Daily canary: requests failed on $DAY" \
+              --label canary-failure --body "$body"
+          fi
+
+      - name: Fail on a failed request
+        if: steps.day.outputs.exit != '0'
+        run: exit "${{ steps.day.outputs.exit || 1 }}"
