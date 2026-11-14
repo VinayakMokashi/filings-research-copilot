@@ -212,3 +212,56 @@ def test_a_data_answer_offers_no_second_answer(monkeypatch: pytest.MonkeyPatch) 
 
     assert not app.exception
     assert not [b for b in app.button if b.label == "Try another answer"]
+
+
+FOUND = {
+    "search_id": "s1",
+    "filings": ["3M_2018_10K"],
+    "results": [
+        {
+            "position": n,
+            "label": f"3M, Form 10-K for fiscal 2018, PDF page {n + 2}",
+            "doc_name": "3M_2018_10K",
+            "page": n + 1,
+            "section": "Item 7",
+            "text": f"Passage {n}.",
+        }
+        for n in range(2)
+    ],
+}
+
+
+def search_script() -> None:
+    from copilot.ui.app import search_page
+
+    search_page()
+
+
+def test_the_search_page_lists_passages_and_counts_a_page_opened(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clicks: list[tuple[str, int]] = []
+
+    def click(self: CopilotClient, search_id: str, position: int) -> bool:
+        clicks.append((search_id, position))
+        return True
+
+    def source(self: CopilotClient, doc_name: str, page: int) -> dict[str, Any]:
+        return {"text": "The whole page."}
+
+    monkeypatch.setattr(CopilotClient, "search", lambda self, query: FOUND)
+    monkeypatch.setattr(CopilotClient, "click", click)
+    monkeypatch.setattr(CopilotClient, "source", source)
+
+    app = AppTest.from_function(search_script, default_timeout=60).run()
+    app.text_input(key="search_query").set_value("3M capex").run()
+
+    assert not app.exception
+    assert any("never your words" in caption.value for caption in app.caption)
+    assert [text.value for text in app.text][:2] == ["Passage 0.", "Passage 1."]
+    app.toggle(key="read-s1-1").set_value(True).run()
+    app.toggle(key="read-s1-1").set_value(False).run()
+    app.toggle(key="read-s1-1").set_value(True).run()
+
+    assert clicks == [("s1", 1)]  # opened twice, counted once
+    assert "The whole page." in [text.value for text in app.text]

@@ -9,6 +9,9 @@
   The page says what a rating keeps. After a thumbs down on an answer from the filings,
   "Try another answer" asks for a second answer by another model setting, and the
   reader's pick between the two is kept through `POST /v1/preference` (step 9.2).
+- **Search:** passages from the filings for a reader's words, with no model involved: the
+  list interleaves two ways of searching, and the passages a reader opens show which serves
+  readers better (step 9.4, `POST /v1/search`).
 - **Results:** the headline numbers of the evaluations, read from eval/results.
 
 An open page holds a websocket, which on Cloud Run keeps the UI's CPU billed, so after
@@ -49,6 +52,12 @@ RATING_NOTE = (
 )
 RETRYABLE = ("doc", "hybrid")  # routes whose answers another model setting can write again
 PICKS = {"The first": "first", "The second": "second", "Neither": "neither"}
+# What the search page keeps (ADR-0038)
+SEARCH_NOTE = (
+    "Passages from the filings closest to your words; no model is involved. The list mixes "
+    "two ways of searching, and the passages you open show which works better. Only which "
+    "passages are opened is kept, never your words."
+)
 
 EXAMPLES = (
     "What was 3M's capital expenditure in 2018?",
@@ -370,6 +379,35 @@ def show_steps(events: list[dict[str, Any]]) -> None:
             st.caption(f"Route: {route.get('route')} ({route.get('router')}, {route.get('model')})")
 
 
+def search_page() -> None:
+    state = st.session_state
+    st.title("Search the filings")
+    st.caption(SEARCH_NOTE)
+    query = st.text_input("Search", placeholder="3M PFAS liabilities", key="search_query")
+    if query and query != state.get("searched"):
+        state.searched, state.found, state.opened = query, client().search(query), set()
+    found = state.get("found")
+    if not query:
+        return
+    if found is None:
+        st.warning("Search isn't available right now.")
+        return
+    if not found["results"]:
+        st.info("Nothing in the filings matched those words.")
+    for result in found["results"]:
+        with st.container(border=True):
+            section = f" · {result['section']}" if result.get("section") else ""
+            st.markdown(plain(f"**{result['label']}**{section}"))
+            st.text(result["text"] + ("..." if len(result["text"]) >= 500 else ""))
+            position = int(result["position"])
+            if st.toggle("Read the page", key=f"read-{found['search_id']}-{position}"):
+                if position not in state.opened:
+                    client().click(found["search_id"], position)
+                    state.opened.add(position)
+                shown = page(result["doc_name"], int(result["page"]))
+                st.text(shown["text"] if shown else "The page couldn't be loaded.")
+
+
 def results_page() -> None:
     st.title("Evaluation results")
     st.caption(
@@ -447,6 +485,7 @@ def main() -> None:
     navigation = st.navigation(
         [
             st.Page(ask_page, title="Ask", icon=":material/chat:", default=True),
+            st.Page(search_page, title="Search", icon=":material/search:", url_path="search"),
             st.Page(
                 results_page, title="Results", icon=":material/monitoring:", url_path="results"
             ),
@@ -455,4 +494,5 @@ def main() -> None:
     navigation.run()
 
 
-main()
+if __name__ == "__main__":  # Streamlit runs the script as __main__; tests import it
+    main()
