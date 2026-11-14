@@ -18,6 +18,11 @@ output "evaluator_service_account" {
   value       = google_service_account.evaluator.email
 }
 
+output "canary_service_account" {
+  description = "Repository variable GCP_CANARY_SA: the daily canary's account (ADR-0036)."
+  value       = google_service_account.canary.email
+}
+
 output "registry" {
   description = "Image registry path (repository variable GCP_REGISTRY)."
   value       = "${google_artifact_registry_repository.images.location}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.images.repository_id}"
