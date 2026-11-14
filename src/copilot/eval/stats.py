@@ -4,6 +4,9 @@
 - `paired_test`: compares two systems on the same questions. It reports the mean
   difference with a paired bootstrap interval, and a two-sided p-value from a paired
   permutation (sign-flip) test.
+- `two_sample_test`: compares two independent groups, such as answers randomized to two
+  policies online: the difference of their means with a bootstrap interval, and a
+  two-sided p-value from a permutation test of the group labels.
 - `mcnemar_exact`: the exact McNemar test for two systems' right-or-wrong outcomes.
 - `holm`: Holm-Bonferroni adjusted p-values for several comparisons made at once.
 - `exact_interval`: the Clopper-Pearson interval for a share of right answers, for when a
@@ -108,6 +111,51 @@ def paired_test(
         mean_b=float(scores_b.mean()),
         difference=bootstrap_ci(
             differences.tolist(), confidence=confidence, resamples=resamples, seed=seed + 1
+        ),
+        p_value=(as_extreme + 1) / (resamples + 1),
+    )
+
+
+def two_sample_test(
+    a: Sequence[float],
+    b: Sequence[float],
+    *,
+    confidence: float = CONFIDENCE,
+    resamples: int = RESAMPLES,
+    seed: int = 0,
+) -> PairedComparison:
+    """Compare group B's mean with group A's, the groups independent; `difference` is B
+    minus A.
+
+    Under the null hypothesis the group labels are exchangeable, so the p-value is the share
+    of random relabellings whose difference is at least as far from zero as the observed
+    one, with the observed labelling counted once. The interval resamples each group with
+    replacement on its own.
+    """
+    scores_a, scores_b = _as_scores(a), _as_scores(b)
+    observed = float(scores_b.mean() - scores_a.mean())
+    rng = np.random.default_rng(seed)
+    pooled = np.concatenate([scores_a, scores_b])
+    order = np.argsort(rng.random((resamples, pooled.size)), axis=1)
+    shuffled = pooled[order]
+    differences = shuffled[:, scores_a.size :].mean(axis=1) - shuffled[:, : scores_a.size].mean(
+        axis=1
+    )
+    as_extreme = int(np.count_nonzero(np.abs(differences) >= abs(observed) - _TIE_TOLERANCE))
+    picks_a = rng.integers(0, scores_a.size, size=(resamples, scores_a.size))
+    picks_b = rng.integers(0, scores_b.size, size=(resamples, scores_b.size))
+    boot = scores_b[picks_b].mean(axis=1) - scores_a[picks_a].mean(axis=1)
+    tail = (1.0 - confidence) / 2.0
+    low, high = np.quantile(boot, [tail, 1.0 - tail])
+    return PairedComparison(
+        mean_a=float(scores_a.mean()),
+        mean_b=float(scores_b.mean()),
+        difference=Interval(
+            mean=observed,
+            low=float(low),
+            high=float(high),
+            n=int(scores_a.size + scores_b.size),
+            confidence=confidence,
         ),
         p_value=(as_extreme + 1) / (resamples + 1),
     )
