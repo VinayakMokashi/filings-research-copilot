@@ -71,6 +71,7 @@ The first estimate, from copilot v2's dev run on Cerebras ([report](../eval/copi
 - **Fresh calls vary.** Temperature 0 doesn't make every reply identical, so a night can differ from the last with nothing changed. The family-wise test keeps false alarms to about one night in twenty.
 - **The small role uses Groq's free tier** in the rolling 24 hours visitors share, a few dozen checks a night, at the quietest hour.
 - **The bundle and the questions are downloaded each night,** from the project's own bucket and FinanceBench's repository. The bundle is cached by its checksum.
+- **Scheduled runs can start late.** GitHub delays scheduled workflows when its runners are busy, and the first three nights started 4.5 to 5.5 hours after 20:30 UTC. The set and the night's date are read in IST when the run starts, so a late start keeps both.
 
 ## References
 

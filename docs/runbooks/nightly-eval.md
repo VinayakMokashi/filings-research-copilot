@@ -13,6 +13,8 @@ How the copilot is evaluated every night, how to run a night by hand, and what t
 
 The workflow is `.github/workflows/nightly.yml`.
 
+- **When it really starts.** GitHub may start a scheduled run late when its runners are busy: the first three nights started 4.5 to 5.5 hours after 20:30 UTC. The set and the night's date are read in IST when the run starts, so a start up to about 22 hours late still runs the right set under the right date.
+
 - **Access:** it acts as the `github-eval` account, through workload identity federation, from `main` only.
 - **Data:** it reads the data bundle named in `infra/data-bundle.json` (cached in Actions by that name) and FinanceBench's question files.
 - **Results:** it pushes the night's metrics to the `eval-history` branch, and its job summary shows them with each step's spend.
