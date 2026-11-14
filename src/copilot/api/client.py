@@ -213,6 +213,24 @@ class CopilotClient:
         except httpx.HTTPError:
             return False
 
+    def search(self, query: str) -> dict[str, Any] | None:
+        """Filing passages for `query`, from two rankings interleaved, or None when search
+        can't be had."""
+        try:
+            response = self._http.post("/v1/search", json={"query": query})
+        except httpx.HTTPError:
+            return None
+        found: dict[str, Any] = response.json() if response.status_code == 200 else {}
+        return found or None
+
+    def click(self, search_id: str, position: int) -> bool:
+        """Credit a result a reader opened; whether it was kept."""
+        body = {"search_id": search_id, "position": position}
+        try:
+            return self._http.post("/v1/search/click", json=body).status_code == 204
+        except httpx.HTTPError:
+            return False
+
     def source(self, doc_name: str, page: int) -> dict[str, Any] | None:
         """A cited page's label, section and text, or None when it can't be had."""
         try:

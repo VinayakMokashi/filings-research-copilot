@@ -19,8 +19,10 @@ Conversations stay in memory (one API instance), since visitors keep no notes.
 - **The answer bandit** keeps each arm's count and reward sum in `bandit/answer-arms`,
   raised with atomic increments, and one document per answer it paid for in
   `bandit-answers`, with the rewards as they come.
+- **The search page** keeps one document per search in `interleaving`: its teams in list
+  order and its clicks (ADR-0038), never the query.
 
-Feedback, preferences and the bandit's records are kept; every other document has an
+Feedback, preferences, the bandit's records and the searches are kept; every other document has an
 `expires_at`, so nothing else accumulates.
 """
 
@@ -240,3 +242,18 @@ class FirestoreBanditLog:
 
     def update(self, request_id: str, fields: dict[str, Any]) -> None:
         self.collection.document(request_id).set(fields, merge=True)
+
+
+class FirestoreSearchLog:
+    """The search page's searches and their clicks, `interleaving/<search id>`."""
+
+    def __init__(self, client: Firestore) -> None:
+        self.collection = client.collection("interleaving")
+
+    def start(self, search_id: str, record: dict[str, Any]) -> None:
+        self.collection.document(search_id).set(record)
+
+    def click(self, search_id: str, position: int, team: str) -> None:
+        self.collection.document(search_id).set(
+            {f"click_{position}": team, "clicks": _increment(1)}, merge=True
+        )

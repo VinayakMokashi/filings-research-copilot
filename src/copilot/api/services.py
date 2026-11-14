@@ -28,6 +28,7 @@ from copilot.agents.graph import Turn
 from copilot.agents.router import Route
 from copilot.agents.runner import Copilot, Fanout, TraceWriter
 from copilot.agents.tracing import build_tracer
+from copilot.answer.agent import DocAgent
 from copilot.answer.bandit import ArmStats, MemoryArmStats, OnlineChooser
 from copilot.answer.context import describe
 from copilot.api.bandit import BanditLog, MemoryBanditLog, OnlineBandit
@@ -41,10 +42,12 @@ from copilot.api.firestore import (
     FirestoreFeedback,
     FirestorePreferences,
     FirestoreQuotas,
+    FirestoreSearchLog,
     FirestoreSpend,
     firestore_client,
 )
 from copilot.api.quotas import MemoryQuotas, PostgresQuotas, QuotaStore
+from copilot.api.search import InterleavedSearch, MemorySearchLog, SearchLog
 from copilot.config import Settings
 from copilot.ingest.corpus import filing_pages
 from copilot.ingest.pdf import Page
@@ -219,6 +222,7 @@ class Services:
     exchanges: ExchangeLog = field(default_factory=ExchangeLog)
     preferences: PreferenceStore = field(default_factory=MemoryPreferences)
     bandit: OnlineBandit | None = None
+    search: InterleavedSearch | None = None
 
     def page(self, doc_name: str, page: int) -> tuple[Page, str] | None:
         """A parsed page and its label, or None when there is no such page."""
@@ -344,6 +348,12 @@ def build_services(settings: Settings) -> Iterator[Services]:
         writer = TraceWriter(settings.data_dir / "traces" / "api.jsonl")
         trace = Fanout(writer if settings.api_trace_file else None, tracer)
         doc = getattr(parts.doc, "by_name", {})
+        search = None
+        if isinstance(parts.doc, DocAgent):
+            log: SearchLog = FirestoreSearchLog(client) if client is not None else MemorySearchLog()
+            search = InterleavedSearch(
+                parts.doc.searcher, parts.doc.matcher, parts.doc.filings, log
+            )
         yield Services(
             copilot=Copilot(parts, checkpointer, trace),
             feedback=feedback,
@@ -356,4 +366,5 @@ def build_services(settings: Settings) -> Iterator[Services]:
             cache=cache,
             preferences=preferences,
             bandit=bandit,
+            search=search,
         )

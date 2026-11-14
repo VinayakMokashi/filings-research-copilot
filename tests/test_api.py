@@ -16,11 +16,13 @@ from copilot.answer.bandit import MemoryArmStats, OnlineChooser
 from copilot.api import app as api
 from copilot.api.bandit import MemoryBanditLog, OnlineBandit
 from copilot.api.cache import MemoryCache
+from copilot.api.search import InterleavedSearch, MemorySearchLog
 from copilot.api.services import Asker, MemoryFeedback, MemoryPreferences, Services
 from copilot.ingest.pdf import Page, write_pages
 from copilot.llm import FakeLLM
 from copilot.llm.fallback import MemorySpend
-from copilot.retrieval.query import Filing
+from copilot.retrieval.query import CompanyMatcher, Filing
+from copilot.retrieval.search import Hit
 
 QUESTION = "What was 3M's capital expenditure in fiscal 2018?"
 
@@ -302,6 +304,8 @@ def test_the_openapi_document_lists_every_endpoint(tmp_path: Path) -> None:
         "/v1/brief",
         "/v1/feedback",
         "/v1/preference",
+        "/v1/search",
+        "/v1/search/click",
         "/v1/sources/{doc_name}/{page}",
     } <= paths
     # Cloud Run's front end answers /healthz itself, and Google advises against paths
@@ -611,3 +615,44 @@ def test_a_rating_rewards_the_arm_that_wrote_the_answer_once(tmp_path: Path) -> 
         client.post("/v1/feedback", json=rating)
 
     assert services.bandit.chooser.stats.read() == ({"strong-low": 1}, {"strong-low": 1.0})
+
+
+class TwoRankings:
+    def search(
+        self, query: str, mode: Any = "hybrid", limit: int = 20, doc_names: Any = None
+    ) -> list[Hit]:
+        name = "dense" if mode == "dense" else "hybrid"
+        return [Hit(f"{name}-{n}", 0.5, "3M_2018_10K", n, (1,), "Item 7", "PP&E") for n in range(3)]
+
+
+def test_search_interleaves_and_a_click_credits_its_team(tmp_path: Path) -> None:
+    services = make_services(tmp_path)
+    log = MemorySearchLog()
+    filings = list(services.filings.values())
+    services.search = InterleavedSearch(
+        TwoRankings(), CompanyMatcher(["3M"], {"3M": None}), filings, log
+    )
+    with TestClient(api.create_app(services)) as client:
+        found = client.post("/v1/search", json={"query": "  3M capital expenditure 2018 "})
+        body = found.json()
+        clicked = client.post(
+            "/v1/search/click", json={"search_id": body["search_id"], "position": 1}
+        )
+        gone = client.post("/v1/search/click", json={"search_id": "not-held", "position": 0})
+        blank = client.post("/v1/search", json={"query": "   "})
+
+    assert found.status_code == 200
+    assert body["filings"] == ["3M_2018_10K"]
+    assert len(body["results"]) == 6
+    assert body["results"][0]["label"] == "3M, Form 10-K for fiscal 2018, PDF page 2"
+    assert (clicked.status_code, gone.status_code, blank.status_code) == (204, 404, 422)
+    assert list(log.records[body["search_id"]]["clicks"]) == [1]
+
+
+def test_search_is_unavailable_without_a_search_page(tmp_path: Path) -> None:
+    with TestClient(api.create_app(make_services(tmp_path))) as client:
+        assert client.post("/v1/search", json={"query": "3M"}).status_code == 503
+        assert (
+            client.post("/v1/search/click", json={"search_id": "s1", "position": 0}).status_code
+            == 404
+        )

@@ -13,6 +13,9 @@
 - `POST /v1/feedback` keeps a thumbs up or down, and an optional comment, on one answer,
   with the exchange it rates when the API still holds it (ADR-0035).
 - `POST /v1/preference` keeps a reader's pick between an answer and its second answer.
+- `POST /v1/search` returns filing passages for a query, from two rankings interleaved
+  (step 9.4, ADR-0038), with no model call; `POST /v1/search/click` credits a result a
+  reader opened to the ranking that placed it.
 - `GET /v1/sources/{doc_name}/{page}` returns a cited filing page: its label, section and
   text.
 - `GET /health` says the process is up; `GET /ready` checks what a question needs (the
@@ -64,11 +67,14 @@ from copilot.api.exchanges import exchange_record
 from copilot.api.quotas import seconds_until_reset, visitor_key
 from copilot.api.schemas import (
     AskRequest,
+    ClickRequest,
     FeedbackReceipt,
     FeedbackRequest,
     Health,
     PreferenceRequest,
     Readiness,
+    SearchRequest,
+    SearchResults,
     SourcePage,
 )
 from copilot.api.services import Feedback, Preference, Services, build_services
@@ -203,6 +209,31 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
             raise HTTPException(status_code=404, detail=GONE)
         kept = Preference(body.chosen, body.comment.strip(), first, second)
         return FeedbackReceipt(id=services.preferences.add(kept))
+
+    @app.post(
+        "/v1/search",
+        tags=["search"],
+        responses={503: {"description": "Search isn't available here."}},
+    )
+    def search(body: SearchRequest, request: Request) -> SearchResults:
+        """Filing passages for a query, from two rankings interleaved; no model is called."""
+        services = _services(request)
+        if services.search is None:
+            raise HTTPException(status_code=503, detail="Search isn't available here.")
+        return SearchResults.model_validate(services.search.search(body.query))
+
+    @app.post(
+        "/v1/search/click",
+        status_code=204,
+        tags=["search"],
+        responses={404: {"description": "The search is no longer held, or has no such result."}},
+    )
+    def click(body: ClickRequest, request: Request) -> Response:
+        """Credit a result a reader opened to the ranking that placed it."""
+        services = _services(request)
+        if services.search is None or not services.search.click(body.search_id, body.position):
+            raise HTTPException(status_code=404, detail="That search is no longer held here.")
+        return Response(status_code=204)
 
     @app.get(
         "/v1/sources/{doc_name}/{page}", tags=["sources"], responses={404: {"description": "None"}}

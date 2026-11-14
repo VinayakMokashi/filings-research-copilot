@@ -32,6 +32,7 @@ from copilot.api.firestore import (
     FirestoreFeedback,
     FirestorePreferences,
     FirestoreQuotas,
+    FirestoreSearchLog,
     FirestoreSpend,
 )
 from copilot.api.quotas import Verdict
@@ -391,3 +392,21 @@ def test_the_bandit_is_built_only_with_a_cap_and_keeps_its_state_where_the_api_d
     assert (in_firestore.chooser.control_share, in_firestore.chooser.epsilon0) == (0.5, 0.2)
     assert in_memory is not None
     assert not isinstance(in_memory.chooser.stats, FirestoreArmStats)
+
+
+def test_a_search_and_its_clicks_are_kept_without_the_query() -> None:
+    db = FakeFirestore()
+    log = FirestoreSearchLog(db)
+
+    log.start("s1", {"teams": ["a", "b", "a"], "filings": 1, "overlap": 2})
+    log.click("s1", 2, "a")
+    log.click("s1", 0, "a")
+
+    assert db.docs["interleaving/s1"] == {
+        "teams": ["a", "b", "a"],
+        "filings": 1,
+        "overlap": 2,
+        "click_2": "a",
+        "click_0": "a",
+        "clicks": 2,
+    }
