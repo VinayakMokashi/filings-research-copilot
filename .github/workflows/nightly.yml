@@ -142,7 +142,7 @@ jobs:
           fi
           set +e
           uv run --no-sync python scripts/nightly_eval.py --set "$SET" --budget "$BUDGET" \
-            --date "$NIGHT" --out "$RUNNER_TEMP/night" "${baseline[@]}"
+            --date "$NIGHT" --out "$RUNNER_TEMP/night" --history history/nightly "${baseline[@]}"
           echo "exit=$?" >> "$GITHUB_OUTPUT"
 
       - name: Summarise the night
@@ -154,6 +154,7 @@ jobs:
                  (.summary | to_entries[] | select(.value | type == "object")
                   | "| \(.key) | \(.value.mean * 1000 | round / 1000) | \(.value.low * 1000 | round / 1000) to \(.value.high * 1000 | round / 1000) | \(.value.n) |"),
                  "", "Spent $\(.spent_usd) of $\(.budget_usd); partial: \(.partial); regression: \(.regression).",
+                 "", "Drift: \(.drift.checks // {} | tostring)",
                  "", "| Step | Exit | Spent by then | Cap | Seconds |", "|---|---|---|---|---|",
                  (.steps[] | "| \(.step) | \(.exit) | $\(.spent_usd) | $\(.cap_usd) | \(.seconds) |")' \
             "$night" >> "$GITHUB_STEP_SUMMARY"
