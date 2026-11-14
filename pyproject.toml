@@ -95,6 +95,7 @@ export-preferences = { cmd = "python scripts/export_preferences.py", help = "Pre
 bandit-report = { cmd = "python scripts/bandit_report.py", help = "Compare the online answer bandit with its randomized fixed arm from its Firestore log, by kind of reward, with intervals and the decision of ADR-0036 (--since, --until, --name, --from)" }
 canary = { cmd = "python scripts/canary.py", help = "Ask the API the day's canary questions, the routing set's dev doc questions in turn; metrics only, exit 2 on a failed request (--api-url, --out, --date, --per-day)" }
 drift-check = { cmd = "python scripts/drift_check.py", help = "The drift checks over the eval-history branch: retrieval similarity and refusals from the nightly evaluation, latency and similarity from the canary (--window, --history)" }
+interleaving-report = { cmd = "python scripts/interleaving_report.py", help = "Count the search page's interleaving from Firestore (as the owner): searches, clicks and wins by ranking, and the sign test (--from, --name)" }
 run-briefs = { cmd = "python scripts/run_briefs.py", help = "Write the brief set's briefs with the crew or one specialist, resumably, and grade them with rubrics and the faithfulness check (--system, --run)" }
 jury-briefs = { cmd = "python scripts/jury_briefs.py", help = "Grade a brief run's rubrics again with a second judge, and report their agreement and kappa (--run, --role)" }
 fetch-sec = { cmd = "python scripts/fetch_sec.py", help = "Match the companies to SEC filers and download their XBRL company facts" }
