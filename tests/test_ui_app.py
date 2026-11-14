@@ -34,7 +34,12 @@ RESPONSE = {
 
 
 def fake_ask(
-    self: CopilotClient, question: str, thread_id: str | None = None, *, brief: bool = False
+    self: CopilotClient,
+    question: str,
+    thread_id: str | None = None,
+    *,
+    brief: bool = False,
+    retry_of: str | None = None,
 ) -> Iterator[Event]:
     yield Event("meta", {"request_id": "r1", "thread_id": "t1"})
     yield Event("start", {"node": "route"})
@@ -134,3 +139,76 @@ def test_the_paused_page_is_served_and_continues_to_the_app() -> None:
     # Streamlit serves static/ only when told to, in the image and in `poe ui`
     for config in ("Dockerfile", "pyproject.toml"):
         assert "--server.enableStaticServing true" in Path(config).read_text(encoding="utf-8")
+
+
+DOC_ANSWER = RESPONSE | {
+    "route": "doc",
+    "text": "Netflix names intense competition as a risk [1].",
+    "citations": [{"number": 1, "label": "Netflix, PDF page 9", "doc_name": "N", "page": 8}],
+    "table": None,
+    "chart": None,
+    "sql": None,
+}
+SECOND = DOC_ANSWER | {"text": "Competition for viewers' time is a risk Netflix names [1]."}
+
+
+def test_a_thumbs_down_offers_another_answer_and_keeps_the_pick(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    asked: list[str | None] = []
+    picks: list[tuple[str, str, str]] = []
+
+    def ask(
+        self: CopilotClient,
+        question: str,
+        thread_id: str | None = None,
+        *,
+        brief: bool = False,
+        retry_of: str | None = None,
+    ) -> Iterator[Event]:
+        asked.append(retry_of)
+        request_id = "r2" if retry_of else "r1"
+        yield Event("meta", {"request_id": request_id, "thread_id": "t9" if retry_of else "t1"})
+        yield Event("response", SECOND if retry_of else DOC_ANSWER)
+        yield Event("done", {})
+
+    def preference(self: CopilotClient, first: str, second: str, chosen: str) -> bool:
+        picks.append((first, second, chosen))
+        return True
+
+    monkeypatch.setattr(CopilotClient, "ask", ask)
+    monkeypatch.setattr(CopilotClient, "preference", preference)
+    monkeypatch.setattr(CopilotClient, "feedback", lambda self, *args: True)
+    monkeypatch.setattr(CopilotClient, "ready", lambda self: {"ready": True, "checks": {}})
+
+    app = AppTest.from_file(str(APP), default_timeout=60).run()
+    app.chat_input[0].set_value("What risks does Netflix name?").run()
+    assert not [b for b in app.button if b.label == "Try another answer"]  # not before a rating
+    assert any("Nothing that identifies you" in caption.value for caption in app.caption)
+    app.feedback[0].set_value(0).run()  # thumbs down
+    app.button(key="retry-1").click().run()
+
+    assert not app.exception
+    assert asked == [None, "r1"]
+    texts: list[Any] = [element.value for element in app.markdown]
+    assert str(SECOND["text"]) in texts
+    app.radio(key="pick-1").set_value("The second").run()
+
+    assert picks == [("r1", "r2", "second")]
+    assert any("your pick is kept" in toast.value for toast in app.toast)
+    app.run()
+    assert any(caption.value == "Your pick is kept." for caption in app.caption)
+    assert not app.radio  # picked once
+
+
+def test_a_data_answer_offers_no_second_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(CopilotClient, "ask", fake_ask)
+    monkeypatch.setattr(CopilotClient, "feedback", lambda self, *args: True)
+    monkeypatch.setattr(CopilotClient, "ready", lambda self: {"ready": True, "checks": {}})
+
+    app = AppTest.from_file(str(APP), default_timeout=60).run()
+    app.chat_input[0].set_value("What was 3M's capital expenditure in 2018?").run()
+    app.feedback[0].set_value(0).run()
+
+    assert not app.exception
+    assert not [b for b in app.button if b.label == "Try another answer"]

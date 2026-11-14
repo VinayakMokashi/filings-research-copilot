@@ -6,6 +6,9 @@
   with how the question was read when it was a follow-up, the chart and table of a query's
   result, every source (a filing page opens in place, the facts database shows its SQL),
   the steps with their times, and thumbs up or down, kept through `POST /v1/feedback`.
+  The page says what a rating keeps. After a thumbs down on an answer from the filings,
+  "Try another answer" asks for a second answer by another model setting, and the
+  reader's pick between the two is kept through `POST /v1/preference` (step 9.2).
 - **Results:** the headline numbers of the evaluations, read from eval/results.
 
 An open page holds a websocket, which on Cloud Run keeps the UI's CPU billed, so after
@@ -38,6 +41,14 @@ DATABASE = "facts-database"
 PAUSED_PAGE = "/app/static/paused.html"
 # What counts as input for that limit
 ACTIVITY = ("pointermove", "pointerdown", "keydown", "wheel", "scroll", "touchstart")
+
+# What a rating keeps (ADR-0035)
+RATING_NOTE = (
+    "A rating keeps your question, this answer and how it was made, to improve the copilot. "
+    "Nothing that identifies you is kept."
+)
+RETRYABLE = ("doc", "hybrid")  # routes whose answers another model setting can write again
+PICKS = {"The first": "first", "The second": "second", "Neither": "neither"}
 
 EXAMPLES = (
     "What was 3M's capital expenditure in 2018?",
@@ -137,6 +148,10 @@ def ask_page() -> None:
             st.warning("Not ready: " + (", ".join(failing) or "the API can't be reached"))
     for number, turn in enumerate(state.turns, start=1):
         show(number, turn)
+    retry = state.pop("pending_retry", None)
+    if retry is not None and 0 < retry <= len(state.turns):
+        state.turns[retry - 1]["second"] = run_second(state.turns[retry - 1])
+        st.rerun()
     brief = bool(state.get("brief_mode"))
     prompt = "Ask for a brief on a company" if brief else "Ask about a company's filings"
     question = st.chat_input(prompt) or state.pop("pending", None)
@@ -148,19 +163,39 @@ def ask_page() -> None:
 def run(question: str, *, brief: bool = False) -> dict[str, Any]:
     """Ask the API, showing each step as it starts; the turn as the page keeps it."""
     state = st.session_state
-    turn: dict[str, Any] = {"question": question, "events": [], "response": None, "error": None}
     with st.chat_message("user"):
         st.markdown(plain(question))
-    with st.chat_message("assistant"), st.status("Working on it...") as status:
-        for event in client().ask(question, state.thread, brief=brief):
+    turn = stream(question, "Working on it...", thread=state.thread, brief=brief)
+    state.thread = turn.get("meta", {}).get("thread_id", state.thread)
+    return turn
+
+
+def run_second(turn: dict[str, Any]) -> dict[str, Any]:
+    """A second answer to a turn's question, by another model setting (step 9.2)."""
+    first = turn.get("meta", {}).get("request_id")
+    return stream(turn["question"], "Writing another answer...", retry_of=first)
+
+
+def stream(
+    question: str,
+    label: str,
+    *,
+    thread: str | None = None,
+    brief: bool = False,
+    retry_of: str | None = None,
+) -> dict[str, Any]:
+    """One answer's events from the API, each step shown as it starts."""
+    turn: dict[str, Any] = {"question": question, "events": [], "response": None, "error": None}
+    with st.chat_message("assistant"), st.status(label) as status:
+        for event in client().ask(question, thread, brief=brief, retry_of=retry_of):
             turn["events"].append({"kind": event.kind, **event.data})
             if event.kind == "meta":
                 turn["meta"] = event.data
-                state.thread = event.data.get("thread_id", state.thread)
             elif event.kind == "start":
                 status.update(label=STEPS.get(event.data.get("node", ""), "Working") + "...")
             elif event.kind == "response":
                 turn["response"] = event.data
+                status.update(label="Finishing...")
             elif event.kind == "error":
                 turn["error"] = event.data.get("error", "The copilot failed.")
         done = turn["response"] is not None
@@ -200,14 +235,57 @@ def show(number: int, turn: dict[str, Any]) -> None:
         rating = st.feedback("thumbs", key=f"feedback-{number}")
         if rating is not None and not turn.get("rated"):
             meta = turn.get("meta", {})
+            turn["rating"] = "up" if rating == 1 else "down"
             kept = client().feedback(
                 str(meta.get("thread_id", "")),
                 int(response.get("turn", number)),
-                "up" if rating == 1 else "down",
+                turn["rating"],
                 meta.get("request_id"),
             )
             turn["rated"] = True
             st.toast("Thanks: your feedback is kept." if kept else "The feedback couldn't be kept.")
+        st.caption(RATING_NOTE)
+        second = turn.get("second")
+        if second is not None:
+            show_second(number, turn, second)
+        elif turn.get("rating") == "down" and response.get("route") in RETRYABLE:
+            offer_second(number)
+
+
+def offer_second(number: int) -> None:
+    """After a thumbs down, a button that asks for a second answer on the next run."""
+    if st.button(
+        "Try another answer",
+        key=f"retry-{number}",
+        icon=":material/autorenew:",
+        help="Another model setting answers the same question; then pick the better.",
+    ):
+        st.session_state.pending_retry = number
+
+
+def show_second(number: int, turn: dict[str, Any], second: dict[str, Any]) -> None:
+    """A second answer to the turn's question, and the reader's pick between the two."""
+    st.markdown("**Another answer**")
+    response = second["response"]
+    if response is None:
+        st.error(second["error"] or "No second answer came back.")
+        return
+    st.markdown(plain(response.get("text") or "") or "_No answer._")
+    show_sources(response)
+    if second.get("picked"):
+        st.caption("Your pick is kept.")
+        return
+    pick = st.radio(
+        "Which answer is better?", list(PICKS), index=None, horizontal=True, key=f"pick-{number}"
+    )
+    if pick is not None:
+        kept = client().preference(
+            str(turn.get("meta", {}).get("request_id", "")),
+            str(second.get("meta", {}).get("request_id", "")),
+            PICKS[pick],
+        )
+        second["picked"] = True
+        st.toast("Thanks: your pick is kept." if kept else "Your pick couldn't be kept.")
 
 
 def handed_on(response: dict[str, Any]) -> str:
