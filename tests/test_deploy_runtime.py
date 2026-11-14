@@ -22,15 +22,20 @@ from pydantic import SecretStr
 
 from copilot.agents.build import model_client
 from copilot.answer.agent import corpus_documents, corpus_filings
+from copilot.answer.bandit import OnlineChooser
+from copilot.api.bandit import OnlineBandit
 from copilot.api.client import CopilotClient, GoogleIdToken, visitor_from_forwarded
 from copilot.api.firestore import (
+    FirestoreArmStats,
+    FirestoreBanditLog,
     FirestoreCache,
     FirestoreFeedback,
+    FirestorePreferences,
     FirestoreQuotas,
     FirestoreSpend,
 )
 from copilot.api.quotas import Verdict
-from copilot.api.services import Feedback, readiness
+from copilot.api.services import Feedback, Preference, online_bandit, readiness
 from copilot.config import Settings
 from copilot.llm import LLMGateway
 from copilot.llm.cache import CachedLLM
@@ -294,3 +299,95 @@ def test_firestore_spend_and_the_question_quota_share_a_document() -> None:
     assert verdict.allowed
     assert db.docs["quotas/2026-11-02"]["questions"] == 1
     assert db.docs["quotas/2026-11-02"]["paid_usd"] == pytest.approx(0.003)
+
+
+def test_a_rating_keeps_its_exchange_as_text() -> None:
+    db = FakeFirestore()
+    exchange = {"request_id": "r1", "models": {"groq/openai/gpt-oss-120b": [100, 20]}}
+
+    FirestoreFeedback(db).add(Feedback("t1", 1, "down", "", "r1"), exchange)
+    FirestoreFeedback(db).add(Feedback("t1", 2, "up", "", "gone"))
+
+    kept, alone = sorted(db.docs.values(), key=lambda doc: doc["turn"])
+    assert json.loads(kept["exchange"]) == exchange  # lists in a map, as text
+    assert alone["exchange"] is None
+
+
+def test_a_pick_keeps_both_exchanges() -> None:
+    db = FakeFirestore()
+
+    stored = FirestorePreferences(db).add(
+        Preference("second", "sharper", {"request_id": "r1"}, {"request_id": "r2"})
+    )
+
+    (doc,) = db.docs.values()
+    assert stored == 1
+    assert (doc["chosen"], doc["comment"]) == ("second", "sharper")
+    assert json.loads(doc["second"]) == {"request_id": "r2"}
+
+
+def test_the_bandits_spend_is_counted_apart_from_the_fallbacks() -> None:
+    db = FakeFirestore()
+    paid, bandit = FirestoreSpend(db), FirestoreSpend(db, "bandit_usd")
+
+    paid.add(PAID_DAY, 0.003)
+    bandit.add(PAID_DAY, 0.02)
+    bandit.add(PAID_DAY, 0.01)
+
+    assert paid.spent(PAID_DAY) == pytest.approx(0.003)
+    assert bandit.spent(PAID_DAY) == pytest.approx(0.03)
+    assert db.docs[f"quotas/{PAID_DAY.isoformat()}"]["expires_at"] == datetime(
+        2026, 11, 5, tzinfo=UTC
+    )
+
+
+def test_the_arms_counts_and_sums_are_raised_and_read_back() -> None:
+    db = FakeFirestore()
+    stats = FirestoreArmStats(db)
+
+    assert stats.read() == (
+        {"strong": 0, "strong-low": 0, "fast": 0},
+        {"strong": 0.0, "strong-low": 0.0, "fast": 0.0},
+    )
+    stats.add("strong-low", 1.0)
+    stats.add("strong-low", 0.0)
+    stats.add("fast", 1.0)
+
+    counts, sums = stats.read()
+    assert counts == {"strong": 0, "strong-low": 2, "fast": 1}
+    assert sums == {"strong": 0.0, "strong-low": 1.0, "fast": 1.0}
+    assert "count_strong_low" in db.docs["bandit/answer-arms"]
+
+
+def test_the_bandits_log_merges_rewards_into_each_answers_record() -> None:
+    db = FakeFirestore()
+    log = FirestoreBanditLog(db)
+
+    log.start("r1", {"arm": "fast", "assignment": "policy"})
+    log.update("r1", {"judge": 1.0})
+    log.update("r1", {"thumbs": 0.0})
+
+    assert db.docs["bandit-answers/r1"] == {
+        "arm": "fast",
+        "assignment": "policy",
+        "judge": 1.0,
+        "thumbs": 0.0,
+    }
+
+
+def test_the_bandit_is_built_only_with_a_cap_and_keeps_its_state_where_the_api_does() -> None:
+    off = Settings(_env_file=None)
+    on = off.model_copy(update={"bandit_daily_usd": 0.25, "bandit_judge_share": 0.3})
+
+    in_firestore = online_bandit(on, FakeFirestore())
+    in_memory = online_bandit(on, None)
+
+    assert online_bandit(off, FakeFirestore()) is None
+    assert isinstance(in_firestore, OnlineBandit)
+    assert isinstance(in_firestore.chooser, OnlineChooser)
+    assert isinstance(in_firestore.chooser.stats, FirestoreArmStats)
+    assert isinstance(in_firestore.log, FirestoreBanditLog)
+    assert (in_firestore.chooser.cap_usd, in_firestore.judge_share) == (0.25, 0.3)
+    assert (in_firestore.chooser.control_share, in_firestore.chooser.epsilon0) == (0.5, 0.2)
+    assert in_memory is not None
+    assert not isinstance(in_memory.chooser.stats, FirestoreArmStats)
