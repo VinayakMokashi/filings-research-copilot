@@ -2,7 +2,7 @@
 
 > Keep measuring the system that is running, on the same questions and within a fixed budget, so that a change in quality shows as a change in a line.
 
-**Lands in:** Phase 9 · **Code:** `src/copilot/eval/nightly.py`, `src/copilot/llm/budget.py`, `scripts/nightly_eval.py`, `.github/workflows/nightly.yml`
+**Lands in:** Phase 9 · **Code:** `src/copilot/eval/nightly.py`, `src/copilot/llm/budget.py`, `scripts/nightly_eval.py`, `.github/workflows/nightly.yml`, `src/copilot/eval/drift.py`, `src/copilot/retrieval/interleaving.py`, `src/copilot/api/search.py`
 
 ## What it is
 
@@ -64,6 +64,27 @@ flowchart LR
    - **A night cut short** by its cap draws no verdict, since it answered other questions than planned.
 7. **The trend.** The project page reads `history.jsonl` from the branch and draws one panel a metric, each night with its interval.
 
+### Drift checks
+
+A regression test asks whether quality dropped. A drift check asks whether the system's insides moved, which can come first ([ADR-0037](../decisions/0037-drift-checks.md)). Each signal is read where it is clean:
+
+| Signal | From | Why there | Test |
+|---|---|---|---|
+| Retrieval similarity: how close the best chunk a question's own search finds is to it | The nightly run, and the canary | The same questions every night: only a changed collection, embedding model or vector store moves it | Paired per question; and as a distribution, the two-sample Kolmogorov-Smirnov statistic, whose p-value comes from relabelling |
+| Refusals | The nightly run | The same questions every night | Each question's share of nights unanswered, paired |
+| Latency | The canary | The nightly run is paced for the free tier; the canary's requests are live and unpaced | Each question's first time against its latest, paired |
+
+- **Windows.** For each signal, the first three nights (or days) that recorded it are the reference and the last three the recent period; the tests are Holm-adjusted together.
+- **Reported, not alarmed.** Every night's and every canary day's history line carries its drift checks. Three nights see a step change, not a slow creep, which the trend shows instead.
+
+### Interleaving
+
+An **A/B test** shows each reader one system and compares groups of readers, so it needs many readers. **Interleaving** shows each reader one list made from both systems and lets their clicks pick a winner, so each reader judges both on the same query ([ADR-0038](../decisions/0038-interleaved-search.md)).
+
+- **Team draft** (Radlinski et al., 2008). The two rankings take turns placing their best result not yet shown: the team with fewer picks goes next, and a coin breaks a tie. Each result remembers its team. A click credits that team, and the search goes to the team with more clicks.
+- **Why it needs few searches.** Each search is a comparison on the same reader and the same query; Chapelle et al. (2012) found interleaving agreed with large A/B tests using far less traffic.
+- **Here** the web UI's Search page interleaves dense search (the doc agent's first stage) with hybrid search (dense and BM25 fused), which tied offline on FinanceBench's templated questions (ADR-0011). It keeps the teams and the clicks, never the query. At this traffic the counts are illustrative.
+
 ## Where it lives in the code
 
 | Piece | What it does |
@@ -76,6 +97,11 @@ flowchart LR
 | `scripts/choose_nightly_slice.py` (`poe nightly-slice`) | Draws the slice into `eval/nightly/slice.json` (ids only) |
 | `.github/workflows/nightly.yml` | The schedule, the keys, the bundle, the history's push and the issue |
 | `infra/terraform` (`github-eval`) | The account the workflow acts as: the bundle and four secrets, nothing else |
+| `copilot.eval.drift` (`nightly_drift`, `canary_drift`, `ks_test`) | The drift checks and their windows |
+| `scripts/drift_check.py` (`poe drift-check`) | The checks over the whole history, for a look by hand |
+| `copilot.retrieval.interleaving` (`team_draft`, `winner`, `sign_test`) | Team-draft interleaving, a search's winner, the wins' test |
+| `copilot.api.search.InterleavedSearch`, `POST /v1/search`, `POST /v1/search/click` | The search page's two rankings and its clicks |
+| `copilot.eval.interleaving`, `scripts/interleaving_report.py` (`poe interleaving-report`) | Wins by team, from Firestore |
 
 ## How we measured it
 
@@ -102,10 +128,15 @@ One night of a first draft's 40-question slice was run by hand on 11 November, f
 3. Why does a night cut short by its cap draw no verdict?
 4. How large must a drop on the 32-question slice be to be flagged, and what does the Sunday run add?
 5. Why does a night keep only ids, categories and numbers, and where do the answers themselves go?
+6. Why is latency's drift read from the canary and not from the nightly run?
+7. Why does team-draft interleaving need fewer searches than an A/B test, and what does a click not tell you?
 
 ## References
 
 - Sculley et al., [Hidden Technical Debt in Machine Learning Systems](https://papers.nips.cc/paper/2015/hash/86df7dcfd896fcaf2674f757a2463eba-Abstract.html), NeurIPS 2015.
 - Breck et al., [The ML Test Score: A Rubric for ML Production Readiness and Technical Debt Reduction](https://research.google/pubs/the-ml-test-score-a-rubric-for-ml-production-readiness-and-technical-debt-reduction/), 2017.
 - Holm, A Simple Sequentially Rejective Multiple Test Procedure, *Scandinavian Journal of Statistics* 6(2), 1979.
+- Rabanser, Günnemann and Lipton, [Failing Loudly: An Empirical Study of Methods for Detecting Dataset Shift](https://arxiv.org/abs/1810.11953), NeurIPS 2019.
+- Radlinski, Kurup and Joachims, [How Does Clickthrough Data Reflect Retrieval Quality?](https://www.cs.cornell.edu/people/tj/publications/radlinski_etal_08b.pdf), CIKM 2008.
+- Chapelle, Joachims, Radlinski and Yue, [Large-Scale Validation and Analysis of Interleaved Search Evaluation](https://dl.acm.org/doi/10.1145/2094072.2094078), ACM TOIS 2012.
 - [ADR-0034](../decisions/0034-nightly-evaluation.md) for the design, [ADR-0007](../decisions/0007-evaluation-statistics.md) for the statistics.
