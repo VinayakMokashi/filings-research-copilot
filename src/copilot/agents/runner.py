@@ -10,6 +10,10 @@ into events:
   the caller stopped reading;
 - `response`, the reply, last.
 
+`Copilot.details` reads what the latest turn's state holds beyond its response, such as the
+sources an answer was written from and its draft before the validator's first check, for
+the API's record of an exchange (step 9.2).
+
 Every event carries the time, the run's id, the conversation's id (the thread) and the
 turn. Each goes to the run's sink: a `TraceWriter` appends it to a file, one JSON object a
 line; `copilot.agents.tracing` sends it to Langfuse; a `Fanout` does both.
@@ -20,7 +24,7 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
@@ -28,7 +32,7 @@ from typing import Any, Protocol
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.types import StreamMode
+from langgraph.types import StateSnapshot, StreamMode
 
 from copilot.agents.graph import Components, CopilotState, Turn, build_graph
 from copilot.agents.router import Route
@@ -92,6 +96,22 @@ class Copilot:
         served from a cache is, so that a follow-up on the thread can build on it."""
         self.graph.update_state(_config(thread_id), {"history": [turn]}, as_node="remember")
 
+    def details(self, thread_id: str) -> dict[str, Any]:
+        """What the latest turn's state holds beyond its response: the specialist's result
+        with every source's text, the validator's verdict and revisions, the router's
+        decision, and the result as it stood before its first check when it was revised."""
+        config = _config(thread_id)
+        values = self.graph.get_state(config).values
+        revisions = int(values.get("revisions", 0))
+        draft = first_draft(self.graph.get_state_history(config)) if revisions else None
+        return {
+            "result": values.get("result", {}),
+            "validation": values.get("validation", {}),
+            "revisions": revisions,
+            "decision": values.get("decision", {}),
+            "draft": draft,
+        }
+
     def stream(
         self,
         question: str,
@@ -99,10 +119,13 @@ class Copilot:
         thread_id: str,
         user_id: str = "default",
         route: Route | None = None,
+        avoid_arm: str | None = None,
     ) -> Generator[dict[str, Any]]:
         """The run's events as they happen; the last one is the response.
 
-        `route` takes that route without asking the router, as a request for a brief does.
+        `route` takes that route without asking the router, as a request for a brief does;
+        `avoid_arm` keeps the doc agent from answering with that arm, as a second answer to
+        the same question does.
         """
         config = _config(thread_id, user_id)
         base = {
@@ -119,8 +142,12 @@ class Copilot:
                 self.trace.write(record)
             return record
 
-        # Set on every turn, so a route asked for once doesn't carry over to the next turn.
-        inputs: CopilotState = {"question": question, "requested_route": route or ""}
+        # Set on every turn, so what was asked for once doesn't carry over to the next turn.
+        inputs: CopilotState = {
+            "question": question,
+            "requested_route": route or "",
+            "avoid_arm": avoid_arm or "",
+        }
         parts = self.graph.stream(inputs, config, stream_mode=STREAM_MODES, version="v2")
         try:
             for part in parts:
@@ -151,13 +178,29 @@ class Copilot:
         thread_id: str,
         user_id: str = "default",
         route: Route | None = None,
+        avoid_arm: str | None = None,
     ) -> dict[str, Any]:
         """The response to one question, once the whole run is done."""
         response: dict[str, Any] = {}
-        for item in self.stream(question, thread_id=thread_id, user_id=user_id, route=route):
+        events = self.stream(
+            question, thread_id=thread_id, user_id=user_id, route=route, avoid_arm=avoid_arm
+        )
+        for item in events:
             if item["type"] == "response":
                 response = item
         return response
+
+
+def first_draft(history: Iterable[StateSnapshot]) -> dict[str, Any] | None:
+    """The latest turn's result as it stood before its first check, from the thread's
+    checkpoints, newest first: the oldest one waiting for `validate` since the turn began."""
+    found = None
+    for snapshot in history:
+        if snapshot.next == ("validate",):
+            found = snapshot.values.get("result")
+        elif snapshot.next == ("rewrite",):
+            break  # the turn's first step: anything older belongs to an earlier turn
+    return found
 
 
 def _config(thread_id: str, user_id: str = "default") -> RunnableConfig:
