@@ -249,3 +249,30 @@ def test_a_bandit_at_its_cap_leaves_a_second_answer_to_another_arm_here() -> Non
     assert policy.avoided == ["strong"]
     assert result.assignment == "retry"
     assert result.arm != "strong"
+
+
+def test_retrieval_records_the_questions_own_similarity() -> None:
+    agent = _agent(_replies([REVENUE]))
+
+    retrieval = agent.retrieve("What was Acme's FY2022 revenue?")
+    alone = agent.searcher.search("What was Acme's FY2022 revenue?", "dense", 60, retrieval.filings)
+
+    assert retrieval.searches[0].text == "What was Acme's FY2022 revenue?"
+    assert retrieval.similarity == alone[0].score  # the question's own search, not the fusion
+
+
+def test_an_answer_keeps_its_first_retrievals_similarity_when_it_retries() -> None:
+    llm = _replies(
+        [
+            {"answerable": False, "answer": "", "missing": "the 2021 figure"},
+            {"answerable": True, "answer": "Revenue grew [1][2].", "calculations": []},
+        ]
+    )
+    agent = _agent(llm)
+
+    result = agent.answer("Did Acme's revenue grow in FY2022?")
+    first = agent.retrieve("Did Acme's revenue grow in FY2022?")
+
+    assert result.retried
+    assert result.similarity == first.similarity
+    assert result.retrieval.similarity is not None  # the retry's own, kept apart

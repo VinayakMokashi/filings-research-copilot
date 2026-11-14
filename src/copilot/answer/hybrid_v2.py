@@ -165,6 +165,7 @@ class HybridAgentV2:
                 first=alone.first,
                 arm=alone.arm,
                 assignment=alone.assignment,
+                similarity=alone.similarity,
             )
 
         plan = make_plan(self.doc.llm, question)
@@ -183,6 +184,7 @@ class HybridAgentV2:
             path="split",
             figures_question=plan.figures,
             reasons_question=plan.reasons,
+            similarity=retrieval.similarity,
         )
         if not answer.missing.strip():
             return result

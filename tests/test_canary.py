@@ -104,3 +104,15 @@ def test_a_days_summary_counts_answers_arms_and_verdicts() -> None:
     assert (found["judged"], found["faithful"], found["answered"]) == (2, 2, 2)
     assert found["arms"] == {"fast": 2}
     assert found["groups"] == {"policy": 2}
+
+
+def test_the_canary_keeps_the_answers_retrieval_similarity() -> None:
+    reply = stream(
+        ("event", {"event": "route", "route": "doc"}),
+        ("event", {"event": "answer", "answered": True, "similarity": 0.7731}),
+        ("response", {"answered": True, "route": "doc"}),
+    )
+
+    row = ask(http(reply), QUESTION)
+
+    assert row["similarity"] == 0.7731

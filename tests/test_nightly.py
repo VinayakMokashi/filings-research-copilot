@@ -20,7 +20,7 @@ from copilot.eval.nightly import (
 )
 
 ALLOWED = {"id", "question_type", "route", "answered", "correct", "faithful", "revised"}
-ALLOWED |= {"handed_on", "cost_usd", "seconds"}
+ALLOWED |= {"handed_on", "cost_usd", "seconds", "similarity"}
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -64,7 +64,8 @@ def test_a_night_keeps_ids_categories_and_scores_only(tmp_path: Path) -> None:
         [
             {"id": "a", "question_type": "novel-generated", "route": "doc", "answerable": True,
              "text": "Revenue rose [1].", "sources": [{"text": "a filing page"}],
-             "revisions": 1, "handoff": None, "cost_usd": 0.004, "seconds": 3.5},
+             "revisions": 1, "handoff": None, "cost_usd": 0.004, "seconds": 3.5,
+             "similarity": 0.812345},
             {"id": "b", "question_type": "metrics-generated", "route": "data", "answerable": True,
              "text": "$1,577 million.", "revisions": 0, "handoff": None, "cost_usd": 0.003,
              "seconds": 2.0},
@@ -85,6 +86,7 @@ def test_a_night_keeps_ids_categories_and_scores_only(tmp_path: Path) -> None:
     assert [row["faithful"] for row in rows] == [1.0, None, None]  # data answers cite no page
     assert rows[0]["revised"] == 1.0
     assert rows[2]["answered"] == 0.0
+    assert [row["similarity"] for row in rows] == [0.8123, None, None]  # where it was recorded
 
 
 def test_a_finished_set_keeps_its_scores_and_the_fields_asked_for(tmp_path: Path) -> None:

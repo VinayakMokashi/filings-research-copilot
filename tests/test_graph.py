@@ -749,3 +749,18 @@ def test_details_hold_the_turns_sources_and_its_draft_before_the_first_check() -
     assert (second["revisions"], second["draft"]) == (0, None)
     assert third["draft"]["answer"]["text"] == "Turn three says piracy [1]."  # not turn one's
     assert third["result"]["answer"]["text"] == "Turn three revised [1]."
+
+
+def test_the_doc_answers_similarity_is_reported_and_kept() -> None:
+    class Similar(FakeDoc):
+        def answer(self, question: str, avoid: str | None = None) -> AgentAnswer:
+            found = super().answer(question, avoid)
+            return AgentAnswer(found.answer, found.retrieval, similarity=0.8125)
+
+    pilot = copilot(["doc"], doc=Similar(answer("Netflix names intense competition [1].")))
+
+    events = list(pilot.stream("What risks does Netflix name?", thread_id="t"))
+
+    (reported,) = [e for e in events if e.get("event") == "answer"]
+    assert reported["similarity"] == 0.8125
+    assert pilot.details("t")["result"]["similarity"] == 0.8125

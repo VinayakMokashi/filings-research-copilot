@@ -8,7 +8,8 @@ service is checked end to end.
   marked `X-Canary: 1`, so the API's judge scores every answer one of the bandit's arms
   writes and reports it in a `reward` event.
 - **A day keeps metrics only:** for each question its id, the route, the arm and its group,
-  whether it answered, the judge's verdict and the seconds; and a summary.
+  whether it answered, the judge's verdict, the retrieval similarity and the seconds; and a
+  summary, with the drift checks of `copilot.eval.drift` when the history is given.
 - **A failed request** (an HTTP error, an `error` event, or no answer) fails the day. A
   busy API is noted, not failed: a visitor's question was running.
 """
@@ -77,6 +78,8 @@ def read(events: Any, row: dict[str, Any]) -> None:
         data = event.data
         if event.kind == "event" and data.get("event") == "route":
             row["route"] = data.get("route")
+        elif event.kind == "event" and data.get("event") == "answer":  # the doc or hybrid node
+            row["similarity"] = data.get("similarity")
         elif event.kind == "event" and data.get("event") == "reward":
             row |= {
                 "arm": data.get("arm"),

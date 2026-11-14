@@ -122,6 +122,7 @@ class HybridAnswer:
     first: Answer | None = None
     arm: str | None = None
     assignment: str | None = None
+    similarity: float | None = None  # its search's, for the drift checks (step 9.5)
 
     @property
     def retried(self) -> bool:
