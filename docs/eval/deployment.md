@@ -232,6 +232,7 @@ On 10 November the database ran from 00:00:36 to 01:01:17 UTC, and three fresh d
     - The paused page was requested at 01:05:44.989, 60 ms before the websocket ended.
     - No websocket opened after it.
   - **So a forgotten tab now bills about 15 minutes once,** about $0.023 before the free tier.
+  - **The bill agrees.** The billing export holds 1,766 CPU-seconds of Cloud Run in the 00:00 UTC hour of 11 November: the two websockets (648.7 s and 900.7 s) and the checks of that hour's deploy. The 01:00 hour holds 4.3 s, although the measured websocket lasted until 01:05: the export books a request in the hour it began. Nothing was billed after the paused page.
   - **A browser can close it sooner.** In a first try, Chrome discarded the background tab after 648.7 s to save memory, which closed the websocket as well.
 
 ### A deploy
@@ -239,6 +240,7 @@ On 10 November the database ran from 00:00:36 to 01:01:17 UTC, and three fresh d
 - **The registry download.** Each deploy's start check ran the API image on GitHub's runner. The build had pushed the image without keeping a copy, so the runner pulled it back from Artifact Registry: 0.376 GB of internet egress.
   - That cost $0.042 a deploy, and $0.21 for the five deploys on the go-live day.
   - The build now loads the image into the runner's Docker as it pushes, in 11 s. On the next deploy the start check pulled nothing.
+  - The export shows no registry egress in the hours of two more deploys on 11 November, at 00:35 and from 02:08 to 02:16 UTC.
 - **Storage.** Each deploy pushes four images: the API, MCP server and worker images at 0.376 GB each, and the UI's at 0.187 GB, sharing most layers.
   - The cleanup policy keeps each image's three newest versions and deletes the rest after a week.
   - The registry held 1.92 GiB from 3 to 9 November, then 0.38 GiB.
