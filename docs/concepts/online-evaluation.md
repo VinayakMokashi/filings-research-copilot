@@ -19,6 +19,8 @@ Three ideas carry it:
 
 In this project, step 9.1 is the scheduled kind: the nightly evaluation. Feedback (9.2), the bandit's rewards (9.3), drift checks (9.5) and an interleaved search page (9.4) come from traffic.
 
+Traffic was too thin to rely on: in the deployment's first twelve days the live API answered 3 questions. So step 9.3 added a second scheduled source, a **daily canary**: ten of the project's own questions through the deployed service, judged, which feeds the answer bandit and checks the live service end to end. The nightly run tests the code on `main` from source; the canary tests what is deployed ([ADR-0036](../decisions/0036-bandit-online.md)).
+
 ## Why we need it here
 
 The deployment has answered visitors since 2 November, and every number about its quality was measured before that. Quality can change with no commit to the copilot's code:
@@ -90,6 +92,8 @@ One night of a first draft's 40-question slice was run by hand on 11 November, f
 - **Intervals that collapse.** 138 of 138 routing decisions gave a bootstrap interval of [1.00, 1.00]; the exact interval says 0.97 to 1.00.
 - **Logs are public.** A public repository's Actions logs can be read by anyone, and a step could print what a question asked. So each step's output goes to a file that stays on the runner, and a failed step reports only its exception's class.
 - **Small slices detect only large drops.** With four tests a night, adjusted together, 8 questions must change all the same way: 25 points on the slice, 8 on the full run.
+- **A schedule is a request, not a promise.** GitHub started the first three scheduled nights 4.5 to 5.5 hours late. The set and the night's date are read in IST when the run starts, so a late start keeps both.
+- **Two jobs, one history branch.** The canary and the nightly run both push to `eval-history`. A push that loses the race rebases on the other job's commit and tries again; their files never overlap.
 
 ## Review questions
 
