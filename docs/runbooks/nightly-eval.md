@@ -62,6 +62,14 @@ The `eval-history` branch holds:
 
 The project page draws the trend from `history.jsonl`. A partial night (cut short by its cap, or with a failed step) shows as a hollow point and draws no verdict.
 
+## Drift
+
+Each night's line in `history.jsonl` carries its drift checks ([ADR-0037](../decisions/0037-drift-checks.md)): retrieval similarity and refusals, the first three nights that recorded each against the last three. The canary's days carry latency and similarity the same way. A drift is reported, not alarmed.
+
+- **Look by hand**, with any window: `uv run poe drift-check` (reads the branch from git) or `uv run poe drift-check --window 5`.
+- **When similarity drifts,** something moved under the search: compare `infra/data-bundle.json` and the index card between the reference nights' commits and the recent ones, and check the collection in Qdrant Cloud.
+- **After a deliberate change** (a new collection, a re-index), the old reference reads as drift ever after. Note the date in the build log; the checks show the step at that date.
+
 ## When an issue says "regression"
 
 The issue lists each tested metric: the baseline, the night, the difference and its Holm-adjusted p-value.

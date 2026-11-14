@@ -16,5 +16,6 @@ Step-by-step operating procedures, written when something becomes operable.
 | [Load-test the deployed API](load-test.md) | Written; run once the deployment exists |
 | [The nightly evaluation](nightly-eval.md) | Written |
 | [The answer bandit and the daily canary](bandit-and-canary.md) | Written |
+| [The search page's interleaving](search-page.md) | Written |
 | Rotating secrets | Phase 8 |
 | Handling an LLM provider outage | Phase 8 |
