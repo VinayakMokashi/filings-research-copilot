@@ -8,6 +8,10 @@ request failed, so the run fails and an issue opens.
 Usage:
   CANARY_ID_TOKEN=... uv run poe canary --api-url https://api-....run.app --out dist/canary
   uv run poe canary --api-url http://127.0.0.1:8010 --per-day 2 --out dist/canary  # a local API
+
+With --history (the `canary` folder of a copy of the eval-history branch), the day also
+carries the drift checks of `copilot.eval.drift`: latency and retrieval similarity on the
+live API, over the earlier days and itself.
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ from pathlib import Path
 import httpx
 
 from copilot.eval.canary import PER_DAY, ask, doc_questions, failed, summary, todays
+from copilot.eval.drift import canary_drift
 from copilot.eval.routing import load_queries
 
 IST = timedelta(hours=5, minutes=30)
@@ -33,6 +38,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--date", type=date.fromisoformat, help="the day, IST (default today)")
     parser.add_argument("--per-day", type=int, default=PER_DAY)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--history", type=Path, help="the eval-history branch's canary folder")
     args = parser.parse_args(argv)
 
     started = datetime.now(UTC)
@@ -58,6 +64,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         "commit": os.environ.get("GITHUB_SHA", ""),
         "summary": summary(rows),
     }
+    if args.history is not None:
+        try:
+            earlier = [
+                json.loads(path.read_text(encoding="utf-8"))
+                for path in sorted((args.history / "runs").glob("*.json"))
+                if path.stem != day.isoformat()
+            ]
+            day_summary["drift"] = canary_drift([*earlier, day_summary | {"rows": rows}])
+        except Exception as exc:  # the drift checks must never cost a day its metrics
+            day_summary["drift"] = {"error": type(exc).__name__}
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "canary.json").write_text(
         json.dumps(day_summary | {"rows": rows}, indent=2) + "\n", encoding="utf-8", newline="\n"
