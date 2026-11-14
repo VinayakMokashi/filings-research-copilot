@@ -22,7 +22,7 @@ locals {
       FRC_QDRANT_API_KEY  = "qdrant-read-api-key"
       FRC_FACTS_URL       = "facts-url"
     },
-    var.paid_daily_usd > 0 ? { CEREBRAS_API_KEY = "cerebras-api-key" } : {},
+    var.paid_daily_usd > 0 || var.bandit_daily_usd > 0 ? { CEREBRAS_API_KEY = "cerebras-api-key" } : {},
   )
   mcp_secrets = {
     FRC_QDRANT_URL     = "qdrant-url"
@@ -67,6 +67,7 @@ module "api" {
     FRC_API_STATE                = "firestore"
     FRC_LLM_DISK_CACHE           = "false"
     FRC_LLM_PAID_DAILY_USD       = tostring(var.paid_daily_usd)
+    FRC_BANDIT_DAILY_USD         = tostring(var.bandit_daily_usd)
     FRC_API_TRACE_FILE           = "false"
     GOOGLE_CLOUD_PROJECT         = var.project_id
     LANGFUSE_BASE_URL            = "https://us.cloud.langfuse.com"
@@ -79,6 +80,7 @@ module "api" {
     "serviceAccount:${local.sa.mcp}",
     "serviceAccount:${local.sa.scheduler}",
     "serviceAccount:${local.deployer}", # the deploy's smoke test
+    "serviceAccount:${local.canary}",   # the daily canary (ADR-0036)
   ]
 
   depends_on = [google_secret_manager_secret_iam_member.readers]
