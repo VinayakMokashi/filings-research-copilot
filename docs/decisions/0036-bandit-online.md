@@ -61,6 +61,12 @@ One fact changed the plan. From 3 to 15 November the live API answered 3 questio
    - **How:** the report compares the policy group's mean reward with the control group's, with bootstrap intervals and a permutation test. Canary rewards (the judge's) and visitor rewards (thumbs) are kept apart.
    - **The rule (the owner's):** the bandit stays on only if the policy's mean reward on the canary's judged answers, the larger sample, is at least the control's. Otherwise the cap is set to 0. When the interval spans zero, the report says the two can't be told apart.
 
+## Evidence so far
+
+- **Switched on** at 22:38 UTC on 14 November (04:08 IST, 15 November) with `bandit_daily_usd = 0.25`, on the deployment of the code it needs.
+- **A canary trial** of two questions, the same night: both went to the control arm, both were judged faithful, and the bandit spent $0.0103. That is about $0.002 for each answer call and $0.003 for each judge's call, which reads every cited source, so ten questions a day should cost about $0.05.
+- **The comparison** covers the canary's days from 15 to 28 November, and its report follows them.
+
 ## Consequences
 
 - **Money.** The bandit can spend at most $0.25 a day, about $7.50 a month; the canary alone is expected at $0.05 to $0.08 a day. With the nightly evaluation (at most about $15 a month) and the paid fallback (at most $0.50 a day), every Cerebras spend is capped. The trial credit's end on 22 December doesn't change this bill, which Cerebras sends.
