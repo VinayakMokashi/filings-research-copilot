@@ -298,7 +298,8 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
   - every night, a fixed slice of 32 FinanceBench dev questions, and the routing and SQL sets' dev splits;
   - on Sundays, all 100 dev questions instead of the slice;
   - metrics only, never question or answer text, with a trend chart on the project page;
-  - a regression (a paired test against the last full run) fails the run and opens an issue.
+  - a regression (a paired test against the last full run) fails the run and opens an issue;
+  - the first full night (15 November) stopped at question 71 of 100, most likely on Groq's daily quota for the small model. A night now waits out a spent quota for up to three hours, and the first baseline is the full night of 22 November ([report](eval/nightly.md#the-first-full-night-was-cut-short)).
 - [x] 9.2 Feedback stored as preference pairs (chosen vs rejected) for future preference tuning ([ADR-0035](decisions/0035-preference-pairs.md)). Done: on the live API, a rating kept its exchange, a second answer came from another arm in a new conversation, and the pick kept both; the export found 37 validator pairs in local runs, and none from readers yet ([guide](concepts/preference-data.md)):
   - a rating keeps the exchange it rates (the question as read, the answer, its sources, the arm, the validator's verdict), and the UI says so;
   - after a thumbs down, "Try another answer" writes a fresh answer with another arm, and the visitor's pick makes a pair;
@@ -307,11 +308,11 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
   - a coin flip sends each paid answer to the fixed arm or to the policy, so the comparison is between randomized groups;
   - rewards from thumbs, and from the faithfulness judge on half of the visitors' bandit answers and every canary answer;
   - a daily canary asks ten of the project's own doc questions through the live API, inside the same cap.
-- [ ] 9.4 Stretch, built last: a search page that interleaves two retrievers and logs clicks.
-- [ ] 9.5 Drift checks on retrieval scores, refusal rate and latency.
+- [x] 9.4 Stretch, built last: a search page that interleaves two retrievers and logs clicks ([ADR-0038](decisions/0038-interleaved-search.md)). Done: on the live API, a search interleaved dense and hybrid search by team draft, a click was credited to its ranking once, and Firestore kept the teams and the click but not the query; the check's document was deleted. Readers' counts stay illustrative at this traffic ([report](eval/interleaving.md)).
+- [ ] 9.5 Drift checks on retrieval scores, refusal rate and latency ([ADR-0037](decisions/0037-drift-checks.md)). Built and deployed on 15 November: each night's and each canary day's history carries them. Retrieval similarity is recorded from the night of 16 November, so its first comparison needs six recorded nights, about 21 November ([report](eval/drift.md)).
 
 **Done when:** the nightly trend is visible and feedback is being stored.
-**Docs:** ADR-0034, ADR-0035, ADR-0036; guides `online-evaluation.md`, `preference-data.md`, `bandit-routing.md`.
+**Docs:** ADR-0034 to ADR-0038; guides `online-evaluation.md`, `preference-data.md`, `bandit-routing.md`.
 **Money:** the nightly eval at most about $15 a month, the bandit at most $0.25 a day with its canary inside that, and the paid fallback at most $0.50 a day, all billed by Cerebras; Google Cloud unchanged.
 
 ### Phase 10: Showcase and polish (M)
@@ -400,6 +401,8 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-11-11 | Step 9.1's slice is 32 questions, not 40 | One night of 40, measured by hand from an empty cache, cost $0.378 of its $0.40 cap, too close to it; at 32 a night should cost about $0.33 ([report](eval/nightly.md)) |
 | 2026-11-15 | Step 9.2 keeps each rated answer with what produced it, adds "Try another answer", and exports pairs from three sources | A rating without its answer can't train anything; visitors' pairs will be few at this traffic, so the validator's revisions add pairs, labelled as judged by a model ([ADR-0035](decisions/0035-preference-pairs.md)) |
 | 2026-11-15 | Step 9.3 compares the bandit with a randomized fixed arm, and a daily canary feeds it | The live API answered 3 questions from 3 to 15 November and received no rating, so two weeks of visitors would leave nothing to compare; the owner approved the canary inside the bandit's cap ([ADR-0036](decisions/0036-bandit-online.md)) |
+| 2026-11-15 | A night runs a step a model stopped again, every ten minutes for up to three hours, and the first baseline moves to the full night of 22 November | The first full night stopped at question 71 of 100, most likely on Groq's daily quota for the small model, which a full night needs most of; waiting keeps the same models, where production's fallback would switch the small role to another ([report](eval/nightly.md#the-first-full-night-was-cut-short)) |
+| 2026-11-15 | Step 9.5's drift checks and step 9.4's search page deployed; step 9.4 done | Each drift signal is read where it is clean ([ADR-0037](decisions/0037-drift-checks.md)); the search page makes no model calls and keeps no query, and its counts stay illustrative at this traffic ([ADR-0038](decisions/0038-interleaved-search.md)) |
 | 2026-11-15 | Step 9.2 done, and step 9.3's bandit switched on with its canary until 28 November | Checked on the live API: a rating kept its exchange, a second answer came from another arm in a new conversation, and the pick kept both; a canary trial of two judged answers cost the bandit $0.0103 ([ADR-0036](decisions/0036-bandit-online.md)) |
 
 ## 11. Status tracker
