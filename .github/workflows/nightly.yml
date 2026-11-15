@@ -43,7 +43,9 @@ jobs:
   evaluate:
     name: Evaluate
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    # A full night's work takes about 85 minutes; the rest is for waiting out a model's
+    # spent quota (--wait-minutes)
+    timeout-minutes: 300
     env:
       PROJECT: ${{ vars.GCP_PROJECT_ID }}
     steps:
@@ -142,7 +144,8 @@ jobs:
           fi
           set +e
           uv run --no-sync python scripts/nightly_eval.py --set "$SET" --budget "$BUDGET" \
-            --date "$NIGHT" --out "$RUNNER_TEMP/night" --history history/nightly "${baseline[@]}"
+            --date "$NIGHT" --out "$RUNNER_TEMP/night" --history history/nightly --wait-minutes 180 \
+            "${baseline[@]}"
           echo "exit=$?" >> "$GITHUB_OUTPUT"
 
       - name: Summarise the night
@@ -155,8 +158,8 @@ jobs:
                   | "| \(.key) | \(.value.mean * 1000 | round / 1000) | \(.value.low * 1000 | round / 1000) to \(.value.high * 1000 | round / 1000) | \(.value.n) |"),
                  "", "Spent $\(.spent_usd) of $\(.budget_usd); partial: \(.partial); regression: \(.regression).",
                  "", "Drift: \(.drift.checks // {} | tostring)",
-                 "", "| Step | Exit | Spent by then | Cap | Seconds |", "|---|---|---|---|---|",
-                 (.steps[] | "| \(.step) | \(.exit) | $\(.spent_usd) | $\(.cap_usd) | \(.seconds) |")' \
+                 "", "| Step | Exit | Spent by then | Cap | Seconds | Run again |", "|---|---|---|---|---|---|",
+                 (.steps[] | "| \(.step) | \(.exit) | $\(.spent_usd) | $\(.cap_usd) | \(.seconds) | \(.reruns // 0) |")' \
             "$night" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep the night's metrics
