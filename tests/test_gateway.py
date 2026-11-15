@@ -234,6 +234,20 @@ def test_a_reached_spend_limit_counts_as_a_spent_quota(settings: Settings) -> No
     assert info.value.rate_limited is True
 
 
+def test_a_reply_groq_refused_as_invalid_json_is_flagged(settings: Settings) -> None:
+    body = (
+        '{"error": {"message": "Failed to validate JSON.", "type": "invalid_request_error",'
+        ' "code": "json_validate_failed", "failed_generation": ""}}'
+    )
+    exc = BadRequestError(message=body, llm_provider="groq", model="m")
+
+    with pytest.raises(LLMError) as info:
+        _gateway_failing_with(settings, exc).complete([user("hi")])
+
+    assert info.value.invalid_reply is True
+    assert info.value.rate_limited is False
+
+
 def test_other_failures_become_llm_errors(settings: Settings) -> None:
     exc = APIConnectionError(message="unreachable", llm_provider="groq", model="m")
 

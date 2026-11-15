@@ -6,8 +6,9 @@ call that actually reached the model (cache hits cost nothing and don't wait): a
 pause, or, when it knows the limit, the time the limit takes to earn back the tokens the
 call used, whichever is longer. An answer call of 4,000 tokens under a limit of 8,000 a
 minute waits 30 seconds; a short rewrite waits the fixed pause. It also retries a
-rate-limited call after a growing pause, and adds up the latency and tokens of the calls
-it makes, in all and by model, so a run can report what it cost. A run's spent budget
+rate-limited call after a growing pause, and a call whose JSON reply the provider refused
+(`LLMError.invalid_reply`), and adds up the latency and tokens of the calls it makes, in
+all and by model, so a run can report what it cost. A run's spent budget
 (`BudgetSpentError`) is never retried: no wait lifts it. Interactive use asks for one attempt: a
 quick fallback or apology beats minutes of waiting for a quota. The counts are kept under a
 lock, since the brief crew's writers share a client across threads.
@@ -28,7 +29,8 @@ RETRY_PAUSE_S = 30.0
 
 
 def _retryable(exc: LLMError, attempt: int, attempts: int) -> bool:
-    return exc.rate_limited and not isinstance(exc, BudgetSpentError) and attempt < attempts
+    limited = exc.rate_limited and not isinstance(exc, BudgetSpentError)
+    return (limited or exc.invalid_reply) and attempt < attempts
 
 
 class PacedLLM:

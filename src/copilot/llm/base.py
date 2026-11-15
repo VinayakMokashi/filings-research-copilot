@@ -53,11 +53,18 @@ class LLMError(RuntimeError):
     error. Only that model's error decides the flag: when the fallbacks fail too, LiteLLM
     re-raises the role model's error, so a fallback that was rate-limited after a server
     error or timeout still leaves `rate_limited=False`.
+
+    `invalid_reply` is set when the provider refused the model's reply because it wasn't
+    the JSON the call asked for. That is the model's slip on one call, not a fault in the
+    request, so another call may well succeed.
     """
 
-    def __init__(self, message: str, *, rate_limited: bool = False) -> None:
+    def __init__(
+        self, message: str, *, rate_limited: bool = False, invalid_reply: bool = False
+    ) -> None:
         super().__init__(message)
         self.rate_limited = rate_limited
+        self.invalid_reply = invalid_reply
 
 
 class BudgetSpentError(LLMError):
