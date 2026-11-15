@@ -1,0 +1,227 @@
+{
+  "date": "2026-11-16",
+  "started": "2026-11-15T18:48:43+00:00",
+  "finished": "2026-11-15T18:51:29+00:00",
+  "commit": "3b7a3866bb8650a33b163ea7a40a935b11ee452b",
+  "summary": {
+    "questions": 20,
+    "ok": 9,
+    "failed": 11,
+    "busy": 0,
+    "answered": 9,
+    "routes": {
+      "doc": 9
+    },
+    "arms": {
+      "fast": 4,
+      "strong": 5
+    },
+    "groups": {
+      "policy": 5,
+      "control": 4
+    },
+    "judged": 9,
+    "faithful": 8,
+    "median_seconds": 9.93,
+    "max_seconds": 77.1
+  },
+  "drift": {
+    "window": 3,
+    "periods": {},
+    "checks": {}
+  },
+  "rows": [
+    {
+      "id": "r001",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.6917415,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 77.1
+    },
+    {
+      "id": "r002",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7032169,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 9.68
+    },
+    {
+      "id": "r003",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.76147175,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": false,
+      "seconds": 11.21
+    },
+    {
+      "id": "r007",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7360943,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 9.93
+    },
+    {
+      "id": "r008",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7303573,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.53
+    },
+    {
+      "id": "r009",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7181605,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 7.55
+    },
+    {
+      "id": "r010",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7581271,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.81
+    },
+    {
+      "id": "r011",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.75860137,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 14.67
+    },
+    {
+      "id": "r012",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.76222134,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 15.12
+    },
+    {
+      "id": "r013",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.3
+    },
+    {
+      "id": "r014",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.58
+    },
+    {
+      "id": "r015",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.3
+    },
+    {
+      "id": "r019",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.3
+    },
+    {
+      "id": "r020",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.58
+    },
+    {
+      "id": "r021",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.31
+    },
+    {
+      "id": "r022",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.32
+    },
+    {
+      "id": "r023",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.31
+    },
+    {
+      "id": "r024",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.31
+    },
+    {
+      "id": "r025",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.32
+    },
+    {
+      "id": "r026",
+      "ok": false,
+      "error": "HTTP 429",
+      "seconds": 0.31
+    }
+  ]
+}
