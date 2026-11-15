@@ -65,6 +65,10 @@ One fact changed the plan. From 3 to 15 November the live API answered 3 questio
 
 - **Switched on** at 22:38 UTC on 14 November (04:08 IST, 15 November) with `bandit_daily_usd = 0.25`, on the deployment of the code it needs.
 - **A canary trial** of two questions, the same night: both went to the control arm, both were judged faithful, and the bandit spent $0.0103. That is about $0.002 for each answer call and $0.003 for each judge's call, which reads every cited source, so ten questions a day should cost about $0.05.
+- **The canary's first day (15 November).**
+  - GitHub never started its scheduled run, so the day was asked by hand at 10:19 UTC. The workflow then got two backup slots and a check that keeps one canary a day (#121).
+  - Nine of the ten questions came back, eight answers and a refusal, all judged; seven were faithful.
+  - One failed: Groq refused the answer check's reply as invalid JSON, and the whole answer failed (#122). Since #123 the API lets such an answer out unchecked.
 - **The comparison** covers the canary's days from 15 to 28 November, and its report follows them.
 
 ## Consequences

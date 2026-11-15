@@ -15,6 +15,48 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-15 · Phase 9 · The canary's first day: a dropped schedule, three slots, and a check that failed a whole answer
+
+- **Goal:** read the canary's first scheduled day, the first on the code that records retrieval similarity and drift.
+- **Done:**
+  - **GitHub never started the day's run.** Six hours after its 04:17 UTC slot there was still no scheduled run, and GitHub's status page listed no incident.
+  - **Three slots, one day a day (#121, no deploy).**
+    - The canary now has slots at 04:17, 08:17 and 12:17 UTC.
+    - A new job, "Choose the day", reads the history first. A full run, scheduled or by hand, stops at a day already kept; a trial always asks.
+    - The day was then asked by hand at 10:19 UTC.
+  - **The first day** ([ADR-0036](decisions/0036-bandit-online.md#evidence-so-far)):
+    - nine of ten questions came back, eight answers and a refusal, all judged, seven faithful;
+    - the bandit spent $0.044 of its $0.25, and the paid fallback $0.005;
+    - each row carries its retrieval similarity, and the day its drift checks, empty until there are earlier days.
+  - **One question failed (#122).**
+    - The API's logs: the answer's check, on the small role in JSON mode, got an HTTP 400 from Groq, `json_validate_failed`, with an empty reply. Nothing retries a 400, so the whole answer failed after 50 seconds.
+    - It is the only such error in the API's logs since 2 November.
+  - **The fix (#123, deployed)** ([validator guide](concepts/validator-loop.md#pitfalls-we-hit)):
+    - the gateway flags such an error (`LLMError.invalid_reply`);
+    - in the API, the answer goes out unchecked, as when the checker's quota is spent, and the notes about a reader are skipped;
+    - batch work tries the call again;
+    - a strict run still stops, so an evaluation never counts an answer it didn't check;
+    - the bandit's judge is unchanged.
+- **Commands:**
+  - `gh run list --workflow canary.yml`, and the incidents on GitHub's status page;
+  - `uvx --from actionlint-py actionlint .github/workflows/canary.yml`;
+  - `gh workflow run canary.yml -f questions=10`;
+  - `gcloud logging read` for `llm.error` and `api.ask_failed` around the run;
+  - `private/tools/read_bandit.py`, and `check_live.py` after the deploy.
+- **Results:**
+  - `poe check`: 803 passed, 7 deselected (five new tests).
+  - **The deploy** (`dd1d708`, 10:47 UTC, revision `api-00016-gdn`): the live checks pass, and the caps are unchanged ($0.25 a day for the bandit, $0.50 for the paid fallback).
+  - **A one-question canary trial** on it passed: answered, judged, faithful. Its "Choose the day" found the day kept, and as a trial it asked anyway and kept nothing.
+- **Problems and fixes:**
+  - **Was the cut-short full night the same slip?** The answers step stops on any failed model call, not only on a spent quota. But the night's question 71 passed three checks in each of the two earlier full runs on the laptop, and since #119 a night runs a stopped step again anyway. So a spent quota stays the likely cause.
+  - **Identity federation lets only `main` call the API,** so the new workflow couldn't be tried from its branch. The run by hand after the merge was its first real run.
+  - **The runbook's report command** said 16 to 30 November. ADR-0036 and the plan say 15 to 28 November, and so does the runbook now.
+- **Decisions:** none new. ADR-0019 got a consequence, and ADR-0036 its first day's evidence.
+- **Next:**
+  - the canary's days to 28 November;
+  - the full night of 22 November, the first baseline;
+  - the bandit's report on or after 29 November, then the Phase 9 close.
+
 ### 2026-11-15 · Phase 9 · The first full night cut short, a night that waits out a spent quota, and steps 9.5 and 9.4 live
 
 - **Goal:** read the first full nightly run, the regression baseline. Then deploy steps 9.5 and 9.4 (#118), which had waited for it.
