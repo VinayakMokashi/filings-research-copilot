@@ -23,7 +23,7 @@ from copilot.answer.context import Source
 from copilot.answer.generate import Answer
 from copilot.answer.hybrid import DATABASE, DATABASE_LABEL, HybridAnswer
 from copilot.config import Settings
-from copilot.llm import FakeLLM, LLMClient, LLMError
+from copilot.llm import FakeLLM, LLMClient, LLMError, Message, ModelRole
 from copilot.llm.pacing import PacedLLM
 from copilot.retrieval.query import CompanyMatcher
 from copilot.sql.tool import DataAnswer
@@ -453,6 +453,31 @@ def test_two_failed_revisions_leave_only_what_was_verified() -> None:
     assert response["validation"]["revisions"] == 2
     assert response["validation"]["unverified"] == [FIXED]
     assert "unverified" in response["text"]
+
+
+def unreadable(messages: Sequence[Message], role: ModelRole) -> str:
+    raise LLMError("The small model call failed: json_validate_failed", invalid_reply=True)
+
+
+def test_an_unreadable_check_lets_the_answer_pass_unchecked() -> None:
+    pilot = copilot(["doc"], checker=FakeLLM(unreadable), writer=FakeLLM([]))
+
+    events = list(pilot.stream("What risks does Netflix name?", thread_id="t"))
+
+    noted = [e["event"] for e in events if e["type"] == "event" and e["node"] == "validate"]
+    assert noted == ["unreadable"]
+    assert "revise" not in nodes_run(events, "start")
+    assert events[-1]["answered"] is True
+    assert events[-1]["validation"] == {"checked": False}
+
+
+def test_a_strict_run_stops_on_an_unreadable_check() -> None:
+    pilot = copilot(["doc"], checker=FakeLLM(unreadable), writer=FakeLLM([]), strict=True)
+
+    with pytest.raises(LLMError) as raised:
+        pilot.ask("What risks does Netflix name?", thread_id="t")
+
+    assert raised.value.invalid_reply
 
 
 def test_data_answers_and_refusals_are_not_checked() -> None:
