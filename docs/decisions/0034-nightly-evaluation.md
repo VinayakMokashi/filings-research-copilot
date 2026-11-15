@@ -62,6 +62,7 @@ The first estimate, from copilot v2's dev run on Cerebras ([report](../eval/copi
 - **The cost left too little room.** $0.378 of $0.40 leaves 5.5% for nights that cost more, and a night cut short draws no verdict. So the slice is 32 questions, about $0.33 a night.
 - **The steps' shares** follow the measured costs: 50%, 57%, 65%, 82% and 100% of the cap.
 - **A full run** should cost about $0.75 of its $1.20.
+- **The first full night was cut short** (15 November), at question 71 of 100, most likely by the small role's free quota. Groq allows gpt-oss-20b about 200K tokens in any 24 hours, and a full night needs about 174K, which leaves little room for the day before. A night now waits out a model that stopped a step, for up to three hours, and carries on with the same models ([report](../eval/nightly.md#the-first-full-night-was-cut-short)).
 
 ## Consequences
 
@@ -69,7 +70,7 @@ The first estimate, from copilot v2's dev run on Cerebras ([report](../eval/copi
 - **The month's model spend** is about $12 by the measured night, and at most about $15 by the caps, at Cerebras's prices. Google Cloud bills nothing for it: the secrets are read a few times a night, within Secret Manager's free operations.
 - **A 32-question slice detects only large drops.** With the night's four tests adjusted together, a drop is significant only when at least 8 questions change, all the same way: 25 points on the slice, 8 points on the Sunday run's 100. The slice's nights show the trend and catch a breakage; the full run is the finer test.
 - **Fresh calls vary.** Temperature 0 doesn't make every reply identical, so a night can differ from the last with nothing changed. The family-wise test keeps false alarms to about one night in twenty.
-- **The small role uses Groq's free tier** in the rolling 24 hours visitors share, a few dozen checks a night, at the quietest hour.
+- **The small role uses Groq's free tier,** whose rolling 24 hours the live demo and the canary share. A slice needs about 52K of its 200K tokens and a full run about 174K, so a full night may wait for the day before's calls to age out: up to three hours, in a job of five.
 - **The bundle and the questions are downloaded each night,** from the project's own bucket and FinanceBench's repository. The bundle is cached by its checksum.
 - **Scheduled runs can start late.** GitHub delays scheduled workflows when its runners are busy, and the first three nights started 4.5 to 5.5 hours after 20:30 UTC. The set and the night's date are read in IST when the run starts, so a late start keeps both.
 

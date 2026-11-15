@@ -10,6 +10,7 @@ How the copilot is evaluated every night, how to run a night by hand, and what t
 | FinanceBench dev | The 32-question slice in `eval/nightly/slice.json` | All 100 questions |
 | Routing and SQL sets | Their dev splits: 138 and 28 questions | The same |
 | Cap | $0.40 | $1.20 |
+| Waiting | Up to 3 hours in all, for a model that stopped a step | The same |
 
 The workflow is `.github/workflows/nightly.yml`.
 
@@ -85,6 +86,10 @@ The issue lists each tested metric: the baseline, the night, the difference and 
 ## When a night fails
 
 - **Which step.** The job summary lists each step's exit code and spend. A failed step's line names its exception's class only: its log stays on the runner, since it could quote a question.
+- **A model stopped a step** (exit 75). The step ran again every ten minutes, carrying on where it stopped, until the night had waited three hours. The summary's "Run again" column counts the reruns.
+  - The error reads "a model's quota stayed spent" (most likely Groq's free quota for the small model) or "a model call kept failing" (an outage).
+  - The night is partial and draws no verdict. Nothing needs doing unless it repeats.
+  - A rerun the same day meets the same quota.
 - **Reproduce it** on the laptop with the same commit (above), where the step's log is at hand.
 - **Run it again** for the same night with `gh run rerun <id>`. The night's metrics are pushed only after the run ends.
 
