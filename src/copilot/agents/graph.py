@@ -175,7 +175,9 @@ class Components:
     `strict=True` lets a rate-limited model call stop the run, for batch evaluations that
     resume later; otherwise the reply asks the user to try again. `checker` checks cited
     answers on the `small` role and `writer` revises them on the `strong` role; without
-    both, answers pass unchecked. `rewriter` makes follow-ups standalone; `notes` and
+    both, answers pass unchecked. Outside a strict run, an answer also passes unchecked, or
+    keeps no notes, when the checker or the notes model is refused or replies with JSON
+    that doesn't parse. `rewriter` makes follow-ups standalone; `notes` and
     `store` keep notes about the user across conversations, when both are set. `brief`
     writes briefs; without it, a request for one gets a short note.
     """
@@ -651,10 +653,13 @@ def build_graph(
         try:
             verdict = check_answer(parts.checker, answer)
         except LLMError as exc:
-            if parts.strict or not exc.rate_limited:
+            if parts.strict or not (exc.rate_limited or exc.invalid_reply):
                 raise
-            emit("validate", "quota", error=str(exc)[:200])
-            return {"validation": {"checked": False, "error": "the checker's quota is used up"}}
+            if exc.rate_limited:
+                emit("validate", "quota", error=str(exc)[:200])
+                return {"validation": {"checked": False, "error": "the checker's quota is used up"}}
+            emit("validate", "unreadable", error=str(exc)[:200])
+            return {"validation": {"checked": False, "error": "the checker's reply was unreadable"}}
         revisions = state.get("revisions", 0)
         checked = verdict_record(verdict) | {"checked": True, "revisions": revisions}
         emit(
@@ -748,9 +753,9 @@ def build_graph(
             facts = extract(parts.notes, state["question"], response.get("text", ""))
             operations = reconcile(parts.notes, recall(parts.store, user), facts)
         except LLMError as exc:
-            if parts.strict or not exc.rate_limited:
+            if parts.strict or not (exc.rate_limited or exc.invalid_reply):
                 raise
-            emit("remember", "quota", error=str(exc)[:200])
+            emit("remember", "quota" if exc.rate_limited else "unreadable", error=str(exc)[:200])
             return {}
         done = apply(parts.store, user, operations)
         emit("remember", "notes", facts=len(facts), **done)
