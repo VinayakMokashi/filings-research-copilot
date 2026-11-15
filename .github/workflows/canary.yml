@@ -7,8 +7,13 @@
 name: Daily canary
 
 on:
+  # GitHub may start a scheduled run hours late, or not at all, as on the first day (15
+  # November), so the day has three slots: the first to run asks, and a later one finds
+  # the day kept and stops.
   schedule:
     - cron: "17 4 * * *" # 09:47 IST
+    - cron: "17 8 * * *" # 13:47 IST
+    - cron: "17 12 * * *" # 17:47 IST
   workflow_dispatch:
     inputs:
       questions:
@@ -30,14 +35,23 @@ env:
   API_URL: https://api-${{ vars.GCP_PROJECT_NUMBER }}.${{ vars.GCP_REGION }}.run.app
 
 jobs:
-  ask:
-    name: Ask
+  plan:
+    name: Choose the day
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 10
+    outputs:
+      questions: ${{ steps.plan.outputs.questions }}
+      trial: ${{ steps.plan.outputs.trial }}
+      date: ${{ steps.plan.outputs.date }}
+      kept: ${{ steps.plan.outputs.kept }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check out the history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ env.HISTORY_BRANCH }}
+          path: history
           persist-credentials: false
+          sparse-checkout: canary
 
       - name: Choose the day
         id: plan
@@ -50,11 +64,32 @@ jobs:
           esac
           trial=false
           if [ "$questions" -lt 10 ]; then trial=true; fi
+          day="$(TZ=Asia/Kolkata date +%F)"
+          kept=false
+          days=history/canary/history.jsonl
+          if [ -f "$days" ] && jq -r '.date' "$days" | grep -qxF "$day"; then
+            kept=true
+            echo "The canary of $day is kept already."
+          fi
           {
             echo "questions=$questions"
             echo "trial=$trial"
-            echo "date=$(TZ=Asia/Kolkata date +%F)"
+            echo "date=$day"
+            echo "kept=$kept"
           } >> "$GITHUB_OUTPUT"
+
+  ask:
+    name: Ask
+    needs: plan
+    # A day keeps one canary, so a later slot, or a full run by hand, stops at a day already
+    # kept. A trial keeps nothing, so it always asks.
+    if: needs.plan.outputs.trial == 'true' || needs.plan.outputs.kept == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # An ID token for the private API, as the canary's account; it may call the API and
       # nothing else (infra/terraform).
@@ -85,8 +120,8 @@ jobs:
         id: day
         env:
           CANARY_ID_TOKEN: ${{ steps.auth.outputs.id_token }}
-          QUESTIONS: ${{ steps.plan.outputs.questions }}
-          DAY: ${{ steps.plan.outputs.date }}
+          QUESTIONS: ${{ needs.plan.outputs.questions }}
+          DAY: ${{ needs.plan.outputs.date }}
         run: |
           set +e
           uv run --no-sync python scripts/canary.py --api-url "$API_URL" --date "$DAY" \
@@ -105,9 +140,9 @@ jobs:
                  "", "Drift: \(.drift.checks // {} | tostring)"' "$day" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep the day's metrics
-        if: always() && steps.day.outputs.exit != '' && steps.plan.outputs.trial == 'false'
+        if: always() && steps.day.outputs.exit != '' && needs.plan.outputs.trial == 'false'
         env:
-          DAY: ${{ steps.plan.outputs.date }}
+          DAY: ${{ needs.plan.outputs.date }}
         run: |
           day="$RUNNER_TEMP/canary"
           [ -f "$day/canary.json" ] || { echo "No canary.json was written."; exit 1; }
@@ -127,10 +162,10 @@ jobs:
           exit 1
 
       - name: Open an issue on a failure
-        if: steps.day.outputs.exit == '2' && steps.plan.outputs.trial == 'false'
+        if: steps.day.outputs.exit == '2' && needs.plan.outputs.trial == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-          DAY: ${{ steps.plan.outputs.date }}
+          DAY: ${{ needs.plan.outputs.date }}
         run: |
           body="$(jq -r '"The canary of \(.date) (commit \(.commit[0:7])) had requests to the live API fail:",
                  "", "| Question | Error | Seconds |", "|---|---|---|",
