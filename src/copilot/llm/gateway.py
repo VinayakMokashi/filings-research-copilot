@@ -55,6 +55,10 @@ _TOKEN_PRICE_FIELDS = ("input_cost_per_token", "output_cost_per_token")
 # Groq's error code once an organisation's monthly spend limit is reached (an HTTP 400).
 SPEND_LIMIT = "blocked_api_access"
 
+# Groq's error code when a reply asked for as JSON doesn't parse (an HTTP 400). Groq checks
+# the reply itself and returns this instead of the reply.
+INVALID_JSON = "json_validate_failed"
+
 
 def provider_of(model: str) -> str:
     """`groq/openai/gpt-oss-120b` -> `groq`; an unprefixed id has no provider."""
@@ -206,9 +210,16 @@ class LLMGateway:
     def _error(self, exc: Exception, role: ModelRole) -> LLMError:
         # A reached spend limit means the same as a spent quota: stop, and try later.
         rate_limited = isinstance(exc, RateLimitError) or SPEND_LIMIT in str(exc)
-        log.warning("llm.error", role=role, error=type(exc).__name__, rate_limited=rate_limited)
+        invalid_reply = INVALID_JSON in str(exc)
+        log.warning(
+            "llm.error",
+            role=role,
+            error=type(exc).__name__,
+            rate_limited=rate_limited,
+            invalid_reply=invalid_reply,
+        )
         message = self._redact(f"The {role} model call failed: {type(exc).__name__}: {exc}")
-        return LLMError(message, rate_limited=rate_limited)
+        return LLMError(message, rate_limited=rate_limited, invalid_reply=invalid_reply)
 
     def _redact(self, text: str) -> str:
         for secret in self._secrets:
