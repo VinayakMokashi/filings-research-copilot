@@ -38,6 +38,16 @@ The constraints:
 5. **What is kept,** in Firestore `interleaving/<search id>`: the teams in list order, the number of filings searched, how far the two rankings overlapped, and the clicks. Never the query.
 6. **The report** (`poe interleaving-report`): searches, clicks and wins by team, and a two-sided sign test on the decided searches. At this traffic the counts are illustrative, and the report says so.
 
+## Evidence
+
+Checked on the live API on 15 November ([report](../eval/interleaving.md)):
+
+- a search over one company's three filings interleaved 8 results;
+- a click was credited to its ranking once, and a click on a search that doesn't exist was refused;
+- Firestore kept the teams and the click and nothing of the query.
+
+The check's document was deleted, so readers' counts start from zero.
+
 ## Consequences
 
 - **A search costs** two embeddings of the query and two Qdrant queries on the API, about a second of CPU, plus Firestore writes, all within free tiers. It counts against no quota, since no model is called.

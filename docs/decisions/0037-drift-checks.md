@@ -40,6 +40,10 @@ The data available:
 3. **Windows.** For each signal, the first three nights (or days) that recorded it are the reference, and the last three the recent period. With fewer than six, it isn't compared yet. The tests of a source are Holm-adjusted together, and a drift is an adjusted p-value below 0.05.
 4. **Reported, not alarmed.** Each night's and each canary day's history line carries its drift checks, and `poe drift-check` shows them for any window. A failure inside the checks is recorded as an error and never costs the night or the day its metrics.
 
+## Evidence
+
+The first look, on 15 November ([report](../eval/drift.md)). Five nights had recorded refusals, and windows of two nights found them unchanged: 0.109 and 0.109 on 46 questions, p = 1.0. Retrieval similarity is recorded from the night of 16 November and the canary's days from 15 November, so the default windows of three compare from about 20 November.
+
 ## Consequences
 
 - **The first comparisons need six periods each:** similarity from the night after this change is deployed, refusals at once (the history holds four nights), latency from the canary's sixth day.
