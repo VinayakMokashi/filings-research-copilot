@@ -31,7 +31,14 @@ import text2sql
 
 from copilot.config import get_settings
 from copilot.eval import sql
-from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
+from copilot.eval.report import (
+    RESULTS_DIR,
+    RETRY_LATER,
+    RunSummary,
+    summarise,
+    summarise_by,
+    write_run,
+)
 from copilot.eval.splits import HeldOutError
 from copilot.facts.database import connect_read_only
 from copilot.logs import configure_logging
@@ -90,7 +97,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             result = pipeline.ask(question.question, analyze=False)
             if result.rate_limited:
                 print(f"Stopped at {question.id}: the model's quota is used up. Run again later.")
-                return 1
+                return RETRY_LATER
             record: dict[str, Any] = {
                 "id": question.id,
                 "status": result.status,
