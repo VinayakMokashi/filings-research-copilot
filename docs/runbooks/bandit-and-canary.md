@@ -10,7 +10,7 @@ How the online answer bandit and the canary that feeds it are switched on and of
 | Its cap | Firestore `quotas/<day>.bandit_usd` | The arms' and the judge's calls, at most $0.25 a UTC day. At the cap, answers take the fixed path on Groq |
 | Its state | Firestore `bandit/answer-arms` | Each arm's count of rewards and their sum |
 | Its log | Firestore `bandit-answers/<request id>` | The arm, the group (`policy`, `control`, `retry`), canary or visitor, the cost, and the rewards (`judge`, `thumbs`) |
-| The canary | `.github/workflows/canary.yml`, 04:17 UTC (09:47 IST), as `github-canary` | Ten of the routing set's 30 dev questions on the doc route a day, in turn, through the live API; metrics to `eval-history` (`canary/`) |
+| The canary | `.github/workflows/canary.yml`, at 04:17 UTC (09:47 IST), with backup slots at 08:17 and 12:17 UTC, as `github-canary` | Ten of the routing set's 30 dev questions on the doc route a day, in turn, through the live API; metrics to `eval-history` (`canary/`). The first slot to run asks; a later one finds the day kept and stops |
 
 ## Switch the bandit on or off
 
@@ -40,20 +40,32 @@ On the laptop, against a local API (`poe api` on port 8010): `uv run poe canary 
 - **What it has learned:** `bandit/answer-arms` in the Firestore console: `count_<arm>` and `sum_<arm>` (arms with `-` written as `_`).
 - **The canary's days:** `canary/history.jsonl` on the `eval-history` branch, a line a day. `curl -s https://raw.githubusercontent.com/VinayakMokashi/filings-research-copilot/eval-history/canary/history.jsonl`.
 
+## A day with no canary
+
+GitHub may start a scheduled run hours late or drop it, as it dropped the first day's (15 November), so the canary has three slots. If a day still has no line by the evening, ask it by hand before 18:30 UTC, when the day ends in IST:
+
+```bash
+gh workflow run canary.yml -f questions=10
+```
+
+The job "Choose the day" reads `canary/history.jsonl` first. A full run, scheduled or by hand, stops at a day already kept, so a day is never asked twice; a trial always asks, and keeps nothing. Identity federation lets only `main` call the API, so a run from another branch fails at its sign-in.
+
 ## When the canary fails
 
 An issue labelled `canary-failure` lists the questions whose requests failed and the error: an HTTP status, an `error` event, or no answer. A busy API (a visitor's question was running) is noted and doesn't fail the day.
 
 1. **Is the service up?** `uv run --no-sync python ../private/tools/check_live.py`, or the deploy runbook's checks.
-2. **Read the API's logs** around the run's time for `api.ask_failed`, `llm.error` or `bandit.arm_failed`.
+2. **Read the API's logs** around the run's time for `api.ask_failed`, `llm.error` or `bandit.arm_failed`. `api.ask_failed` carries the traceback; `llm.error` says which role failed, and whether it was a spent quota (`rate_limited`) or a reply the provider refused as invalid JSON (`invalid_reply`).
 3. **Run a trial** once the cause is fixed, then close the issue with the cause.
+
+The first failure (#122, 15 November) was a model's slip, not an outage: Groq refused the answer check's reply as invalid JSON, and the whole answer failed. Since #123 the API lets such an answer out unchecked instead.
 
 ## The two-week report
 
-After 14 days with the canary running:
+After the canary's 14 days, 15 to 28 November (`--until` is the first day left out):
 
 ```bash
-CLOUDSDK_ACTIVE_CONFIG_NAME=frc uv run poe bandit-report --since 2026-11-16 --until 2026-11-30
+CLOUDSDK_ACTIVE_CONFIG_NAME=frc uv run poe bandit-report --since 2026-11-15 --until 2026-11-29
 ```
 
 It reads the log as the owner, keeps a copy under `data/processed/bandit/`, and writes `eval/results/bandit-online/two-weeks/summary.json`: each group's answers and arms, the mean reward of each kind with intervals, the policy's difference from the control with a permutation test, and the decision by ADR-0036's rule. The report `docs/eval/bandit-online.md` is written from it. If the rule says off, switch the bandit and the canary off as above.
