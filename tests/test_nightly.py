@@ -18,6 +18,7 @@ from copilot.eval.nightly import (
     steps,
     summary,
 )
+from copilot.eval.report import RETRY_LATER
 
 ALLOWED = {"id", "question_type", "route", "answered", "correct", "faithful", "revised"}
 ALLOWED |= {"handed_on", "cost_usd", "seconds", "similarity"}
@@ -202,3 +203,101 @@ def test_each_step_runs_under_its_share_and_a_failure_keeps_its_message_out(
     assert routing["error"] == "ValueError"
     assert "capital expenditure" not in json.dumps(outcomes)
     assert "must keep" in (tmp_path / "logs" / "answers.log").read_text(encoding="utf-8")
+
+
+QUOTA_STOP = (
+    'print("Stopped at q7: a model\'s quota is used up. Run again later.")\n'
+    f"raise SystemExit({RETRY_LATER})\n"
+)
+
+
+def test_a_step_a_model_stopped_runs_again_and_carries_on(tmp_path: Path) -> None:
+    once = (
+        "import pathlib\n"
+        "mark = pathlib.Path('stopped-once')\n"
+        "if not mark.exists():\n"
+        "    mark.touch()\n"
+        '    print("Stopped at q7: a model\'s quota is used up. Run again later.")\n'
+        f"    raise SystemExit({RETRY_LATER})\n"
+        "print('carried on')\n"
+    )
+    pauses: list[float] = []
+    night = [Step("answers", 0.5, script(tmp_path, "answers", once), ())]
+
+    (answers,) = run_steps(
+        night,
+        0.40,
+        tmp_path / "ledger.jsonl",
+        tmp_path / "logs",
+        tmp_path,
+        wait_s=1200,
+        pause_s=600,
+        sleep=pauses.append,
+    )
+
+    assert (answers["exit"], answers["failed"], answers["reruns"]) == (0, False, 1)
+    assert pauses == [600]
+    log = (tmp_path / "logs" / "answers.log").read_text(encoding="utf-8")
+    assert "Stopped at q7" in log
+    assert "carried on" in log
+
+
+def test_the_night_stops_waiting_once_its_waiting_is_spent(tmp_path: Path) -> None:
+    outage = (
+        f"print('Stopped at r3: a timeout. Run again later.')\nraise SystemExit({RETRY_LATER})\n"
+    )
+    pauses: list[float] = []
+    night = [
+        Step("answers", 0.5, script(tmp_path, "answers", QUOTA_STOP), ()),
+        Step("routing", 1.0, script(tmp_path, "routing", outage), ()),
+    ]
+
+    answers, routing = run_steps(
+        night,
+        0.40,
+        tmp_path / "ledger.jsonl",
+        tmp_path / "logs",
+        tmp_path,
+        wait_s=1500,
+        pause_s=600,
+        sleep=pauses.append,
+    )
+
+    assert pauses == [600, 600]
+    assert (answers["reruns"], answers["failed"]) == (2, True)
+    assert answers["error"] == "a model's quota stayed spent"
+    assert (routing["reruns"], routing["failed"]) == (0, True)
+    assert routing["error"] == "a model call kept failing"
+    assert "q7" not in json.dumps([answers, routing])
+
+
+def test_a_step_its_cap_stopped_never_runs_again(tmp_path: Path) -> None:
+    spend = (
+        "import json, os\n"
+        "with open(os.environ['FRC_LLM_BUDGET_FILE'], 'a') as f:\n"
+        "    print(json.dumps({'usd': float(os.environ['FRC_LLM_BUDGET_USD'])}), file=f)\n"
+        f"raise SystemExit({RETRY_LATER})\n"
+    )
+    pauses: list[float] = []
+    night = [Step("answers", 0.5, script(tmp_path, "answers", spend), ())]
+
+    (answers,) = run_steps(
+        night,
+        0.40,
+        tmp_path / "ledger.jsonl",
+        tmp_path / "logs",
+        tmp_path,
+        wait_s=1800,
+        sleep=pauses.append,
+    )
+
+    assert pauses == []
+    assert (answers["stopped_by_cap"], answers["failed"], answers["reruns"]) == (True, False, 0)
+
+
+def test_without_waiting_a_stopped_step_is_not_run_again(tmp_path: Path) -> None:
+    night = [Step("answers", 0.5, script(tmp_path, "answers", QUOTA_STOP), ())]
+
+    (answers,) = run_steps(night, 0.40, tmp_path / "ledger.jsonl", tmp_path / "logs", tmp_path)
+
+    assert (answers["exit"], answers["reruns"], answers["failed"]) == (RETRY_LATER, 0, True)

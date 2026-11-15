@@ -6,7 +6,9 @@ on Sundays), its answers are judged and checked against their sources, the LLM r
 decides the routing set's dev questions, and the data agent answers the SQL set's. Each
 step is one of the evaluation scripts, run in a process of its own under the night's
 spending cap (`copilot.llm.budget`): a step may spend until the night's ledger reaches its
-share of the cap, so a step that spends less leaves the rest to the steps after it.
+share of the cap, so a step that spends less leaves the rest to the steps after it. A
+step a model stopped, as Groq's free tier does once a model's daily quota is spent, waits
+and carries on where it stopped, while the night has waiting left.
 
 A night keeps metrics only: for each question its id, its categories, its scores, its cost
 and its time, never a question or an answer, since FinanceBench's licence keeps those out
@@ -24,12 +26,13 @@ import statistics
 import subprocess
 import sys
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from copilot.eval.labels import stratified_sample
+from copilot.eval.report import RETRY_LATER
 from copilot.eval.stats import bootstrap_ci, exact_interval, holm, paired_test
 from copilot.llm.budget import RunBudget
 
@@ -38,6 +41,8 @@ from copilot.llm.budget import RunBudget
 SLICE_SIZE = 32
 SLICE_SEED = 20261111
 ALPHA = 0.05
+# How long a night waits before it runs a step a model stopped again
+PAUSE_S = 600.0
 # The metrics a night is tested on: per question, 1 or 0
 TESTED = ("correct", "answered", "routing_accuracy", "sql_accuracy")
 # Routes whose answers cite filing pages, so the faithfulness check can read them
@@ -83,22 +88,41 @@ def steps(run: str, results_dir: Path, ids_file: Path | None = None) -> list[Ste
     ]
 
 
-def failure(log: Path) -> str:
-    """The class of the exception that ended a step, from its log. Never the message, which
-    could quote a question."""
-    for line in reversed(log.read_text(encoding="utf-8", errors="replace").splitlines()):
+def failure(log: Path, code: int = 1) -> str:
+    """Why a step failed, from its exit code and its log: a model's spent quota, another
+    model error, or the class of the exception that ended it. Never a message, which could
+    quote a question."""
+    lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    if code == RETRY_LATER:
+        if any("quota is used up" in line for line in lines):
+            return "a model's quota stayed spent"
+        return "a model call kept failing"
+    for line in reversed(lines):
         if match := _EXCEPTION.match(line.strip()):
             return match.group(1)
     return "no exception in the log"
 
 
 def run_steps(
-    night: Sequence[Step], budget_usd: float, ledger: Path, logs: Path, cwd: Path
+    night: Sequence[Step],
+    budget_usd: float,
+    ledger: Path,
+    logs: Path,
+    cwd: Path,
+    *,
+    wait_s: float = 0.0,
+    pause_s: float = PAUSE_S,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> list[dict[str, Any]]:
     """Run each step in its own process under its share of the cap, with its output in
-    `logs/<step>.log`, and say how each ended: finished, stopped by its cap, or failed."""
+    `logs/<step>.log`, and say how each ended: finished, stopped by its cap, or failed.
+
+    A step a model stopped is run again after `pause_s` and carries on where it stopped,
+    while the night has some of `wait_s` left: Groq's free tier gives a model's quota back
+    as the last day's calls age out (ADR-0034)."""
     logs.mkdir(parents=True, exist_ok=True)
     outcomes = []
+    waiting_left = wait_s
     for step in night:
         cap = round(budget_usd * step.share, 4)
         env = os.environ | {
@@ -108,16 +132,23 @@ def run_steps(
         }
         log = logs / f"{step.name}.log"
         began = time.perf_counter()
-        with log.open("w", encoding="utf-8") as output:
-            code = subprocess.run(
-                [sys.executable, step.script, *step.args],
-                cwd=cwd,
-                env=env,
-                stdout=output,
-                stderr=subprocess.STDOUT,
-                check=False,
-            ).returncode
-        spent = RunBudget(ledger, cap).spent()
+        reruns = 0
+        while True:
+            with log.open("a" if reruns else "w", encoding="utf-8") as output:
+                code = subprocess.run(
+                    [sys.executable, step.script, *step.args],
+                    cwd=cwd,
+                    env=env,
+                    stdout=output,
+                    stderr=subprocess.STDOUT,
+                    check=False,
+                ).returncode
+            spent = RunBudget(ledger, cap).spent()
+            if code != RETRY_LATER or spent >= cap or waiting_left < pause_s:
+                break
+            sleep(pause_s)
+            waiting_left -= pause_s
+            reruns += 1
         stopped = code != 0 and spent >= cap
         outcome: dict[str, Any] = {
             "step": step.name,
@@ -126,10 +157,11 @@ def run_steps(
             "spent_usd": round(spent, 4),
             "stopped_by_cap": stopped,
             "failed": code != 0 and not stopped,
+            "reruns": reruns,
             "seconds": round(time.perf_counter() - began, 1),
         }
         if outcome["failed"]:
-            outcome["error"] = failure(log)
+            outcome["error"] = failure(log, code)
         outcomes.append(outcome)
     return outcomes
 
