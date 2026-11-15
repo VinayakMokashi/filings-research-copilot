@@ -120,6 +120,7 @@ One night of a first draft's 40-question slice was run by hand on 11 November, f
 - **Small slices detect only large drops.** With four tests a night, adjusted together, 8 questions must change all the same way: 25 points on the slice, 8 on the full run.
 - **A schedule is a request, not a promise.** GitHub started the first three scheduled nights 4.5 to 5.5 hours late. The set and the night's date are read in IST when the run starts, so a late start keeps both.
 - **Two jobs, one history branch.** The canary and the nightly run both push to `eval-history`. A push that loses the race rebases on the other job's commit and tries again; their files never overlap.
+- **A free quota is shared over a rolling day.** Groq allows the small model about 200K tokens in any 24 hours, and the nightly run, the canary and visitors all draw on them. The first full night needed about 174K and stopped at question 71, while the day before's slice was still in the window. A night now waits for the quota to come back, with the same models, rather than switching to another.
 
 ## Review questions
 

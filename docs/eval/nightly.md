@@ -1,4 +1,4 @@
-# The nightly evaluation: a measured night, and the job's size
+# The nightly evaluation: a measured night, the job's size, and the first nights
 
 Phase 9, step 9.1 ([ADR-0034](../decisions/0034-nightly-evaluation.md)). One night was run by hand on 11 November 2026, before the schedule started, to measure what a night costs and to size the job from it.
 
@@ -55,9 +55,39 @@ $0.378 fits the cap, but with 5.5% to spare. Fresh calls vary from night to nigh
 - **A full run** (all 100 questions, on Sundays) should cost about $0.75 of its $1.20.
 - **A month** should cost about $12, under the $15 the caps allow.
 
+## The first nights
+
+The schedule started on 12 November. Every night ran on Cerebras, with Groq's gpt-oss-20b for the small role; a night's date is in IST.
+
+| Night | Set | Started (UTC) | Spent | Correct | Answered | Faithful | Routing | SQL |
+|---|---|---|---|---|---|---|---|---|
+| 11 Nov, by hand | 40 questions | 00:53 | $0.378 | 0.65 (40) | 0.93 (40) | 0.81 (21) | 1.00 | 1.00 |
+| 12 Nov | Slice | 01:57 | $0.348 | 0.59 (32) | 0.94 (32) | 0.94 (17) | 0.99 | 0.96 |
+| 13 Nov | Slice | 01:16 | $0.339 | 0.50 (32) | 0.88 (32) | 0.93 (15) | 0.99 | 1.00 |
+| 14 Nov | Slice | 00:56 | $0.335 | 0.56 (32) | 0.91 (32) | 0.81 (16) | 1.00 | 1.00 |
+| 15 Nov | Full, cut short | 00:00 | $0.561 | 0.61 (70) | 0.93 (70) | 0.86 (36) | 1.00 | 1.00 |
+
+Routing covers the routing set's 138 dev questions each night, and SQL the SQL set's 28.
+
+- **The slices cost as sized:** $0.335 to $0.348 against the estimate of about $0.33, and their answers steps spent $0.156 to $0.165 of their $0.20 share.
+- **The same 32 questions scored 0.50 to 0.59 correct.** Fresh calls vary from night to night, and these differences are within the intervals. No night drew a verdict: there is no baseline yet (below).
+- **GitHub starts the nights late:** 3.5 to 5.5 hours after 20:30 UTC.
+
+## The first full night was cut short
+
+- **What happened.** On 15 November the answers step stopped at question 71 of 100. It exited 1 with no exception in its log, which is how `run_copilot.py` ends when a model call fails after its retries. The other four steps finished, and the night spent $0.56 of its $1.20. It was kept as partial, so it drew no verdict and didn't become the baseline.
+- **The likely cause: the small role's free quota.** Groq allows gpt-oss-20b about 200K tokens in any 24 hours.
+  - **A full night's need.** The copilot uses about 1.7K of them a question (copilot v2's 100 dev questions used 117,807 prompt and 56,014 completion tokens), so a full night needs about 174K.
+  - **What else was in the window.** Saturday's slice (about 52K; GitHub had started it at 00:56 UTC) and the live demo's calls, the canary's trial among them.
+  - **When it stopped.** The night had used about 105K, 12 minutes before Saturday's slice began to leave the window.
+  - **The provider's message stayed on the runner,** in the step's log.
+- **The fix: wait, with the same models (#119).** A step a model stops now exits 75 and runs again every ten minutes, for up to three hours a night, carrying on where it stopped. Production's fallback would have sent the small role to Cerebras's gpt-oss-120b, a different model, and a night is compared question by question with the baseline.
+- **The baseline is now the full night of 22 November,** so slices draw verdicts from 23 November.
+
 ## Limits
 
 - **One night.** The cost of a night varies with the length of the models' replies, and the first scheduled nights will show by how much. If a night is cut short, the slice shrinks again.
 - **A 32-question slice detects only large drops.** With the night's four tests adjusted together, a drop is significant only when at least 8 of the 32 questions change, all the same way: 25 points. On the Sunday run's 100 questions, 8 points can show. The slice's nights show the trend and catch a breakage; the full run is the finer test.
 - **The judges are models.** Their verdicts carry the caveats of [the judge guide](../concepts/llm-as-judge.md); the same judges grade every night, so the trend compares like with like.
 - **The interval on faithfulness is wide,** since only the doc and hybrid answers cite pages (21 of 40).
+- **A Sunday needs most of a day's free quota.** A full night (about 174K tokens) and a day's canary (about 20K) come close to Groq's 200K for the small model. Heavy use of the demo the day before can still cut a full night short, and it then draws no verdict.
