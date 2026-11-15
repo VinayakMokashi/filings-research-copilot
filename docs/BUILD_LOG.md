@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-15 · Phase 9 · The bandit's comparison shortened to a week
+
+- **Goal:** close Phase 9 sooner. Only the bandit's two weeks held the close to 29 November: the nightly's first baseline (22 November) and the drift checks' windows (about 21 November) are ready sooner.
+- **Done:**
+  - **The owner's choice,** made after the canary's first day and before the groups' rewards were compared: the comparison covers the canary's days from 15 to 22 November, not to 28 November ([ADR-0036](decisions/0036-bandit-online.md#amendment-15-november-a-week-instead-of-two)).
+  - **The canary (no deploy)** asks twenty questions on the weekdays of 16 to 20 November and ten on the other days, so the week asks 130, against 140 in two weeks of ten. A run without a number asks the day's.
+  - **The weekend stays at ten,** because Sunday's full nightly run needs most of Groq's free daily quota for the small role, which the canary's answers also draw on.
+  - **The runbook's report command** is now `--since 2026-11-15 --until 2026-11-23 --name one-week`.
+- **Commands:**
+  - the workflow's "Choose the day" script, run under `bash -e` for 15 days and inputs, with `date` and `jq` stubbed;
+  - `uvx --from actionlint-py actionlint .github/workflows/canary.yml`.
+- **Results:** the script chose twenty on 16 to 20 November and ten on every other day, kept a number given by hand, and refused one that isn't whole.
+- **Problems and fixes:** at twenty the rotation goes round unevenly: in the week, 20 questions are asked five times and 10 three times. Both groups draw from the same days and questions, so the comparison stays fair.
+- **Decisions:** [ADR-0036's amendment](decisions/0036-bandit-online.md#amendment-15-november-a-week-instead-of-two).
+- **Next:**
+  - the canary's days to 22 November, the first at twenty on 16 November;
+  - the full night of 22 November, the first baseline, and the first verdicts on 23 November;
+  - the bandit's report and the Phase 9 close from 23 November.
+
 ### 2026-11-15 · Phase 9 · The canary's first day: a dropped schedule, three slots, and a check that failed a whole answer
 
 - **Goal:** read the canary's first scheduled day, the first on the code that records retrieval similarity and drift.

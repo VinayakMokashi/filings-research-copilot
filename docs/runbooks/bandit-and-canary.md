@@ -10,7 +10,7 @@ How the online answer bandit and the canary that feeds it are switched on and of
 | Its cap | Firestore `quotas/<day>.bandit_usd` | The arms' and the judge's calls, at most $0.25 a UTC day. At the cap, answers take the fixed path on Groq |
 | Its state | Firestore `bandit/answer-arms` | Each arm's count of rewards and their sum |
 | Its log | Firestore `bandit-answers/<request id>` | The arm, the group (`policy`, `control`, `retry`), canary or visitor, the cost, and the rewards (`judge`, `thumbs`) |
-| The canary | `.github/workflows/canary.yml`, at 04:17 UTC (09:47 IST), with backup slots at 08:17 and 12:17 UTC, as `github-canary` | Ten of the routing set's 30 dev questions on the doc route a day, in turn, through the live API; metrics to `eval-history` (`canary/`). The first slot to run asks; a later one finds the day kept and stops |
+| The canary | `.github/workflows/canary.yml`, at 04:17 UTC (09:47 IST), with backup slots at 08:17 and 12:17 UTC, as `github-canary` | Ten of the routing set's 30 dev questions on the doc route a day (twenty on the weekdays of 16 to 20 November), in turn, through the live API; metrics to `eval-history` (`canary/`). The first slot to run asks; a later one finds the day kept and stops |
 
 ## Switch the bandit on or off
 
@@ -45,10 +45,10 @@ On the laptop, against a local API (`poe api` on port 8010): `uv run poe canary 
 GitHub may start a scheduled run hours late or drop it, as it dropped the first day's (15 November), so the canary has three slots. If a day still has no line by the evening, ask it by hand before 18:30 UTC, when the day ends in IST:
 
 ```bash
-gh workflow run canary.yml -f questions=10
+gh workflow run canary.yml
 ```
 
-The job "Choose the day" reads `canary/history.jsonl` first. A full run, scheduled or by hand, stops at a day already kept, so a day is never asked twice; a trial always asks, and keeps nothing. Identity federation lets only `main` call the API, so a run from another branch fails at its sign-in.
+Without a number it asks the day's: twenty on the weekdays of 16 to 20 November, ten on any other day. The job "Choose the day" reads `canary/history.jsonl` first. A full run, scheduled or by hand, stops at a day already kept, so a day is never asked twice; a trial always asks, and keeps nothing. Identity federation lets only `main` call the API, so a run from another branch fails at its sign-in.
 
 ## When the canary fails
 
@@ -60,15 +60,15 @@ An issue labelled `canary-failure` lists the questions whose requests failed and
 
 The first failure (#122, 15 November) was a model's slip, not an outage: Groq refused the answer check's reply as invalid JSON, and the whole answer failed. Since #123 the API lets such an answer out unchecked instead.
 
-## The two-week report
+## The comparison's report
 
-After the canary's 14 days, 15 to 28 November (`--until` is the first day left out):
+After the canary's days from 15 to 22 November, a week since [ADR-0036's amendment](../decisions/0036-bandit-online.md#amendment-15-november-a-week-instead-of-two) (`--until` is the first day left out):
 
 ```bash
-CLOUDSDK_ACTIVE_CONFIG_NAME=frc uv run poe bandit-report --since 2026-11-15 --until 2026-11-29
+CLOUDSDK_ACTIVE_CONFIG_NAME=frc uv run poe bandit-report --since 2026-11-15 --until 2026-11-23 --name one-week
 ```
 
-It reads the log as the owner, keeps a copy under `data/processed/bandit/`, and writes `eval/results/bandit-online/two-weeks/summary.json`: each group's answers and arms, the mean reward of each kind with intervals, the policy's difference from the control with a permutation test, and the decision by ADR-0036's rule. The report `docs/eval/bandit-online.md` is written from it. If the rule says off, switch the bandit and the canary off as above.
+It reads the log as the owner, keeps a copy under `data/processed/bandit/`, and writes `eval/results/bandit-online/one-week/summary.json`: each group's answers and arms, the mean reward of each kind with intervals, the policy's difference from the control with a permutation test, and the decision by ADR-0036's rule. The report `docs/eval/bandit-online.md` is written from it. If the rule says off, switch the bandit and the canary off as above.
 
 ## Export preference pairs
 
@@ -81,4 +81,4 @@ The first reads the deployment's ratings and picks as the owner and keeps a copy
 
 ## Costs
 
-The bandit's calls and its judge's are billed by Cerebras, at most $0.25 a day; the canary alone should cost $0.05 to $0.08 a day. The nightly evaluation and the paid fallback spend from the same key under their own caps, so Cerebras's own console shows all three together.
+The bandit's calls and its judge's are billed by Cerebras, at most $0.25 a day; the canary alone should cost $0.05 to $0.08 a day at ten questions, and twice that at twenty. The nightly evaluation and the paid fallback spend from the same key under their own caps, so Cerebras's own console shows all three together.

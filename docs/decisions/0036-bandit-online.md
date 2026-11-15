@@ -53,13 +53,27 @@ One fact changed the plan. From 3 to 15 November the live API answered 3 questio
 8. **The canary.**
    - **When:** a GitHub Actions workflow, once a day.
    - **What:** it asks 10 of the routing set's 30 dev questions on the doc route (the project's own; the test split stays closed), a different ten each day in turn, each in a new conversation, so the answer cache is bypassed.
+   - **How many, amended on 15 November:** twenty on the weekdays of 16 to 20 November, and ten on every other day ([amendment](#amendment-15-november-a-week-instead-of-two)).
    - **As whom:** its own account, `github-canary`, which may call the API and nothing else, reached keylessly through workload identity federation as the deploys are.
    - **What it keeps:** metrics only, in `canary/history.jsonl` on the `eval-history` branch. A failed request fails the run and opens an issue.
    - **When it runs:** only while the bandit is on.
 9. **The comparison, fixed before the data.**
-   - **When:** after 14 days with the bandit on.
+   - **When:** after 14 days with the bandit on; since the amendment, after the canary's days from 15 to 22 November.
    - **How:** the report compares the policy group's mean reward with the control group's, with bootstrap intervals and a permutation test. Canary rewards (the judge's) and visitor rewards (thumbs) are kept apart.
    - **The rule (the owner's):** the bandit stays on only if the policy's mean reward on the canary's judged answers, the larger sample, is at least the control's. Otherwise the cap is set to 0. When the interval spans zero, the report says the two can't be told apart.
+
+## Amendment (15 November): a week instead of two
+
+After the canary's first day, and before the groups' rewards were compared, the owner shortened the comparison by a week:
+
+- **The window:** the canary's days from 15 to 22 November, not 15 to 28 November.
+- **The sample:** the canary asks twenty questions on the weekdays of 16 to 20 November and ten on the other days. The week asks 130 questions, against 140 in two weeks of ten, so the comparison keeps about the same power.
+- **The weekend stays at ten,** because Sunday's full nightly run needs most of Groq's free daily quota for the small role ([report](../eval/nightly.md#the-first-full-night-was-cut-short)), which the canary's answers also draw on.
+- **The money:** about $0.09 a day on the days of twenty, from the first day's $0.044 for ten, inside the same $0.25 cap.
+- **The questions:** at twenty the rotation goes round unevenly. In the week, 20 questions are asked five times and 10 three times. Both groups draw from the same days and the same questions, so the comparison stays fair.
+- **Unchanged:** the arms, the coin flip, the policy, the rewards and the rule.
+
+The end date moved to save time, not because of a result: a date chosen after looking at the difference would bias it.
 
 ## Evidence so far
 
@@ -69,14 +83,14 @@ One fact changed the plan. From 3 to 15 November the live API answered 3 questio
   - GitHub never started its scheduled run, so the day was asked by hand at 10:19 UTC. The workflow then got two backup slots and a check that keeps one canary a day (#121).
   - Nine of the ten questions came back, eight answers and a refusal, all judged; seven were faithful.
   - One failed: Groq refused the answer check's reply as invalid JSON, and the whole answer failed (#122). Since #123 the API lets such an answer out unchecked.
-- **The comparison** covers the canary's days from 15 to 28 November, and its report follows them.
+- **The comparison** covers the canary's days from 15 to 22 November (the amendment), and its report follows them.
 
 ## Consequences
 
 - **Money.** The bandit can spend at most $0.25 a day, about $7.50 a month; the canary alone is expected at $0.05 to $0.08 a day. With the nightly evaluation (at most about $15 a month) and the paid fallback (at most $0.50 a day), every Cerebras spend is capped. The trial credit's end on 22 December doesn't change this bill, which Cerebras sends.
 - **A judged visitor answer waits for the judge,** a few seconds, before its stream ends.
-- **The canary counts against the day's total quota** of 200 questions, ten a day.
-- **The comparison's power is low.** With about 70 judged answers in each group after two weeks, only a difference of roughly 12 to 16 points would show, depending on the share judged faithful. Most likely the report will say the policy and the fixed arm can't be told apart, and the owner's rule then decides.
+- **The canary counts against the day's total quota** of 200 questions, ten a day, or twenty on the weekdays of 16 to 20 November.
+- **The comparison's power is low.** With about 65 judged answers in each group after the week (70 in the plan of two weeks), only a difference of roughly 12 to 17 points would show, depending on the share judged faithful. Most likely the report will say the policy and the fixed arm can't be told apart, and the owner's rule then decides.
 - **A judge shares a model with an arm.** The judge is Qwen, which is also the `fast` arm, as in ADR-0029; the report says so.
 
 ## References

@@ -29,7 +29,7 @@ The answer call is most of a question's cost, and the strong model writes every 
    - **Shared state.** Each arm's count of rewards and their sum live in Firestore, raised with atomic increments, so no transaction is needed.
    - **Rewards.** A thumbs up is 1 and a thumbs down 0. The faithfulness judge gives 1 when every cited sentence is supported and 0 otherwise, refusals included, on half of the visitors' answers and on every canary answer. The reward is quality alone (λ = 0): the cap bounds the money, and each answer's cost is logged.
    - **What it doesn't learn from:** a second answer (it follows a thumbs down, so its question is harder than usual) and an answer from the cache.
-   - **The canary.** With almost no visitors, a daily job asks ten of the routing set's dev questions on the doc route through the live API, so the bandit has rewards to learn from.
+   - **The canary.** With almost no visitors, a daily job asks ten of the routing set's dev questions on the doc route through the live API (twenty on the weekdays of 16 to 20 November), so the bandit has rewards to learn from.
 
 ## Where it lives in the code
 
@@ -45,7 +45,7 @@ The answer call is most of a question's cost, and the strong model writes every 
 | `copilot.api.bandit.OnlineBandit` | The log of each answer an arm wrote, the judge on a sample, rewards from the judge and from thumbs |
 | `copilot.api.firestore` (`FirestoreArmStats`, `FirestoreBanditLog`, `FirestoreSpend`) | `bandit/answer-arms`, `bandit-answers/<request id>`, `quotas/<day>.bandit_usd` |
 | `copilot.eval.canary`, `scripts/canary.py`, `.github/workflows/canary.yml` | The daily canary |
-| `copilot.eval.bandit_online`, `scripts/bandit_report.py` | The two-week comparison, by kind of reward, and ADR-0036's decision |
+| `copilot.eval.bandit_online`, `scripts/bandit_report.py` | The online comparison, by kind of reward, and ADR-0036's decision |
 
 ## How we measured it
 
@@ -60,7 +60,7 @@ On FinanceBench dev ([report](../eval/bandit-routing.md)), the three arms answer
 
 Both learners earn less than the best fixed arm at every λ, so the copilot kept a fixed arm, and the bandit waited behind `FRC_ANSWER_POLICY` for Phase 9's rewards ([ADR-0029](../decisions/0029-bandit-routing.md)).
 
-**Online,** the policy and the control are compared after two weeks with the canary running, on the canary's judged answers and apart on visitors' thumbs: each group's mean reward with a bootstrap interval, and their difference with a two-sample permutation test (`poe bandit-report`). The rule was set before the data: the bandit stays on only if the policy earns at least what the control does. With about 70 judged answers a group, only a difference of roughly 12 to 16 points would show.
+**Online,** the policy and the control are compared after a week of the canary, 15 to 22 November, on the canary's judged answers and apart on visitors' thumbs: each group's mean reward with a bootstrap interval, and their difference with a two-sample permutation test (`poe bandit-report`). Two weeks were planned; after the first day, before any comparison, the owner shortened them to one, with twenty questions on the weekdays instead of ten. The rule was set before the data: the bandit stays on only if the policy earns at least what the control does. With about 65 judged answers a group, only a difference of roughly 12 to 17 points would show.
 
 **The first canary questions**, a trial of two on 15 November, both went to the control arm and were both judged faithful. The bandit spent $0.0103 on them: about $0.002 for each answer call and $0.003 for each judge's call, since the judge reads every cited source on Cerebras's dearer Qwen. Ten a day should cost about $0.05.
 

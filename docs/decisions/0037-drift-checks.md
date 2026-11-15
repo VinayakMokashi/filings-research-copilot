@@ -11,7 +11,7 @@ Step 9.5 asks for drift checks on retrieval scores, the refusal rate and latency
 The data available:
 
 - **The nightly evaluation** asks the same questions every night, so any movement is the system's own, not the questions'. But its seconds are paced for the free tier's limits (ADR-0034's report says so), and they measure throughput, not a reader's wait.
-- **The daily canary** ([ADR-0036](0036-bandit-online.md)) asks the live API ten of the routing set's questions, unpaced, each question every three days.
+- **The daily canary** ([ADR-0036](0036-bandit-online.md)) asks the live API ten of the routing set's questions a day, unpaced, so each question comes round every three days (twenty a day on the weekdays of 16 to 20 November).
 - **Visitors' traffic** was 3 questions in twelve days, too thin for daily aggregates.
 - **No retrieval score was recorded** anywhere; the nightly rows held correctness, faithfulness, cost and seconds.
 
