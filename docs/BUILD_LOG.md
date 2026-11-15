@@ -15,6 +15,41 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-15 · Phase 9 · The first full night cut short, a night that waits out a spent quota, and steps 9.5 and 9.4 live
+
+- **Goal:** read the first full nightly run, the regression baseline. Then deploy steps 9.5 and 9.4 (#118), which had waited for it.
+- **Done:**
+  - **The full night was cut short.** Its answers step stopped at question 71 of 100. The other four steps finished, and the night spent $0.56 of $1.20. It was kept as partial, so it isn't the baseline ([report](eval/nightly.md#the-first-full-night-was-cut-short)).
+  - **The likely cause is the small role's free quota.** Groq allows gpt-oss-20b about 200K tokens in any 24 hours, and a full night needs about 174K. The window also still held Saturday's slice, about 52K.
+  - **The fix (#119, merged into #118's branch).** The step scripts exit 75 when a model stops them. A night runs such a step again every ten minutes, for up to three hours, and it carries on where it stopped. The job's limit went from 240 to 300 minutes.
+  - **#118 and #119 deployed together** (`051336f`, 01:40 UTC):
+    - the drift checks in each night's and each canary day's history;
+    - each answer's retrieval similarity;
+    - the Search page.
+  - **The search page, checked live** ([report](eval/interleaving.md)):
+    - a search over one company's three filings returned 8 results, alternating dense and hybrid search;
+    - a click was credited to hybrid once, a repeat wasn't counted, and an unknown search got 404;
+    - Firestore kept the teams and the click, not the query;
+    - the check's document was deleted.
+- **Commands:**
+  - `gh run view 43655984958 --log`, and the night's file on `eval-history`;
+  - `uv run poe drift-check --window 2`;
+  - `private/tools/check_live.py`, and a check of the search page through the private API.
+- **Results:**
+  - **The first nights** ([report](eval/nightly.md#the-first-nights)): the slices cost $0.335 to $0.348 and scored 0.50 to 0.59 correct on the same 32 questions.
+  - **Drift, with windows of two nights:** refusals were 0.109 in the first two nights and 0.109 in the last two, on 46 questions, p = 1.0 ([report](eval/drift.md)).
+  - `poe check`: 798 passed, 7 deselected.
+- **Problems and fixes:**
+  - **A step's log stays on the runner,** since it could quote a question, so the night couldn't say why its model call failed. A step a model stopped now says whether a quota stayed spent or a call kept failing, still without the provider's message.
+  - **Production's fallback would have changed the model.** It sends the small role to Cerebras's gpt-oss-120b, and a night is compared question by question with its baseline. So a night waits instead.
+  - **The coin looked fixed.** The check's four rounds all put dense search first, which a fair coin does once in 16. Production draws the coin from the system's entropy at each tie, so it was chance.
+- **Decisions:** none new. ADR-0034's evidence and consequences were updated, and ADR-0037 and ADR-0038 got their first evidence.
+- **Next:**
+  - The canary's first scheduled day (15 November) is the first to carry similarity and drift.
+  - The full night of 22 November becomes the baseline, so slices draw verdicts from 23 November.
+  - Drift's first comparisons with the default windows: the canary's about 20 November, similarity's about 21 November.
+  - The bandit's report on or after 29 November, then the Phase 9 close.
+
 ### 2026-11-15 · Phase 9 · Feedback as preference pairs, the answer bandit online, and a daily canary
 
 - **Goal:** steps 9.2 and 9.3: keep readers' ratings as preference pairs, and run the answer bandit online within its own cap of $0.25 a day ([ADR-0035](decisions/0035-preference-pairs.md), [ADR-0036](decisions/0036-bandit-online.md)).
