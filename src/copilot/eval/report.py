@@ -31,6 +31,9 @@ from copilot.eval.stats import (
 )
 
 RESULTS_DIR = Path("eval/results")
+# The exit code of a run a model stopped (a spent quota, an outage): run it again later and
+# it carries on where it stopped (sysexits' EX_TEMPFAIL)
+RETRY_LATER = 75
 
 
 class MetricSummary(BaseModel):

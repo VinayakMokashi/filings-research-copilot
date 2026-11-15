@@ -18,7 +18,7 @@ Routers (`--router`):
 
 Each decision is appended to data/processed/routing/<run>/<split>/decisions.jsonl as it
 arrives, and a rerun skips the questions already there; a run stopped by a quota or an
-outage exits with 1, so run it again. Then eval/results/routing/<run>/<split>/ gets
+outage exits with 75, so run it again. Then eval/results/routing/<run>/<split>/ gets
 items.jsonl (each decision with its latency, tokens and cost), summary.json, summary.md
 and confusion.md.
 
@@ -61,7 +61,14 @@ from copilot.agents.router import (
 )
 from copilot.config import Settings, get_settings
 from copilot.eval import routing
-from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
+from copilot.eval.report import (
+    RESULTS_DIR,
+    RETRY_LATER,
+    RunSummary,
+    summarise,
+    summarise_by,
+    write_run,
+)
 from copilot.eval.splits import HeldOutError
 from copilot.ingest.embed import BGE_MODEL, FastEmbedDense
 from copilot.ingest.universe import read_companies
@@ -229,7 +236,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 except LLMError as exc:
                     reason = "the model's quota is used up" if exc.rate_limited else str(exc)[:200]
                     print(f"Stopped at {query.id}: {reason}. Run again later.")
-                    return 1
+                    return RETRY_LATER
                 record = {"id": query.id, **asdict(decision)}
                 out.write(json.dumps(record, ensure_ascii=False) + "\n")
                 out.flush()

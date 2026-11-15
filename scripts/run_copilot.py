@@ -46,7 +46,14 @@ from copilot.agents.runner import Copilot, TraceWriter
 from copilot.answer.hybrid import database_source
 from copilot.config import get_settings
 from copilot.eval.financebench import Question
-from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
+from copilot.eval.report import (
+    RESULTS_DIR,
+    RETRY_LATER,
+    RunSummary,
+    summarise,
+    summarise_by,
+    write_run,
+)
 from copilot.eval.splits import load_split
 from copilot.llm import LLMError
 from copilot.llm.gateway import token_cost
@@ -200,7 +207,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 except LLMError as exc:
                     reason = "a model's quota is used up" if exc.rate_limited else str(exc)[:200]
                     print(f"Stopped at {question.id}: {reason}. Run again later.")
-                    return 1
+                    return RETRY_LATER
                 state = copilot.graph.get_state(config).values
                 result = state.get("result", {})
                 decision = state.get("decision", {})
