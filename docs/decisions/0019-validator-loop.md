@@ -46,6 +46,7 @@ On the doc agent's 100 stored dev answers, run through the loop and graded by th
 - **Judgement questions lose their judgement** when it rests on general knowledge, a usual benchmark or an industry norm, rather than on the sources. The copilot's rules already forbid outside knowledge; the loop enforces them. Letting an answer give an assessment labelled as its own, apart from the cited facts, is an open question for a later phase.
 - **Checked is not certain:** the checker passed 10 of the 35 answers the judge found unfaithful.
 - **The graph's loop is an edge,** `validate` to `revise` and back ([ADR-0018](0018-graph-design.md)); the end-to-end evaluation (step 5.6) measures the copilot with it in place.
+- **A check that can't run** lets the answer out unchecked in the API, and the response says so (`checked: false`). That happens when the checker's quota is spent or, since 15 November, when Groq refuses its reply as invalid JSON, which once failed a whole answer on the live API. An evaluation run stops instead and resumes later, so it never counts an answer it didn't check.
 
 ## References
 
