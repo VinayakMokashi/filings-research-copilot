@@ -20,6 +20,9 @@ Usage (the models come from the run's environment, as in ADR-0024's evaluations)
 
 With --history (the `nightly` folder of a copy of the eval-history branch), the night also
 carries the drift checks of `copilot.eval.drift` over the earlier nights and itself.
+
+With --wait-minutes, a step a model stopped (a spent quota, an outage) runs again every ten
+minutes and carries on where it stopped, until the night has waited that long in all.
 """
 
 from __future__ import annotations
@@ -71,6 +74,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--history", type=Path, help="the eval-history branch's nightly folder")
     parser.add_argument("--date", default=datetime.now(IST).date().isoformat())
     parser.add_argument("--slice", type=Path, default=SLICE_FILE)
+    parser.add_argument(
+        "--wait-minutes",
+        type=float,
+        default=0.0,
+        help="how long in all the night may wait for a model that stopped a step",
+    )
     args = parser.parse_args(argv)
 
     settings = get_settings()
@@ -85,12 +94,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         ids, ids_file = [question.id for question in questions], None
 
     started = datetime.now(UTC)
-    outcomes = run_steps(steps(run, results, ids_file), args.budget, ledger, out / "logs", ROOT)
+    night_steps = steps(run, results, ids_file)
+    wait_s = args.wait_minutes * 60
+    outcomes = run_steps(night_steps, args.budget, ledger, out / "logs", ROOT, wait_s=wait_s)
     for o in outcomes:
         note = " (stopped by its cap)" if o["stopped_by_cap"] else f" ({o.get('error')})"
+        reruns = f", run again {o['reruns']} times" if o["reruns"] else ""
         print(
-            f"{o['step']}: exit {o['exit']} in {o['seconds']} s, ${o['spent_usd']:.4f} of the "
-            f"night spent, cap ${o['cap_usd']:.4f}{note if o['exit'] else ''}"
+            f"{o['step']}: exit {o['exit']} in {o['seconds']} s{reruns}, ${o['spent_usd']:.4f} of "
+            f"the night spent, cap ${o['cap_usd']:.4f}{note if o['exit'] else ''}"
         )
 
     answers_file = settings.data_dir / "processed" / "answers" / run / "dev" / "answers.jsonl"
