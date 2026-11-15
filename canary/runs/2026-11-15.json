@@ -1,0 +1,170 @@
+{
+  "date": "2026-11-15",
+  "started": "2026-11-15T10:20:06+00:00",
+  "finished": "2026-11-15T10:22:19+00:00",
+  "commit": "e62d026041343b9217f8c3fd6dc955e007d35128",
+  "summary": {
+    "questions": 10,
+    "ok": 9,
+    "failed": 1,
+    "busy": 0,
+    "answered": 8,
+    "routes": {
+      "doc": 9
+    },
+    "arms": {
+      "strong": 4,
+      "strong-low": 2,
+      "fast": 3
+    },
+    "groups": {
+      "control": 3,
+      "policy": 6
+    },
+    "judged": 9,
+    "faithful": 7,
+    "median_seconds": 8.86,
+    "max_seconds": 11.76
+  },
+  "drift": {
+    "window": 3,
+    "periods": {},
+    "checks": {}
+  },
+  "rows": [
+    {
+      "id": "r027",
+      "ok": false,
+      "error": "error event",
+      "route": "doc",
+      "similarity": 0.7905407,
+      "seconds": 50.43
+    },
+    {
+      "id": "r037",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.8200197,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 10.3
+    },
+    {
+      "id": "r038",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.767811,
+      "answered": true,
+      "cached": false,
+      "arm": "strong-low",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.85
+    },
+    {
+      "id": "r039",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.78913015,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.03
+    },
+    {
+      "id": "r040",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.68959016,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": false,
+      "seconds": 7.96
+    },
+    {
+      "id": "r041",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.6526977,
+      "answered": false,
+      "cached": false,
+      "arm": "strong-low",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": false,
+      "seconds": 9.82
+    },
+    {
+      "id": "r042",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.6935771,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 9.1
+    },
+    {
+      "id": "r043",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7860554,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.04
+    },
+    {
+      "id": "r044",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.78106266,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 11.76
+    },
+    {
+      "id": "r045",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.77419794,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.86
+    }
+  ]
+}
