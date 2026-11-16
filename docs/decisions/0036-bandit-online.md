@@ -83,14 +83,15 @@ The end date moved to save time, not because of a result: a date chosen after lo
   - GitHub never started its scheduled run, so the day was asked by hand at 10:19 UTC. The workflow then got two backup slots and a check that keeps one canary a day (#121).
   - Nine of the ten questions came back, eight answers and a refusal, all judged; seven were faithful.
   - One failed: Groq refused the answer check's reply as invalid JSON, and the whole answer failed (#122). Since #123 the API lets such an answer out unchecked.
+- **16 November lost eleven questions.** GitHub started 15 November's last slot at 18:48 UTC, after midnight IST, so the canary asked 16 November's twenty on 15 November's daily quota (UTC), with nine questions left on it. Nine came back, all judged, eight faithful; eleven got HTTP 429 (#126). Since #127 the canary's day is the date in UTC, the quota's day. The comparison keeps the nine.
 - **The comparison** covers the canary's days from 15 to 22 November (the amendment), and its report follows them.
 
 ## Consequences
 
 - **Money.** The bandit can spend at most $0.25 a day, about $7.50 a month; the canary alone is expected at $0.05 to $0.08 a day. With the nightly evaluation (at most about $15 a month) and the paid fallback (at most $0.50 a day), every Cerebras spend is capped. The trial credit's end on 22 December doesn't change this bill, which Cerebras sends.
 - **A judged visitor answer waits for the judge,** a few seconds, before its stream ends.
-- **The canary counts against the day's total quota** of 200 questions, ten a day, or twenty on the weekdays of 16 to 20 November.
-- **The comparison's power is low.** With about 65 judged answers in each group after the week (70 in the plan of two weeks), only a difference of roughly 12 to 17 points would show, depending on the share judged faithful. Most likely the report will say the policy and the fixed arm can't be told apart, and the owner's rule then decides.
+- **The canary counts against the day's total quota** of 200 questions, ten a day, or twenty on the weekdays of 16 to 20 November. Its own quota, as a visitor, is twenty a day, so the days of twenty leave no room for a trial.
+- **The comparison's power is low.** With about 60 judged answers in each group after the week (65 planned before 16 November lost eleven questions; 70 in the plan of two weeks), only a difference of roughly 12 to 17 points would show, depending on the share judged faithful. Most likely the report will say the policy and the fixed arm can't be told apart, and the owner's rule then decides.
 - **A judge shares a model with an arm.** The judge is Qwen, which is also the `fast` arm, as in ADR-0029; the report says so.
 
 ## References
