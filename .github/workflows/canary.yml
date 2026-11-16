@@ -60,7 +60,11 @@ jobs:
         env:
           ASKED: ${{ inputs.questions }}
         run: |
-          day="$(TZ=Asia/Kolkata date +%F)"
+          # The day is the date in UTC, when the API's daily quotas reset: the canary may ask
+          # twenty questions a day. The slots fall on the same date in IST, and one that
+          # GitHub starts hours late, even after midnight IST, still counts for its own date,
+          # so it can't ask the next day's questions on this day's quota (#126).
+          day="$(date -u +%F)"
           questions="$ASKED" # a scheduled run has no inputs
           if [ -z "$questions" ]; then
             # The day's number: twenty on the weekdays of 16 to 20 November, so that the
