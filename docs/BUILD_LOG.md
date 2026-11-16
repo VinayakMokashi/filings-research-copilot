@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-16 · Phase 9 · A late slot asked the next day's canary on the wrong quota
+
+- **Goal:** find why eleven of 16 November's twenty canary questions failed (#126), and stop it before the next days of twenty.
+- **Done:**
+  - **The cause.** GitHub started 15 November's last slot (12:17 UTC) at 18:48 UTC, six and a half hours late and after midnight IST. "Choose the day" took the IST date, so the run asked 16 November's twenty questions. But the API's quotas count from midnight UTC, and the canary's visitor (`canary`) may ask twenty a day. 15 November's ten questions and a one-question trial had used eleven, so the run's first nine came back and the other eleven got HTTP 429 before any model call.
+  - **The fix (#127, no deploy):** the canary's day is the date in UTC, in "Choose the day" and in `scripts/canary.py`'s default. The slots (04:17, 08:17 and 12:17 UTC) fall on the same date in IST, and a slot started late still asks for its own date.
+  - **The day stays as kept:** nine answers, all judged, eight faithful; groups policy 5, control 4. Asking it again would have counted nine answers twice in the comparison, so it wasn't. Its answers came at 00:18 IST rather than the usual hour, and the first took 77 s, most likely a cold start.
+  - **Docs:** the runbook (a day is a date in UTC; on a day of twenty a trial would use the canary's quota; the second failure), ADR-0036's evidence and consequences, the bandit guide.
+- **Commands:**
+  - the "Choose the day" script under `bash -e`, with `date` stubbed to answer only `date -u`;
+  - `uvx --from actionlint-py actionlint .github/workflows/canary.yml`;
+  - `uv run poe check`.
+- **Results:** the script chose the same days and numbers as before, now from the UTC date; actionlint was clean; the checks passed.
+- **Problems and fixes:** the cause above. A run late in the evening, by hand or by a slot, can no longer ask the next day's questions on the day's quota.
+- **Decisions:** none new; [ADR-0036's evidence](decisions/0036-bandit-online.md#evidence-so-far) records the lost questions.
+- **Next:** the days of twenty from 17 November, at the usual hour; the full night of 22 November; the close from 23 November.
+
+---
+
 ### 2026-11-15 · Phase 9 · The bandit's comparison shortened to a week
 
 - **Goal:** close Phase 9 sooner. Only the bandit's two weeks held the close to 29 November: the nightly's first baseline (22 November) and the drift checks' windows (about 21 November) are ready sooner.

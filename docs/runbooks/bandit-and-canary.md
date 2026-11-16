@@ -30,7 +30,7 @@ gh workflow run canary.yml -f questions=2
 gh run watch "$(gh run list --workflow canary.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
 
-The job summary has a row per question: route, arm, group, answered, judged, faithful and seconds. A trial spends like any canary question, inside the bandit's cap.
+The job summary has a row per question: route, arm, group, answered, judged, faithful and seconds. A trial spends like any canary question, inside the bandit's cap. It also counts against the canary's twenty questions a day (UTC), so on a day of twenty (17 to 20 November) it would leave the day's last questions an HTTP 429: run trials on a day of ten.
 
 On the laptop, against a local API (`poe api` on port 8010): `uv run poe canary --api-url http://127.0.0.1:8010 --per-day 2 --out dist/canary`.
 
@@ -42,13 +42,15 @@ On the laptop, against a local API (`poe api` on port 8010): `uv run poe canary 
 
 ## A day with no canary
 
-GitHub may start a scheduled run hours late or drop it, as it dropped the first day's (15 November), so the canary has three slots. If a day still has no line by the evening, ask it by hand before 18:30 UTC, when the day ends in IST:
+GitHub may start a scheduled run hours late or drop it, as it dropped the first day's (15 November), so the canary has three slots. If a day still has no line by the evening, ask it by hand before midnight UTC (05:30 IST), when the canary's day ends:
 
 ```bash
 gh workflow run canary.yml
 ```
 
 Without a number it asks the day's: twenty on the weekdays of 16 to 20 November, ten on any other day. The job "Choose the day" reads `canary/history.jsonl` first. A full run, scheduled or by hand, stops at a day already kept, so a day is never asked twice; a trial always asks, and keeps nothing. Identity federation lets only `main` call the API, so a run from another branch fails at its sign-in.
+
+A day is a date in UTC, like the API's daily quotas. The canary asks as the visitor `canary`, which the API allows twenty questions a day from midnight UTC (`FRC_API_DAILY_QUESTIONS`), so a day of twenty uses the whole quota. A slot that GitHub starts hours late still asks for its own date.
 
 ## When the canary fails
 
@@ -59,6 +61,8 @@ An issue labelled `canary-failure` lists the questions whose requests failed and
 3. **Run a trial** once the cause is fixed, then close the issue with the cause.
 
 The first failure (#122, 15 November) was a model's slip, not an outage: Groq refused the answer check's reply as invalid JSON, and the whole answer failed. Since #123 the API lets such an answer out unchecked instead.
+
+The second (#126, 16 November) was the canary's own quota. GitHub started 15 November's last slot at 18:48 UTC, after midnight IST, and the canary then took its day from the IST date. So it asked 16 November's twenty questions on 15 November's quota, which eleven questions had already used; the last eleven got HTTP 429 before any model call. Since #127 the day is the date in UTC. An HTTP 429 always means a daily quota is used up: the canary's twenty, or everyone's 200.
 
 ## The comparison's report
 
