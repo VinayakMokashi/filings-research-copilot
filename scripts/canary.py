@@ -20,7 +20,7 @@ import argparse
 import json
 import os
 from collections.abc import Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import httpx
@@ -29,20 +29,18 @@ from copilot.eval.canary import PER_DAY, ask, doc_questions, failed, summary, to
 from copilot.eval.drift import canary_drift
 from copilot.eval.routing import load_queries
 
-IST = timedelta(hours=5, minutes=30)
-
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--api-url", required=True)
-    parser.add_argument("--date", type=date.fromisoformat, help="the day, IST (default today)")
+    parser.add_argument("--date", type=date.fromisoformat, help="the day, UTC (default today)")
     parser.add_argument("--per-day", type=int, default=PER_DAY)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--history", type=Path, help="the eval-history branch's canary folder")
     args = parser.parse_args(argv)
 
     started = datetime.now(UTC)
-    day = args.date or (started + IST).date()
+    day = args.date or started.date()
     questions = todays(doc_questions(load_queries("dev")), day, args.per_day)
     token = os.environ.get("CANARY_ID_TOKEN", "")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
