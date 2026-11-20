@@ -1,0 +1,363 @@
+{
+  "date": "2026-11-20",
+  "started": "2026-11-20T12:53:57+00:00",
+  "finished": "2026-11-20T12:58:27+00:00",
+  "commit": "0aa056f3a5531f767db73a737b1eda62cae3c8a4",
+  "summary": {
+    "questions": 20,
+    "ok": 20,
+    "failed": 0,
+    "busy": 0,
+    "answered": 19,
+    "routes": {
+      "doc": 20
+    },
+    "arms": {
+      "strong": 13,
+      "fast": 7
+    },
+    "groups": {
+      "control": 13,
+      "policy": 7
+    },
+    "judged": 20,
+    "faithful": 17,
+    "median_seconds": 11.37,
+    "max_seconds": 46.79
+  },
+  "drift": {
+    "window": 3,
+    "periods": {
+      "seconds": {
+        "reference": [
+          "2026-11-15",
+          "2026-11-16",
+          "2026-11-17"
+        ],
+        "recent": [
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20"
+        ]
+      },
+      "similarity": {
+        "reference": [
+          "2026-11-15",
+          "2026-11-16",
+          "2026-11-17"
+        ],
+        "recent": [
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20"
+        ]
+      }
+    },
+    "checks": {
+      "seconds": {
+        "questions": 20,
+        "reference": 14.922,
+        "recent": 13.49,
+        "difference": -1.432,
+        "low": -8.4175,
+        "high": 2.659,
+        "p": 0.9955004499550045,
+        "p_holm": 1.0,
+        "drift": false
+      },
+      "similarity": {
+        "questions": 20,
+        "reference": 0.7508,
+        "recent": 0.7508,
+        "difference": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "p": 1.0,
+        "p_holm": 1.0,
+        "drift": false
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "r027",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7905407,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 46.79
+    },
+    {
+      "id": "r037",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.8200197,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 13.01
+    },
+    {
+      "id": "r038",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.767811,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 10.07
+    },
+    {
+      "id": "r039",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.78913015,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": false,
+      "seconds": 8.89
+    },
+    {
+      "id": "r040",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.68959016,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": false,
+      "seconds": 8.55
+    },
+    {
+      "id": "r041",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.6526977,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 15.06
+    },
+    {
+      "id": "r042",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.6935771,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 10.02
+    },
+    {
+      "id": "r043",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7860554,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 11.32
+    },
+    {
+      "id": "r044",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.78106266,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.79
+    },
+    {
+      "id": "r045",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.77419794,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.78
+    },
+    {
+      "id": "r001",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.6917415,
+      "answered": false,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 14.95
+    },
+    {
+      "id": "r002",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7032169,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 11.42
+    },
+    {
+      "id": "r003",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.76147175,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 9.3
+    },
+    {
+      "id": "r007",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7360943,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 11.85
+    },
+    {
+      "id": "r008",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7303573,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 13.47
+    },
+    {
+      "id": "r009",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7181605,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 10.01
+    },
+    {
+      "id": "r010",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7581271,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": false,
+      "seconds": 17.96
+    },
+    {
+      "id": "r011",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.75860137,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 14.44
+    },
+    {
+      "id": "r012",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.76222134,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 15.96
+    },
+    {
+      "id": "r013",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.8521451,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 9.16
+    }
+  ]
+}
