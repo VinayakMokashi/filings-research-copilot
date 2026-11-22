@@ -1,0 +1,2639 @@
+{
+ "date": "2026-11-22",
+ "set": "full",
+ "run": "nightly-2026-11-22-full",
+ "runner": "github-actions",
+ "commit": "0aa056f3a5531f767db73a737b1eda62cae3c8a4",
+ "started": "2026-11-22T00:32:07+00:00",
+ "finished": "2026-11-22T02:22:29+00:00",
+ "models": {
+  "strong": "cerebras/gpt-oss-120b",
+  "fast": "cerebras/qwen-3.8-27b",
+  "small": "groq/openai/gpt-oss-20b"
+ },
+ "budget_usd": 1.2,
+ "spent_usd": 0.7562,
+ "spent_by_model": {
+  "cerebras/gpt-oss-120b": 0.4087,
+  "cerebras/qwen-3.8-27b": 0.3224,
+  "groq/openai/gpt-oss-20b": 0.0251
+ },
+ "questions": 100,
+ "partial": false,
+ "steps": [
+  {
+   "step": "answers",
+   "exit": 0,
+   "cap_usd": 0.6,
+   "spent_usd": 0.4819,
+   "stopped_by_cap": false,
+   "failed": false,
+   "reruns": 2,
+   "seconds": 5379.3
+  },
+  {
+   "step": "judge",
+   "exit": 0,
+   "cap_usd": 0.684,
+   "spent_usd": 0.5478,
+   "stopped_by_cap": false,
+   "failed": false,
+   "reruns": 0,
+   "seconds": 306.4
+  },
+  {
+   "step": "faithfulness",
+   "exit": 0,
+   "cap_usd": 0.78,
+   "spent_usd": 0.6286,
+   "stopped_by_cap": false,
+   "failed": false,
+   "reruns": 0,
+   "seconds": 244.2
+  },
+  {
+   "step": "routing",
+   "exit": 0,
+   "cap_usd": 0.984,
+   "spent_usd": 0.6872,
+   "stopped_by_cap": false,
+   "failed": false,
+   "reruns": 0,
+   "seconds": 452.6
+  },
+  {
+   "step": "sql",
+   "exit": 0,
+   "cap_usd": 1.2,
+   "spent_usd": 0.7562,
+   "stopped_by_cap": false,
+   "failed": false,
+   "reruns": 0,
+   "seconds": 239.5
+  }
+ ],
+ "summary": {
+  "correct": {
+   "mean": 0.66,
+   "low": 0.57,
+   "high": 0.75,
+   "n": 100
+  },
+  "answered": {
+   "mean": 0.91,
+   "low": 0.85,
+   "high": 0.96,
+   "n": 100
+  },
+  "faithful": {
+   "mean": 0.7692307692307693,
+   "low": 0.6538461538461539,
+   "high": 0.8846153846153846,
+   "n": 52
+  },
+  "routing_accuracy": {
+   "mean": 0.9855072463768116,
+   "low": 0.9486289239638097,
+   "high": 0.9982400159788654,
+   "n": 138
+  },
+  "sql_accuracy": {
+   "mean": 1.0,
+   "low": 0.8765638814997361,
+   "high": 1.0,
+   "n": 28
+  },
+  "cost_per_question": 0.00493,
+  "median_seconds": 30.7,
+  "p95_seconds": 80.8
+ },
+ "tests": [],
+ "regression": null,
+ "copilot": [
+  {
+   "id": "financebench_id_03029",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003583,
+   "seconds": 16.62,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04672",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.0036,
+   "seconds": 16.47,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00499",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00841,
+   "seconds": 73.97,
+   "similarity": 0.7655
+  },
+  {
+   "id": "financebench_id_01226",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.009893,
+   "seconds": 79.25,
+   "similarity": 0.736
+  },
+  {
+   "id": "financebench_id_01865",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.007347,
+   "seconds": 57.18,
+   "similarity": 0.7096
+  },
+  {
+   "id": "financebench_id_00807",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.007444,
+   "seconds": 55.48,
+   "similarity": 0.7384
+  },
+  {
+   "id": "financebench_id_00941",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003468,
+   "seconds": 30.74,
+   "similarity": 0.7431
+  },
+  {
+   "id": "financebench_id_01858",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004008,
+   "seconds": 39.08,
+   "similarity": 0.7918
+  },
+  {
+   "id": "financebench_id_02987",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003893,
+   "seconds": 17.26,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_07966",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003848,
+   "seconds": 17.25,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04735",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003744,
+   "seconds": 17.1,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_07507",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003827,
+   "seconds": 17.67,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_03856",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003737,
+   "seconds": 17.06,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00438",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003908,
+   "seconds": 33.28,
+   "similarity": 0.6893
+  },
+  {
+   "id": "financebench_id_00591",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00379,
+   "seconds": 34.1,
+   "similarity": 0.7213
+  },
+  {
+   "id": "financebench_id_03882",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003624,
+   "seconds": 16.4,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_01935",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003304,
+   "seconds": 30.97,
+   "similarity": 0.7006
+  },
+  {
+   "id": "financebench_id_00799",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003638,
+   "seconds": 30.67,
+   "similarity": 0.7021
+  },
+  {
+   "id": "financebench_id_01079",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.006049,
+   "seconds": 41.83,
+   "similarity": 0.6894
+  },
+  {
+   "id": "financebench_id_01148",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.002634,
+   "seconds": 28.18,
+   "similarity": 0.7723
+  },
+  {
+   "id": "financebench_id_00684",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.006196,
+   "seconds": 48.88,
+   "similarity": 0.7295
+  },
+  {
+   "id": "financebench_id_01936",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 0.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005747,
+   "seconds": 48.93,
+   "similarity": 0.7108
+  },
+  {
+   "id": "financebench_id_01928",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005433,
+   "seconds": 39.99,
+   "similarity": 0.8112
+  },
+  {
+   "id": "financebench_id_01930",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.011047,
+   "seconds": 256.34,
+   "similarity": 0.7714
+  },
+  {
+   "id": "financebench_id_00476",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005878,
+   "seconds": 44.98,
+   "similarity": 0.7613
+  },
+  {
+   "id": "financebench_id_01028",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004744,
+   "seconds": 43.38,
+   "similarity": 0.7084
+  },
+  {
+   "id": "financebench_id_00723",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00651,
+   "seconds": 52.55,
+   "similarity": 0.6936
+  },
+  {
+   "id": "financebench_id_00720",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.01129,
+   "seconds": 86.08,
+   "similarity": 0.6995
+  },
+  {
+   "id": "financebench_id_01351",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003156,
+   "seconds": 29.12,
+   "similarity": 0.7278
+  },
+  {
+   "id": "financebench_id_01964",
+   "question_type": "novel-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003599,
+   "seconds": 16.66,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_01981",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.006152,
+   "seconds": 48.43,
+   "similarity": 0.7437
+  },
+  {
+   "id": "financebench_id_05718",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003587,
+   "seconds": 16.19,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04254",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00383,
+   "seconds": 18.85,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00070",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00541,
+   "seconds": 49.22,
+   "similarity": 0.7314
+  },
+  {
+   "id": "financebench_id_02608",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003715,
+   "seconds": 16.87,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04417",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003434,
+   "seconds": 16.0,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00685",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00718,
+   "seconds": 49.57,
+   "similarity": 0.7155
+  },
+  {
+   "id": "financebench_id_01077",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005541,
+   "seconds": 44.77,
+   "similarity": 0.6777
+  },
+  {
+   "id": "financebench_id_01275",
+   "question_type": "domain-relevant",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 1.0,
+   "cost_usd": 0.004969,
+   "seconds": 35.07,
+   "similarity": 0.679
+  },
+  {
+   "id": "financebench_id_00288",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.008728,
+   "seconds": 65.3,
+   "similarity": 0.7542
+  },
+  {
+   "id": "financebench_id_00460",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005203,
+   "seconds": 46.18,
+   "similarity": 0.7432
+  },
+  {
+   "id": "financebench_id_01902",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003054,
+   "seconds": 29.2,
+   "similarity": 0.7298
+  },
+  {
+   "id": "financebench_id_04660",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003655,
+   "seconds": 16.81,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_03838",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003834,
+   "seconds": 17.68,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_07661",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003532,
+   "seconds": 16.06,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_10285",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003615,
+   "seconds": 16.46,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00517",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005642,
+   "seconds": 46.63,
+   "similarity": 0.737
+  },
+  {
+   "id": "financebench_id_01091",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005431,
+   "seconds": 43.74,
+   "similarity": 0.6984
+  },
+  {
+   "id": "financebench_id_00678",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.006254,
+   "seconds": 51.59,
+   "similarity": 0.7113
+  },
+  {
+   "id": "financebench_id_01290",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005984,
+   "seconds": 47.38,
+   "similarity": 0.7093
+  },
+  {
+   "id": "financebench_id_00464",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004715,
+   "seconds": 43.95,
+   "similarity": 0.7246
+  },
+  {
+   "id": "financebench_id_00494",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003332,
+   "seconds": 31.64,
+   "similarity": 0.757
+  },
+  {
+   "id": "financebench_id_00585",
+   "question_type": "novel-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00479,
+   "seconds": 22.46,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_03473",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004131,
+   "seconds": 18.01,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_09724",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003707,
+   "seconds": 16.93,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_06272",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004633,
+   "seconds": 22.21,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04209",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003444,
+   "seconds": 16.28,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_05915",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003903,
+   "seconds": 17.21,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00790",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.007491,
+   "seconds": 58.18,
+   "similarity": 0.7545
+  },
+  {
+   "id": "financebench_id_01107",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003413,
+   "seconds": 32.78,
+   "similarity": 0.7343
+  },
+  {
+   "id": "financebench_id_01244",
+   "question_type": "domain-relevant",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004984,
+   "seconds": 46.42,
+   "similarity": 0.8416
+  },
+  {
+   "id": "financebench_id_00839",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003186,
+   "seconds": 31.27,
+   "similarity": 0.723
+  },
+  {
+   "id": "financebench_id_00822",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005337,
+   "seconds": 39.27,
+   "similarity": 0.5977
+  },
+  {
+   "id": "financebench_id_04103",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004733,
+   "seconds": 20.21,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_03471",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003587,
+   "seconds": 16.63,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04854",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003713,
+   "seconds": 17.57,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_10136",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003773,
+   "seconds": 16.85,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00956",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.008649,
+   "seconds": 74.52,
+   "similarity": 0.6948
+  },
+  {
+   "id": "financebench_id_00669",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 0.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.010741,
+   "seconds": 80.8,
+   "similarity": 0.6864
+  },
+  {
+   "id": "financebench_id_00711",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 0.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005998,
+   "seconds": 50.23,
+   "similarity": 0.6748
+  },
+  {
+   "id": "financebench_id_00651",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.009146,
+   "seconds": 75.71,
+   "similarity": 0.752
+  },
+  {
+   "id": "financebench_id_01484",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003211,
+   "seconds": 29.41,
+   "similarity": 0.6646
+  },
+  {
+   "id": "financebench_id_01488",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 0.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00583,
+   "seconds": 45.07,
+   "similarity": 0.6484
+  },
+  {
+   "id": "financebench_id_01490",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003025,
+   "seconds": 28.59,
+   "similarity": 0.7076
+  },
+  {
+   "id": "financebench_id_01491",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003059,
+   "seconds": 28.89,
+   "similarity": 0.7459
+  },
+  {
+   "id": "financebench_id_01487",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003281,
+   "seconds": 29.31,
+   "similarity": 0.7333
+  },
+  {
+   "id": "financebench_id_00299",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.006511,
+   "seconds": 34.17,
+   "similarity": 0.6653
+  },
+  {
+   "id": "financebench_id_02119",
+   "question_type": "novel-generated",
+   "route": "decline",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00054,
+   "seconds": 3.34,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00206",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.012748,
+   "seconds": 86.74,
+   "similarity": 0.7636
+  },
+  {
+   "id": "financebench_id_00394",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005498,
+   "seconds": 42.65,
+   "similarity": 0.6873
+  },
+  {
+   "id": "financebench_id_02049",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003186,
+   "seconds": 28.9,
+   "similarity": 0.732
+  },
+  {
+   "id": "financebench_id_04171",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00336,
+   "seconds": 16.03,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_03849",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003775,
+   "seconds": 16.96,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_01254",
+   "question_type": "domain-relevant",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003479,
+   "seconds": 16.42,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_00382",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.002897,
+   "seconds": 29.7,
+   "similarity": 0.7133
+  },
+  {
+   "id": "financebench_id_01911",
+   "question_type": "novel-generated",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 0.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003212,
+   "seconds": 30.1,
+   "similarity": 0.7061
+  },
+  {
+   "id": "financebench_id_01912",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003144,
+   "seconds": 30.74,
+   "similarity": 0.6257
+  },
+  {
+   "id": "financebench_id_00407",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00288,
+   "seconds": 28.32,
+   "similarity": 0.6983
+  },
+  {
+   "id": "financebench_id_04302",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003834,
+   "seconds": 17.47,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_03531",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003476,
+   "seconds": 16.08,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04080",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00386,
+   "seconds": 17.09,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_01163",
+   "question_type": "domain-relevant",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 1.0,
+   "handed_on": 1.0,
+   "cost_usd": 0.010358,
+   "seconds": 81.19,
+   "similarity": 0.7198
+  },
+  {
+   "id": "financebench_id_00859",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005318,
+   "seconds": 51.63,
+   "similarity": 0.7255
+  },
+  {
+   "id": "financebench_id_02024",
+   "question_type": "novel-generated",
+   "route": "doc",
+   "answered": 0.0,
+   "correct": 0.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005845,
+   "seconds": 42.04,
+   "similarity": 0.7318
+  },
+  {
+   "id": "financebench_id_00216",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 0.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.005727,
+   "seconds": 47.76,
+   "similarity": 0.7195
+  },
+  {
+   "id": "financebench_id_00215",
+   "question_type": "domain-relevant",
+   "route": "hybrid",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": 1.0,
+   "revised": 1.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00554,
+   "seconds": 51.9,
+   "similarity": 0.7506
+  },
+  {
+   "id": "financebench_id_00566",
+   "question_type": "domain-relevant",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.003827,
+   "seconds": 20.7,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_06247",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004156,
+   "seconds": 18.56,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_04784",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.00386,
+   "seconds": 17.3,
+   "similarity": null
+  },
+  {
+   "id": "financebench_id_06741",
+   "question_type": "metrics-generated",
+   "route": "data",
+   "answered": 1.0,
+   "correct": 1.0,
+   "faithful": null,
+   "revised": 0.0,
+   "handed_on": 0.0,
+   "cost_usd": 0.004084,
+   "seconds": 17.67,
+   "similarity": null
+  }
+ ],
+ "routing": [
+  {
+   "id": "r001",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r002",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r003",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r007",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r008",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r009",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r010",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r011",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r012",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r013",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r014",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r015",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r019",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r020",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r021",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r022",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r023",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r024",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r025",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r026",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r027",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r037",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r038",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r039",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r040",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r041",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r042",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r043",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r044",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r045",
+   "accuracy": 1.0,
+   "route": "doc",
+   "predicted": "doc",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r049",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r050",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r051",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r052",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r053",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r054",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r055",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r056",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r057",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r058",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r059",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r060",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r061",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r062",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r063",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r067",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r068",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r069",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r070",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r071",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r072",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r073",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r074",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r075",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r079",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r080",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r081",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r082",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "seed"
+  },
+  {
+   "id": "r083",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r084",
+   "accuracy": 1.0,
+   "route": "data",
+   "predicted": "data",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r091",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r092",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r093",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r094",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r095",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r096",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r097",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r098",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r099",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r103",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r104",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r105",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r109",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r110",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r111",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r112",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r113",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r114",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r115",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "seed"
+  },
+  {
+   "id": "r116",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r117",
+   "accuracy": 1.0,
+   "route": "hybrid",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r124",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r125",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r126",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r127",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r128",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r129",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r130",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r131",
+   "accuracy": 0.0,
+   "route": "brief",
+   "predicted": "hybrid",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r132",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r133",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r134",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r135",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r139",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r140",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r141",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r142",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "seed"
+  },
+  {
+   "id": "r143",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r144",
+   "accuracy": 1.0,
+   "route": "brief",
+   "predicted": "brief",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r145",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r146",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r147",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r151",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r152",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r153",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r154",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r155",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r156",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r157",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r158",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r159",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r160",
+   "accuracy": 0.0,
+   "route": "smalltalk",
+   "predicted": "doc",
+   "origin": "seed"
+  },
+  {
+   "id": "r161",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r162",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r166",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "seed"
+  },
+  {
+   "id": "r167",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r168",
+   "accuracy": 1.0,
+   "route": "smalltalk",
+   "predicted": "smalltalk",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r169",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r170",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r171",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r181",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r182",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r183",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r184",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r185",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r186",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r187",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r188",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r189",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r190",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r191",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r192",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r193",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r194",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r195",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r196",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "seed"
+  },
+  {
+   "id": "r197",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  },
+  {
+   "id": "r198",
+   "accuracy": 1.0,
+   "route": "decline",
+   "predicted": "decline",
+   "origin": "paraphrase"
+  }
+ ],
+ "sql": [
+  {
+   "id": "s01",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s03",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s04",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s05",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s09",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "easy",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s12",
+   "accuracy": 1.0,
+   "category": "comparison",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s13",
+   "accuracy": 1.0,
+   "category": "trend",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s14",
+   "accuracy": 1.0,
+   "category": "aggregate",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s15",
+   "accuracy": 1.0,
+   "category": "aggregate",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s16",
+   "accuracy": 1.0,
+   "category": "ratio",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s17",
+   "accuracy": 1.0,
+   "category": "growth",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s18",
+   "accuracy": 1.0,
+   "category": "ratio",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s21",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "medium",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s22",
+   "accuracy": 1.0,
+   "category": "ranking",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s23",
+   "accuracy": 1.0,
+   "category": "trend",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s24",
+   "accuracy": 1.0,
+   "category": "ranking",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s26",
+   "accuracy": 1.0,
+   "category": "ranking",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s28",
+   "accuracy": 1.0,
+   "category": "provenance",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s29",
+   "accuracy": 1.0,
+   "category": "provenance",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s30",
+   "accuracy": 1.0,
+   "category": "ratio",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s32",
+   "accuracy": 1.0,
+   "category": "lookup",
+   "difficulty": "hard",
+   "answerable": "answerable"
+  },
+  {
+   "id": "s33",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "easy",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s34",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s36",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "easy",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s37",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "easy",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s38",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s39",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  },
+  {
+   "id": "s40",
+   "accuracy": 1.0,
+   "category": "unanswerable",
+   "difficulty": "medium",
+   "answerable": "unanswerable"
+  }
+ ],
+ "drift": {
+  "window": 3,
+  "periods": {
+   "similarity": {
+    "reference": [
+     "2026-11-16",
+     "2026-11-17",
+     "2026-11-18"
+    ],
+    "recent": [
+     "2026-11-20",
+     "2026-11-21",
+     "2026-11-22"
+    ]
+   },
+   "refusals": {
+    "reference": [
+     "2026-11-11",
+     "2026-11-12",
+     "2026-11-13"
+    ],
+    "recent": [
+     "2026-11-20",
+     "2026-11-21",
+     "2026-11-22"
+    ]
+   }
+  },
+  "checks": {
+   "similarity": {
+    "questions": 20,
+    "reference": 0.7308,
+    "recent": 0.7329,
+    "difference": 0.002,
+    "low": -0.0031,
+    "high": 0.0091,
+    "p": 0.7464253574642535,
+    "p_holm": 1.0,
+    "drift": false
+   },
+   "similarity_distribution": {
+    "ks": 0.05,
+    "p": 1.0,
+    "p_holm": 1.0,
+    "drift": false
+   },
+   "refusals": {
+    "questions": 51,
+    "reference": 0.1144,
+    "recent": 0.098,
+    "difference": -0.0163,
+    "low": -0.0784,
+    "high": 0.0458,
+    "p": 0.7517248275172482,
+    "p_holm": 1.0,
+    "drift": false
+   }
+  }
+ }
+}
