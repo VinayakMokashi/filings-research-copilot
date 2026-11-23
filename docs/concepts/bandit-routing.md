@@ -29,7 +29,7 @@ The answer call is most of a question's cost, and the strong model writes every 
    - **Shared state.** Each arm's count of rewards and their sum live in Firestore, raised with atomic increments, so no transaction is needed.
    - **Rewards.** A thumbs up is 1 and a thumbs down 0. The faithfulness judge gives 1 when every cited sentence is supported and 0 otherwise, refusals included, on half of the visitors' answers and on every canary answer. The reward is quality alone (λ = 0): the cap bounds the money, and each answer's cost is logged.
    - **What it doesn't learn from:** a second answer (it follows a thumbs down, so its question is harder than usual) and an answer from the cache.
-   - **The canary.** With almost no visitors, a daily job asks ten of the routing set's dev questions on the doc route through the live API (twenty on the weekdays of 16 to 20 November), so the bandit has rewards to learn from.
+   - **The canary.** With almost no visitors, a daily job asks ten of the routing set's dev questions on the doc route through the live API, so the bandit has rewards to learn from. It asked twenty on the weekdays of 16 to 20 November, so that the comparison could close after a week.
 
 ## Where it lives in the code
 
@@ -60,16 +60,24 @@ On FinanceBench dev ([report](../eval/bandit-routing.md)), the three arms answer
 
 Both learners earn less than the best fixed arm at every λ, so the copilot kept a fixed arm, and the bandit waited behind `FRC_ANSWER_POLICY` for Phase 9's rewards ([ADR-0029](../decisions/0029-bandit-routing.md)).
 
-**Online,** the policy and the control are compared after a week of the canary, 15 to 22 November, on the canary's judged answers and apart on visitors' thumbs: each group's mean reward with a bootstrap interval, and their difference with a two-sample permutation test (`poe bandit-report`). Two weeks were planned; after the first day, before any comparison, the owner shortened them to one, with twenty questions on the weekdays instead of ten. The rule was set before the data: the bandit stays on only if the policy earns at least what the control does. With about 60 judged answers a group (a quota cost eleven of 16 November's questions), only a difference of roughly 12 to 17 points would show.
+**Online,** the policy and the control were compared after a week of the canary, 15 to 22 November, on the canary's judged answers, with visitors' thumbs kept apart: each group's mean reward with a bootstrap interval, and their difference with a two-sample permutation test (`poe bandit-report`, [report](../eval/bandit-online.md)). Two weeks were planned; after the first day, before any comparison, the owner shortened them to one, with twenty questions on the weekdays instead of ten. The rule was set before the data: the bandit stays on only if the policy earns at least what the control does.
 
-**The first canary questions**, a trial of two on 15 November, both went to the control arm and were both judged faithful. The bandit spent $0.0103 on them: about $0.002 for each answer call and $0.003 for each judge's call, since the judge reads every cited source on Cerebras's dearer Qwen. Ten a day should cost about $0.05.
+| Group | Judged answers | Mean reward | 95% interval |
+|---|---|---|---|
+| Policy (`fast` 52, `strong-low` 3, `strong` 2) | 57 | 0.930 | 0.860 to 0.982 |
+| Control (`strong`) | 62 | 0.855 | 0.758 to 0.935 |
+
+The difference, +0.075 (−0.039 to +0.188, p = 0.25), can't be told from none, so the rule decided: the bandit stays on. Counting cost changes the order. At ADR-0029's λ = 100 the control wins, −0.210 (−0.386 to −0.036, p = 0.02), because the policy settled on Qwen, the dearer model on Cerebras, and its answers cost about half as much again.
+
+**The canary's spend:** the trial of two on 15 November cost $0.0103, about $0.002 for each answer call and $0.003 for each judge's call, since the judge reads every cited source on Cerebras's dearer Qwen. In the week, a day of ten cost the bandit $0.05 to $0.07 and a day of twenty $0.11 to $0.13.
 
 ## Pitfalls we hit
 
 - **Too few rounds for arms this close.** A two-to-four-point difference in accuracy needs far more than 100 rewards to show; until it does, every exploring choice of a worse arm is a cost, so on 100 questions the best a learner can do is lose slowly to the best fixed arm.
 - **The cheap model isn't always cheap.** On Cerebras's list prices, Qwen costs two and a half times as much a question as gpt-oss-120b; the roles' names (`fast`, `small`) describe the free tier, not every provider.
 - **A fair comparison needs the same evidence.** Letting each arm run the whole doc agent would also change what it retrieves on a retry; answering from the stored sources isolates the answer model, at the price of leaving retries out.
-- **The judge shares a model with an arm.** The evaluation's judge is Qwen, which is also the `fast` arm, so that arm's answers could be favoured; it still came last.
+- **The judge shares a model with an arm.** The evaluation's judge is Qwen, which is also the `fast` arm, so that arm's answers could be favoured. Offline, judged on correctness, it still came last. Online, judged on faithfulness by the same model, 50 of its 52 answers earned a reward of 1, and the policy chose it almost alone from its second day of answers. Part of that may be the judge's taste for its own model's writing; a judge from another model family would tell.
+- **The reward is what the policy learns, not the goal.** Faithfulness says every cited sentence holds up, not that the answer is right, and a refusal that cites what the filing does say can earn it.
 - **A bandit without traffic learns nothing.** In its first twelve days the live API answered 3 questions and got no rating, so the online bandit is fed by a daily canary of the project's own questions, judged, and the report keeps the canary's rewards apart from visitors'.
 - **A reward can be biased by when it is asked for.** A second answer is requested after a thumbs down, on questions the first arm got wrong; rewarding its arm would make that arm look worse than it is, so second answers reward nothing.
 
@@ -81,6 +89,7 @@ Both learners earn less than the best fixed arm at every λ, so the copilot kept
 4. When would a contextual bandit, one that sees something about the question before it chooses, do better than these?
 5. Online, why does a coin flip send half the bandit's answers to the fixed arm, when the policy could learn from all of them?
 6. Why do the canary's rewards and visitors' thumbs get separate comparisons?
+7. Online, the policy settled on the arm that shares the judge's model. How would you tell whether that arm writes better answers or is only judged more kindly?
 
 ## References
 
