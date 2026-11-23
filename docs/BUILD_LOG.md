@@ -15,6 +15,38 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-23 · Phase 9 · The close: the first baseline, the bandit's week, and no drift
+
+- **Goal:** close Phase 9: read the first complete full night and the first verdict, compare the bandit with its fixed arm after the canary's week, run drift's first comparisons with the default windows, count the search page, and tick the plan.
+- **Done:**
+  - **The nightly (9.1).** The full night of 22 November answered all 100 dev questions after two ten-minute waits (#119), for $0.756 of its $1.20, and became the baseline: correct 0.66 (0.57 to 0.75), as in copilot v2's dev run. 23 November's slice drew the first verdict: no drop on any of the four tests. The full night finished, so the paid Cerebras approved on 16 November for that case wasn't needed, and the nights' small role stays on Groq, the model production runs ([report](eval/nightly.md)).
+  - **The bandit (9.3).** Over 119 judged answers from 15 to 22 November, the policy earned 0.930 (0.860 to 0.982), from `fast` on 52 of its 57 answers, and the control 0.855 (0.758 to 0.935): +0.075 (−0.039 to +0.188), p = 0.25. By ADR-0036's rule the bandit stays on. Two caveats go with it: at ADR-0029's cost penalty (λ = 100) the control wins, −0.210 (p = 0.02), and the judge shares its model, Qwen, with the arm the policy chose ([report](eval/bandit-online.md)).
+  - **The canary (ci, no deploy)** goes back to ten questions a day: the case for 16 to 20 November is gone from "Choose the day".
+  - **Drift (9.5):** the default windows' first comparisons found no drift in retrieval similarity, refusals or the canary's latency ([report](eval/drift.md)).
+  - **The search page (9.4):** no readers' searches. The API answered no visitor's question all week either: its request log holds only the canary's.
+  - **Dependabot.** #129 (the ruff hook) merged. #130 (uv 0.13.9) and #131 (FastAPI, LangGraph, LiteLLM 1.109.1, pypdfium2, ruff) were cherry-picked into #132 with a test fix and the close's results, so production deployed once, at 09:00 UTC; the live check passed, and a one-question canary trial passed on it. #128 (Python 3.15 in the images) was closed, since onnxruntime publishes no wheel for 3.15, and Dependabot now skips the base image's Python minor versions.
+  - **Docs:** the reports `eval/nightly.md`, `eval/bandit-online.md` (new), `eval/drift.md` and `eval/interleaving.md`; the evidence of ADR-0034, ADR-0036, ADR-0037 and ADR-0038; the bandit guide and runbook; PLAN (9.1, 9.3 and 9.5 ticked; Phase 9 done); the README; the project page's Phase 9 block, "On the live service".
+- **Commands:**
+  - `uv run poe bandit-report --since 2026-11-15 --until 2026-11-23 --name one-week`, `uv run poe drift-check` and `uv run poe interleaving-report --name to-date`, with the `frc` configuration;
+  - the API's `llm.spend` and `llm.paid_fallback` log events, summed by day;
+  - LiteLLM's prices and context limits for the gateway's five models, printed under 1.108.1 and 1.109.1;
+  - the "Choose the day" script under `bash -e`, with `date` and `jq` stubbed (13 cases), and actionlint;
+  - `uv run poe check`, on both dependency sets.
+- **Results:**
+  - 803 tests passed on both dependency sets.
+  - LiteLLM 1.109.1 prices the five models as 1.108.1 did, so the caps count as before.
+  - The bandit's busiest day cost $0.129 of its $0.25.
+  - Cerebras billed $6.17 in November to the 23rd: the nights $5.03, the bandit $0.70 and the paid fallback $0.44.
+- **Problems and fixes:**
+  - **LiteLLM 1.109 deprecates `Router.model_list` and `Router.fallbacks`.** The old attributes type as `_T?`, which failed mypy on #131, so the tests now read `registry().all()` and `settings().fallbacks`. The project's own code only builds the router and calls it.
+  - **The days' `quotas` documents expire.** The bandit's spend for 15 to 19 November came from the API's `llm.spend` events instead; for 20 to 22 November, the two agree.
+  - **Two costs that differ.** The bandit log's `cost_usd` is the whole answer at list prices, Groq's free calls included. So it runs above `bandit_usd`, which counts only the paid calls the cap limits.
+  - **The page's table called the cut-short night "cut short by its cap".** Groq's quota stopped it, not the cap. The table now says "cut short", and marks the baseline and the nights that drew a verdict.
+- **Decisions:** [ADR-0036's evidence](decisions/0036-bandit-online.md#evidence-so-far) (the bandit stays on); [ADR-0034's consequences](decisions/0034-nightly-evaluation.md#consequences) (the nights' small role stays on Groq).
+- **Next:** Phase 10, the showcase: the final README, a demo video, the project page with measured numbers and links, a technical write-up, and a documentation review.
+
+---
+
 ### 2026-11-16 · Phase 9 · A late slot asked the next day's canary on the wrong quota
 
 - **Goal:** find why eleven of 16 November's twenty canary questions failed (#126), and stop it before the next days of twenty.
