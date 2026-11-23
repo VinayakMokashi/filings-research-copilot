@@ -18,7 +18,7 @@ FROM ghcr.io/astral-sh/uv:0.13.9@sha256:d3b601f0c7b118bc1753febf7c41cc80981df678
 # Empty unless a build passes the bundle as `data`.
 FROM scratch AS data
 
-FROM python:3.12-slim-trixie@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS build
+FROM python:3.12-slim-trixie@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS build
 COPY --from=uv /uv /bin/uv
 # git fetches text2sql-analyst, a pinned git dependency.
 RUN apt-get update \
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --only-group ui --no-install-project
 COPY src ./src
 
-FROM python:3.12-slim-trixie@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS runtime
+FROM python:3.12-slim-trixie@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS runtime
 ARG UID=1000
 RUN useradd --uid "${UID}" --create-home --shell /usr/sbin/nologin copilot
 ENV PATH="/app/.venv/bin:${PATH}" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
