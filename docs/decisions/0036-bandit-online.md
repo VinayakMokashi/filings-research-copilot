@@ -84,15 +84,20 @@ The end date moved to save time, not because of a result: a date chosen after lo
   - Nine of the ten questions came back, eight answers and a refusal, all judged; seven were faithful.
   - One failed: Groq refused the answer check's reply as invalid JSON, and the whole answer failed (#122). Since #123 the API lets such an answer out unchecked.
 - **16 November lost eleven questions.** GitHub started 15 November's last slot at 18:48 UTC, after midnight IST, so the canary asked 16 November's twenty on 15 November's daily quota (UTC), with nine questions left on it. Nine came back, all judged, eight faithful; eleven got HTTP 429 (#126). Since #127 the canary's day is the date in UTC, the quota's day. The comparison keeps the nine.
-- **The comparison** covers the canary's days from 15 to 22 November (the amendment), and its report follows them.
+- **The comparison (23 November, [report](../eval/bandit-online.md))** covers 119 judged answers: the canary's 118 from 15 to 22 November (the amendment), and the 15 November trial's one.
+  - The policy settled on `fast` for 52 of its 57 answers and earned 0.930 (95% interval 0.860 to 0.982); the control earned 0.855 (0.758 to 0.935).
+  - The difference, +0.075 (−0.039 to +0.188, p = 0.25), can't be told from none. **By the rule, the bandit stays on,** and the canary goes back to ten questions a day.
+  - With ADR-0029's cost penalty of λ = 100, the control would win: −0.210 (−0.386 to −0.036, p = 0.02). The two break even at λ of about 26.
+  - No visitor's answer reached the bandit in the week, so thumbs and visitors' judged answers had nothing to compare.
+- **Spend:** at most $0.129 in a day (17 November, a day of twenty), against the $0.25 cap; $0.699 from the trial on 14 November to 22 November.
 
 ## Consequences
 
-- **Money.** The bandit can spend at most $0.25 a day, about $7.50 a month; the canary alone is expected at $0.05 to $0.08 a day. With the nightly evaluation (at most about $15 a month) and the paid fallback (at most $0.50 a day), every Cerebras spend is capped. The trial credit's end on 22 December doesn't change this bill, which Cerebras sends.
+- **Money.** The bandit can spend at most $0.25 a day, about $7.50 a month; in the measured week the canary's days cost it $0.053 and $0.065 at ten questions, and $0.108 to $0.129 at twenty. With the nightly evaluation (at most about $15 a month) and the paid fallback (at most $0.50 a day), every Cerebras spend is capped. The trial credit's end on 22 December doesn't change this bill, which Cerebras sends.
 - **A judged visitor answer waits for the judge,** a few seconds, before its stream ends.
-- **The canary counts against the day's total quota** of 200 questions, ten a day, or twenty on the weekdays of 16 to 20 November. Its own quota, as a visitor, is twenty a day, so the days of twenty leave no room for a trial.
-- **The comparison's power is low.** With about 60 judged answers in each group after the week (65 planned before 16 November lost eleven questions; 70 in the plan of two weeks), only a difference of roughly 12 to 17 points would show, depending on the share judged faithful. Most likely the report will say the policy and the fixed arm can't be told apart, and the owner's rule then decides.
-- **A judge shares a model with an arm.** The judge is Qwen, which is also the `fast` arm, as in ADR-0029; the report says so.
+- **The canary counts against the day's total quota** of 200 questions: ten a day, and twenty on the weekdays of 16 to 20 November. Its own quota, as a visitor, is twenty a day, so a day of ten leaves room for a trial; the days of twenty left none.
+- **The comparison's power is low.** With about 60 judged answers in each group after the week (65 planned before 16 November lost eleven questions; 70 in the plan of two weeks), only a difference of roughly 12 to 17 points would show, depending on the share judged faithful. The report found the policy and the fixed arm can't be told apart, and the owner's rule decided.
+- **A judge shares a model with an arm.** The judge is Qwen, which is also the `fast` arm, as in ADR-0029, and the policy chose that arm for 52 of its 57 answers. Part of its lead may be the judge's taste for its own model; the report says so.
 
 ## References
 

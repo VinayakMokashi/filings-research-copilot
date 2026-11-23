@@ -10,7 +10,7 @@ How the online answer bandit and the canary that feeds it are switched on and of
 | Its cap | Firestore `quotas/<day>.bandit_usd` | The arms' and the judge's calls, at most $0.25 a UTC day. At the cap, answers take the fixed path on Groq |
 | Its state | Firestore `bandit/answer-arms` | Each arm's count of rewards and their sum |
 | Its log | Firestore `bandit-answers/<request id>` | The arm, the group (`policy`, `control`, `retry`), canary or visitor, the cost, and the rewards (`judge`, `thumbs`) |
-| The canary | `.github/workflows/canary.yml`, at 04:17 UTC (09:47 IST), with backup slots at 08:17 and 12:17 UTC, as `github-canary` | Ten of the routing set's 30 dev questions on the doc route a day (twenty on the weekdays of 16 to 20 November), in turn, through the live API; metrics to `eval-history` (`canary/`). The first slot to run asks; a later one finds the day kept and stops |
+| The canary | `.github/workflows/canary.yml`, at 04:17 UTC (09:47 IST), with backup slots at 08:17 and 12:17 UTC, as `github-canary` | Ten of the routing set's 30 dev questions on the doc route a day (twenty on the weekdays of 16 to 20 November, for the one-week comparison), in turn, through the live API; metrics to `eval-history` (`canary/`). The first slot to run asks; a later one finds the day kept and stops |
 
 ## Switch the bandit on or off
 
@@ -30,7 +30,7 @@ gh workflow run canary.yml -f questions=2
 gh run watch "$(gh run list --workflow canary.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
 
-The job summary has a row per question: route, arm, group, answered, judged, faithful and seconds. A trial spends like any canary question, inside the bandit's cap. It also counts against the canary's twenty questions a day (UTC), so on a day of twenty (17 to 20 November) it would leave the day's last questions an HTTP 429: run trials on a day of ten.
+The job summary has a row per question: route, arm, group, answered, judged, faithful and seconds. A trial spends like any canary question, inside the bandit's cap. It also counts against the canary's twenty questions a day (UTC), which the day's ten leave room for. (On the days of twenty, 16 to 20 November, a trial would have left the day's last questions an HTTP 429.)
 
 On the laptop, against a local API (`poe api` on port 8010): `uv run poe canary --api-url http://127.0.0.1:8010 --per-day 2 --out dist/canary`.
 
@@ -48,9 +48,9 @@ GitHub may start a scheduled run hours late or drop it, as it dropped the first 
 gh workflow run canary.yml
 ```
 
-Without a number it asks the day's: twenty on the weekdays of 16 to 20 November, ten on any other day. The job "Choose the day" reads `canary/history.jsonl` first. A full run, scheduled or by hand, stops at a day already kept, so a day is never asked twice; a trial always asks, and keeps nothing. Identity federation lets only `main` call the API, so a run from another branch fails at its sign-in.
+Without a number it asks the day's ten. (On the weekdays of 16 to 20 November it asked twenty, for the one-week comparison.) The job "Choose the day" reads `canary/history.jsonl` first. A full run, scheduled or by hand, stops at a day already kept, so a day is never asked twice; a trial always asks, and keeps nothing. Identity federation lets only `main` call the API, so a run from another branch fails at its sign-in.
 
-A day is a date in UTC, like the API's daily quotas. The canary asks as the visitor `canary`, which the API allows twenty questions a day from midnight UTC (`FRC_API_DAILY_QUESTIONS`), so a day of twenty uses the whole quota. A slot that GitHub starts hours late still asks for its own date.
+A day is a date in UTC, like the API's daily quotas. The canary asks as the visitor `canary`, which the API allows twenty questions a day from midnight UTC (`FRC_API_DAILY_QUESTIONS`): twice the day's ten. A slot that GitHub starts hours late still asks for its own date.
 
 ## When the canary fails
 
@@ -66,13 +66,15 @@ The second (#126, 16 November) was the canary's own quota. GitHub started 15 Nov
 
 ## The comparison's report
 
-After the canary's days from 15 to 22 November, a week since [ADR-0036's amendment](../decisions/0036-bandit-online.md#amendment-15-november-a-week-instead-of-two) (`--until` is the first day left out):
+The comparison covered the canary's days from 15 to 22 November, a week since [ADR-0036's amendment](../decisions/0036-bandit-online.md#amendment-15-november-a-week-instead-of-two), and was run on 23 November (`--until` is the first day left out):
 
 ```bash
 CLOUDSDK_ACTIVE_CONFIG_NAME=frc uv run poe bandit-report --since 2026-11-15 --until 2026-11-23 --name one-week
 ```
 
-It reads the log as the owner, keeps a copy under `data/processed/bandit/`, and writes `eval/results/bandit-online/one-week/summary.json`: each group's answers and arms, the mean reward of each kind with intervals, the policy's difference from the control with a permutation test, and the decision by ADR-0036's rule. The report `docs/eval/bandit-online.md` is written from it. If the rule says off, switch the bandit and the canary off as above.
+It reads the log as the owner, keeps a copy under `data/processed/bandit/`, and writes `eval/results/bandit-online/one-week/summary.json`: each group's answers and arms, the mean reward of each kind with intervals, the policy's difference from the control with a permutation test, and the decision by ADR-0036's rule. The [report](../eval/bandit-online.md) is written from it. The rule kept the bandit on, and the canary went back to ten questions a day.
+
+The control group stays, so a later window can be compared the same way: run the report with other dates and a new `--name`. The decision stands on the one-week window; a later one informs, unless the owner sets a new rule first.
 
 ## Export preference pairs
 
@@ -85,4 +87,4 @@ The first reads the deployment's ratings and picks as the owner and keeps a copy
 
 ## Costs
 
-The bandit's calls and its judge's are billed by Cerebras, at most $0.25 a day; the canary alone should cost $0.05 to $0.08 a day at ten questions, and twice that at twenty. The nightly evaluation and the paid fallback spend from the same key under their own caps, so Cerebras's own console shows all three together.
+The bandit's calls and its judge's are billed by Cerebras, at most $0.25 a day; from 15 to 22 November the canary's days cost it $0.053 and $0.065 at ten questions, and $0.108 to $0.129 at twenty. The canary's answers also draw on the paid fallback, when Groq's per-minute limit refuses a call: $0.013 to $0.059 a day in that week. The nightly evaluation and the paid fallback spend from the same key under their own caps, so Cerebras's own console shows all three together.
