@@ -1,11 +1,9 @@
 # The daily canary (ADR-0036). Once a day it asks the live API ten of the project's own
 # questions, the routing set's dev questions on the doc route in turn, as an account of its
 # own, so that the answer bandit has rewards to learn from and the deployed service is
-# checked end to end. On the weekdays of 16 to 20 November it asks twenty, so that the
-# bandit's comparison closes after a week. The API's judge scores every answer one of the
-# bandit's arms writes. Metrics alone go to the eval-history branch; a failed request fails
-# the run and opens an issue. It runs while the bandit is on: disable it when the bandit's
-# cap goes to 0.
+# checked end to end. The API's judge scores every answer one of the bandit's arms writes.
+# Metrics alone go to the eval-history branch; a failed request fails the run and opens an
+# issue. It runs while the bandit is on: disable it when the bandit's cap goes to 0.
 name: Daily canary
 
 on:
@@ -19,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       questions:
-        description: "How many of the day's questions to ask (empty: the day's number); fewer than 10 is a trial, and keeps nothing"
+        description: "How many of the day's questions to ask (empty: ten); fewer than 10 is a trial, and keeps nothing"
         type: string
         default: ""
 
@@ -65,15 +63,7 @@ jobs:
           # GitHub starts hours late, even after midnight IST, still counts for its own date,
           # so it can't ask the next day's questions on this day's quota (#126).
           day="$(date -u +%F)"
-          questions="$ASKED" # a scheduled run has no inputs
-          if [ -z "$questions" ]; then
-            # The day's number: twenty on the weekdays of 16 to 20 November, so that the
-            # bandit's comparison closes after a week (ADR-0036), and ten on any other day.
-            case "$day" in
-              2026-11-1[6-9] | 2026-11-20) questions=20 ;;
-              *) questions=10 ;;
-            esac
-          fi
+          questions="${ASKED:-10}" # a scheduled run has no inputs, so it asks the day's ten
           case "$questions" in
             '' | *[!0-9]*) echo "The number of questions must be a whole number."; exit 1 ;;
           esac
