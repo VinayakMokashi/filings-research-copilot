@@ -25,6 +25,11 @@ A dated journal of every working session, newest first. Each entry uses this tem
   - **Drift (9.5):** the default windows' first comparisons found no drift in retrieval similarity, refusals or the canary's latency ([report](eval/drift.md)).
   - **The search page (9.4):** no readers' searches. The API answered no visitor's question all week either: its request log holds only the canary's.
   - **Dependabot.** #129 (the ruff hook) merged. #130 (uv 0.13.9) and #131 (FastAPI, LangGraph, LiteLLM 1.109.1, pypdfium2, ruff) were cherry-picked into #132 with a test fix and the close's results, so production deployed once, at 09:00 UTC; the live check passed, and a one-question canary trial passed on it. #128 (Python 3.15 in the images) was closed, since onnxruntime publishes no wheel for 3.15, and Dependabot now skips the base image's Python minor versions.
+  - **After the close,** with the owner's go-ahead, two more Dependabot updates were merged, each deployed and checked live:
+    - #134, the Python 3.12 base image's latest digest, deployed at 09:56 UTC;
+    - #135 (FastAPI 0.163.1, LangGraph 1.2.22, langgraph-checkpoint-postgres 3.2.1, numpy 2.5.5, onnxruntime 1.32.0, pydantic-settings 2.16.3), deployed at 10:08 UTC.
+
+    onnxruntime computes the query embeddings, so retrieval similarity may shift slightly from 23 November. A drift the checks show from then is this update's, not the collection's.
   - **Docs:** the reports `eval/nightly.md`, `eval/bandit-online.md` (new), `eval/drift.md` and `eval/interleaving.md`; the evidence of ADR-0034, ADR-0036, ADR-0037 and ADR-0038; the bandit guide and runbook; PLAN (9.1, 9.3 and 9.5 ticked; Phase 9 done); the README; the project page's Phase 9 block, "On the live service".
 - **Commands:**
   - `uv run poe bandit-report --since 2026-11-15 --until 2026-11-23 --name one-week`, `uv run poe drift-check` and `uv run poe interleaving-report --name to-date`, with the `frc` configuration;
