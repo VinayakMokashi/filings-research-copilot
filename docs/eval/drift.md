@@ -57,3 +57,5 @@ By 23 November the history held 13 nights and 8 canary days, enough for every si
 ## Next
 
 The checks go on with every night and every canary day, against the same reference windows. After a deliberate change, such as a new collection, the reference must be started again by hand, or the change will read as drift ever after.
+
+**A change to note:** on 23 November, after these comparisons, onnxruntime moved from 1.31.1 to 1.32.0 in the deployment (10:08 UTC) and in the nightly runs (#135). It computes the query embeddings, so retrieval similarity may shift slightly from that day. Such a shift is the library's, not the collection's.
