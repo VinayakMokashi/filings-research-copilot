@@ -1,0 +1,62 @@
+{
+  "since": "2026-11-15T00:00:00+00:00",
+  "until": "2026-11-23T00:00:00+00:00",
+  "answers": {
+    "policy": 57,
+    "control": 62
+  },
+  "canary_answers": {
+    "policy": 57,
+    "control": 62
+  },
+  "retries": 0,
+  "arms": {
+    "policy": {
+      "fast": 52,
+      "strong": 2,
+      "strong-low": 3
+    },
+    "control": {
+      "strong": 62
+    }
+  },
+  "cost_per_answer_usd": {
+    "policy": 0.008422,
+    "control": 0.005573
+  },
+  "comparisons": {
+    "canary judge": {
+      "policy": {
+        "mean": 0.9298245614035088,
+        "low": 0.8596491228070176,
+        "high": 0.9824561403508771,
+        "n": 57
+      },
+      "control": {
+        "mean": 0.8548387096774194,
+        "low": 0.7580645161290323,
+        "high": 0.9354838709677419,
+        "n": 62
+      },
+      "difference": {
+        "mean": 0.0749858517260894,
+        "low": -0.03933220147142058,
+        "high": 0.18788907753254103,
+        "p": 0.25047495250474955
+      }
+    },
+    "visitor judge": {
+      "policy": null,
+      "control": null
+    },
+    "visitor thumbs": {
+      "policy": null,
+      "control": null
+    }
+  },
+  "decision": {
+    "rule": "Keep the bandit on only if the policy's mean reward on the canary's judged answers is at least the control's (ADR-0036).",
+    "keep": true,
+    "told_apart": false
+  }
+}
