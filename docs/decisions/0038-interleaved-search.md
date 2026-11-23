@@ -48,6 +48,8 @@ Checked on the live API on 15 November ([report](../eval/interleaving.md)):
 
 The check's document was deleted, so readers' counts start from zero.
 
+At Phase 9's close, on 23 November, no reader had searched: `poe interleaving-report` counted no searches and no clicks ([report](../eval/interleaving.md#readers-counts-at-the-close-23-november)).
+
 ## Consequences
 
 - **A search costs** two embeddings of the query and two Qdrant queries on the API, about a second of CPU, plus Firestore writes, all within free tiers. It counts against no quota, since no model is called.

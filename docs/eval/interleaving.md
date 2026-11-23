@@ -1,6 +1,6 @@
 # The interleaved search page: the first check
 
-Phase 9, step 9.4 ([ADR-0038](../decisions/0038-interleaved-search.md), [guide](../concepts/online-evaluation.md#interleaving), [runbook](../runbooks/search-page.md)). The web UI's Search page went live on 15 November. This report keeps the live check and the method; the Phase 9 close adds readers' counts, which stay illustrative at this traffic.
+Phase 9, step 9.4 ([ADR-0038](../decisions/0038-interleaved-search.md), [guide](../concepts/online-evaluation.md#interleaving), [runbook](../runbooks/search-page.md)). The web UI's Search page went live on 15 November. This report keeps the live check, the method, and readers' counts at the Phase 9 close, which stay illustrative at this traffic.
 
 ## Question
 
@@ -26,6 +26,10 @@ One search through the private API, with the owner's identity token, then three 
   - a click on a search that doesn't exist returned 404.
 - **Firestore** kept the teams, the overlap, the number of filings and the click (`clicks: 1`), and nothing of the query.
 - **The check's document was deleted,** so readers' counts start from zero.
+
+## Readers' counts at the close (23 November)
+
+`poe interleaving-report --name to-date` counted no readers' searches and no clicks from 15 to 23 November ([`summary.json`](../../eval/results/interleaving/to-date/summary.json)). The live API answered no visitor's question in that week either: its request log holds only the daily canary's. So there is nothing to compare yet. The page stays live, keeps counting, and the report can be run again at any time.
 
 ## Limits
 

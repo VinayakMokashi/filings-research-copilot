@@ -44,6 +44,14 @@ The data available:
 
 The first look, on 15 November ([report](../eval/drift.md)). Five nights had recorded refusals, and windows of two nights found them unchanged: 0.109 and 0.109 on 46 questions, p = 1.0. Retrieval similarity is recorded from the night of 16 November and the canary's days from 15 November, so the default windows of three compare from about 20 November.
 
+The first comparisons with the default windows, on 23 November (13 nights, 8 canary days; [report](../eval/drift.md#results-23-november-the-default-windows)), found no drift:
+
+- the nightly's retrieval similarity, 0.7308 against 0.7339 on 20 questions (16 to 18 against 21 to 23 November), and its distribution (KS 0.05);
+- the nightly's refusals, 0.114 against 0.085 on 51 questions (11 to 13 against 21 to 23 November);
+- the canary's latency, 14.9 s against 14.6 s on 20 questions, and its similarity, unchanged to the fourth decimal (15 to 17 against 20 to 22 November).
+
+Every adjusted p-value was 1.0.
+
 ## Consequences
 
 - **The first comparisons need six periods each:** similarity from the night after this change is deployed, refusals at once (the history holds four nights), latency from the canary's sixth day.
