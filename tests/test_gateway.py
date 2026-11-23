@@ -303,14 +303,14 @@ def test_router_has_one_deployment_per_role_and_the_fallback_chain() -> None:
 
     router = build_router(settings)
 
-    assert [d["model_name"] for d in router.model_list] == [
+    assert [d["model_name"] for d in router.registry().all()] == [
         "strong",
         "fast",
         "small",
         "fallback-1",
         "fallback-2",
     ]
-    assert router.fallbacks == [
+    assert router.settings().fallbacks == [
         {"strong": ["fallback-1", "fallback-2"]},
         {"fast": ["fallback-1", "fallback-2"]},
         {"small": ["fallback-1", "fallback-2"]},
@@ -320,7 +320,8 @@ def test_router_has_one_deployment_per_role_and_the_fallback_chain() -> None:
 def test_qwen_on_cerebras_is_called_without_reasoning() -> None:
     settings = Settings(_env_file=None, llm_fast_model="cerebras/qwen-3.8-27b")
 
-    params = {d["model_name"]: d["litellm_params"] for d in build_router(settings).model_list}
+    deployments = build_router(settings).registry().all()
+    params = {d["model_name"]: d["litellm_params"] for d in deployments}
 
     assert params["fast"]["reasoning_effort"] == "none"
     assert "reasoning_effort" not in params["strong"]
@@ -330,8 +331,8 @@ def test_qwen_on_cerebras_is_called_without_reasoning() -> None:
 def test_router_without_fallbacks_has_no_chain() -> None:
     router = build_router(Settings(_env_file=None))
 
-    assert [d["model_name"] for d in router.model_list] == ["strong", "fast", "small"]
-    assert not router.fallbacks
+    assert [d["model_name"] for d in router.registry().all()] == ["strong", "fast", "small"]
+    assert not router.settings().fallbacks
 
 
 def test_role_models_names_each_role_s_model() -> None:
