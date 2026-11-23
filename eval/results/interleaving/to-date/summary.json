@@ -1,0 +1,19 @@
+{
+  "rankers": {
+    "a": "dense",
+    "b": "hybrid (dense and BM25)"
+  },
+  "searches": 0,
+  "with_clicks": 0,
+  "clicks": {
+    "a": 0,
+    "b": 0
+  },
+  "wins": {
+    "a": 0,
+    "b": 0,
+    "tie": 0
+  },
+  "p": 1.0,
+  "mean_overlap": null
+}
