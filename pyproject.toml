@@ -66,6 +66,7 @@ format-check = { cmd = "ruff format --check .", help = "Check formatting without
 typecheck = { cmd = "mypy", help = "Type-check src, tests and scripts" }
 test = { cmd = "pytest", help = "Run the unit tests" }
 check = { sequence = ["lint", "format-check", "typecheck", "test"], help = "Lint, format check, types and tests, as in CI" }
+check-links = { cmd = "python scripts/check_links.py", help = "Check every documentation link and anchor, as CI does (--external also fetches each web address once)" }
 secrets = { cmd = "docker run --rm \"--mount=type=bind,source=${POE_ROOT},target=/repo\" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --config /repo/.gitleaks.toml --redact --verbose", help = "Scan the full git history for secrets, as CI does (needs Docker)" }
 services-up = { cmd = "docker compose up -d --wait", help = "Start Qdrant and Postgres and wait until healthy" }
 services-down = { cmd = "docker compose down", help = "Stop the local services (data volumes are kept)" }
