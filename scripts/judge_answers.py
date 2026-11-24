@@ -1,10 +1,10 @@
 """Judge a run's answers against FinanceBench's reference answers, resumably (step 3.6).
 
-Reads data/processed/answers/<run>/dev/answers.jsonl and judges every answer in it that
-hasn't been judged yet, appending each verdict to
+Reads data/processed/answers/<run>/<split>/answers.jsonl (dev unless --split test) and
+judges every answer in it that hasn't been judged yet, appending each verdict to
 data/processed/judgements/<run>/<judge>/judgements.jsonl as it arrives (the reasons can
 quote the reference, so they stay local). Then writes ids and outcomes for every judged
-answer to eval/results/correctness/<run>--<judge>/dev/:
+answer of the split to eval/results/correctness/<run>--<judge>/<split>/:
 
 - `correct`, `incorrect`, `refused`: FinanceBench's three outcomes, one of them 1 for each
   question. A refusal is never correct.
@@ -16,6 +16,7 @@ from different prompts never mix.
 
 Usage: uv run poe judge-answers --run doc-agent-v3-full                 (the fast model)
        uv run poe judge-answers --run doc-agent-v3-full --role strong   (a second judge)
+       uv run poe judge-answers --run copilot-v2 --split test --allow-test   (milestone runs)
 """
 
 from __future__ import annotations
@@ -30,7 +31,7 @@ from typing import Any
 from copilot.config import get_settings
 from copilot.eval.judge import PROMPT_VERSION, ROLE, judge
 from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
-from copilot.eval.splits import load_split
+from copilot.eval.splits import HeldOutError, load_split
 from copilot.llm import LLMGateway, ModelRole
 from copilot.llm.cache import CachedLLM
 from copilot.llm.gateway import role_models
@@ -58,15 +59,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--run", required=True, help="the answers run to judge")
     parser.add_argument("--role", choices=["fast", "strong"], default=ROLE, help="judge model")
+    parser.add_argument("--split", choices=("dev", "test"), default="dev")
+    parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
     role: ModelRole = args.role
 
     settings = get_settings()
     configure_logging(settings.log_level, settings.log_format)
-    questions = load_split("dev", settings.data_dir / "raw" / "financebench")
+    try:
+        questions = load_split(
+            args.split, settings.data_dir / "raw" / "financebench", allow_test=args.allow_test
+        )
+    except HeldOutError:
+        print("FinanceBench's test split is held out. Add --allow-test only for a milestone run.")
+        return 2
     answers = read_jsonl(
-        settings.data_dir / "processed" / "answers" / args.run / "dev" / "answers.jsonl"
+        settings.data_dir / "processed" / "answers" / args.run / args.split / "answers.jsonl"
     )
     models = role_models(settings)
     name = judge_name(models[role])
@@ -119,10 +128,10 @@ def main(argv: list[str] | None = None) -> int:
     summary = RunSummary(
         suite="correctness",
         run=f"{args.run}--{name}",
-        split="dev",
+        split=args.split,
         created=datetime.now(UTC),
         questions=len(rows),
-        test_split_opened=False,
+        test_split_opened=args.split == "test",
         system={
             "answers_run": args.run,
             "judge_model": models[role],
@@ -136,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
         metrics=summarise(rows, METRICS),
         by={"question_type": summarise_by(rows, METRICS, "question_type")},
     )
-    directory = args.results_dir / "correctness" / f"{args.run}--{name}" / "dev"
+    directory = args.results_dir / "correctness" / f"{args.run}--{name}" / args.split
     write_run(directory, summary, rows)
     print({metric: round(value.mean, 3) for metric, value in summary.metrics.items()})
     print(f"Wrote {directory} and {path}")

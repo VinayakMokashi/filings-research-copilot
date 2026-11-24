@@ -20,6 +20,8 @@ Usage: uv run poe answer-questions --limit 10        (needs GROQ_API_KEY)
        uv run poe answer-questions                   (all dev questions, resumable)
        uv run poe answer-questions --first eval/labels/answer-correctness-sample.json
                                                      (the questions sampled for labelling first)
+       uv run poe answer-questions --run doc-agent-v4-cerebras --split test --allow-test
+                                                     (the held-out test split, milestones only)
 """
 
 from __future__ import annotations
@@ -39,7 +41,7 @@ from copilot.config import get_settings
 from copilot.eval.financebench import Question
 from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
 from copilot.eval.retrieval import gold_pages
-from copilot.eval.splits import load_split
+from copilot.eval.splits import HeldOutError, load_split
 from copilot.logs import configure_logging
 
 METRICS = ["answered", "retried", "uncited", "context_hit", "cites_evidence"]
@@ -99,13 +101,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run", default="doc-agent-v3", help="run name")
     parser.add_argument("--limit", type=int, help="answer only the first N questions")
     parser.add_argument("--first", type=Path, help="a JSON file whose ids to answer first")
+    parser.add_argument("--split", choices=("dev", "test"), default="dev")
+    parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
 
     settings = get_settings()
     configure_logging(settings.log_level, settings.log_format)
-    questions = load_split("dev", settings.data_dir / "raw" / "financebench")[: args.limit]
-    path = settings.data_dir / "processed" / "answers" / args.run / "dev" / "answers.jsonl"
+    try:
+        questions = load_split(
+            args.split, settings.data_dir / "raw" / "financebench", allow_test=args.allow_test
+        )[: args.limit]
+    except HeldOutError:
+        print("FinanceBench's test split is held out. Add --allow-test only for a milestone run.")
+        return 2
+    path = settings.data_dir / "processed" / "answers" / args.run / args.split / "answers.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     done = {}
     if path.exists():
@@ -132,10 +142,10 @@ def main(argv: list[str] | None = None) -> int:
     summary = RunSummary(
         suite="answers",
         run=args.run,
-        split="dev",
+        split=args.split,
         created=datetime.now(UTC),
         questions=len(rows),
-        test_split_opened=False,
+        test_split_opened=args.split == "test",
         system={
             "agent": "understood filings, three rewrites, fused dense search, page chunks",
             "retry": "on a refusal, search for what is missing across the company's filings",
@@ -153,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         metrics=summarise(rows, METRICS),
         by={"question_type": summarise_by(rows, METRICS, "question_type")},
     )
-    directory = args.results_dir / "answers" / args.run / "dev"
+    directory = args.results_dir / "answers" / args.run / args.split
     write_run(directory, summary, rows)
     print({name: round(value.mean, 3) for name, value in summary.metrics.items()})
     print(f"Wrote {directory} and {path}")

@@ -1,10 +1,10 @@
 """Check whether each answer's sentences are supported by the sources they cite (step 3.7).
 
-Reads data/processed/answers/<run>/dev/answers.jsonl and checks every answered question
-not checked yet, appending the sentence verdicts to
+Reads data/processed/answers/<run>/<split>/answers.jsonl (dev unless --split test) and
+checks every answered question not checked yet, appending the sentence verdicts to
 data/processed/faithfulness/<run>/<judge>/checks.jsonl as they arrive (they quote the
-answers, so they stay local). Then writes measures for every checked answer, by id, to
-eval/results/faithfulness/<run>--<judge>/dev/:
+answers, so they stay local). Then writes measures for every checked answer of the split,
+by id, to eval/results/faithfulness/<run>--<judge>/<split>/:
 
 - `faithful`: every sentence cites a source and is supported by what it cites;
 - `supported_share`: the share of an answer's sentences that are supported (a sentence
@@ -12,6 +12,7 @@ eval/results/faithfulness/<run>--<judge>/dev/:
 - citation precision over all citations of the run, in the summary.
 
 Usage: uv run poe check-faithfulness --run doc-agent-v3-full
+       uv run poe check-faithfulness --run copilot-v2 --split test --allow-test   (milestones)
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ from typing import Any
 from copilot.config import get_settings
 from copilot.eval.faithfulness import PROMPT_VERSION, ROLE, check
 from copilot.eval.report import RESULTS_DIR, RunSummary, summarise, summarise_by, write_run
-from copilot.eval.splits import load_split
+from copilot.eval.splits import HeldOutError, load_split
 from copilot.llm import LLMGateway, ModelRole
 from copilot.llm.cache import CachedLLM
 from copilot.llm.gateway import role_models
@@ -48,15 +49,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--run", required=True, help="the answers run to check")
     parser.add_argument("--role", choices=["fast", "strong"], default=ROLE, help="judge model")
+    parser.add_argument("--split", choices=("dev", "test"), default="dev")
+    parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
     role: ModelRole = args.role
 
     settings = get_settings()
     configure_logging(settings.log_level, settings.log_format)
-    questions = load_split("dev", settings.data_dir / "raw" / "financebench")
+    try:
+        questions = load_split(
+            args.split, settings.data_dir / "raw" / "financebench", allow_test=args.allow_test
+        )
+    except HeldOutError:
+        print("FinanceBench's test split is held out. Add --allow-test only for a milestone run.")
+        return 2
     answers = read_jsonl(
-        settings.data_dir / "processed" / "answers" / args.run / "dev" / "answers.jsonl"
+        settings.data_dir / "processed" / "answers" / args.run / args.split / "answers.jsonl"
     )
     models = role_models(settings)
     name = f"{models[role].rsplit('/', 1)[-1]}-f{PROMPT_VERSION}"
@@ -117,10 +126,10 @@ def main(argv: list[str] | None = None) -> int:
     summary = RunSummary(
         suite="faithfulness",
         run=f"{args.run}--{name}",
-        split="dev",
+        split=args.split,
         created=datetime.now(UTC),
         questions=len(rows),
-        test_split_opened=False,
+        test_split_opened=args.split == "test",
         system={
             "answers_run": args.run,
             "judge_model": models[role],
@@ -133,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
         metrics=summarise(rows, METRICS),
         by={"question_type": summarise_by(rows, METRICS, "question_type")},
     )
-    directory = args.results_dir / "faithfulness" / f"{args.run}--{name}" / "dev"
+    directory = args.results_dir / "faithfulness" / f"{args.run}--{name}" / args.split
     write_run(directory, summary, rows)
     print({metric: round(value.mean, 3) for metric, value in summary.metrics.items()})
     print(f"citation precision {summary.system['citation_precision']}; wrote {directory}")
