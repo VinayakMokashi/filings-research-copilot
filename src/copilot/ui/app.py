@@ -137,7 +137,9 @@ def client() -> CopilotClient:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def page(doc_name: str, number: int) -> dict[str, Any] | None:
-    return CopilotClient(API_URL, "ui-pages").source(doc_name, number)
+    # Signed like every other call: on Cloud Run the API is private.
+    client = CopilotClient(API_URL, "ui-pages", id_token=SETTINGS.api_id_token)
+    return client.source(doc_name, number)
 
 
 def ask_page() -> None:

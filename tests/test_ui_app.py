@@ -291,3 +291,28 @@ def test_every_headline_on_the_results_page_has_its_run() -> None:
     for _area, _what, folder, metric in HEADLINES:
         summary = json.loads((RESULTS / folder / "summary.json").read_text(encoding="utf-8"))
         assert metric in summary["metrics"], folder
+
+
+def test_a_cited_page_is_fetched_with_the_uis_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    from copilot.config import Settings
+    from copilot.ui import app
+
+    signed: list[bool] = []
+
+    class Client:
+        def __init__(self, base_url: str, visitor: str, *, id_token: bool = False) -> None:
+            signed.append(id_token)
+
+        def source(self, doc_name: str, page: int) -> dict[str, Any]:
+            return {"doc_name": doc_name, "page": page, "text": "Item 7."}
+
+    monkeypatch.setattr(app, "CopilotClient", Client)
+    monkeypatch.setattr(app, "SETTINGS", Settings(_env_file=None, api_id_token=True))
+    app.page.clear()
+
+    assert app.page("ACME_2022_10K", 26) == {
+        "doc_name": "ACME_2022_10K",
+        "page": 26,
+        "text": "Item 7.",
+    }
+    assert signed == [True]  # the private API on Cloud Run refuses an unsigned call
