@@ -67,6 +67,18 @@ EXAMPLES = (
 )
 # (area, what, run folder under eval/results, metric)
 HEADLINES = (
+    (
+        "Copilot",
+        "Correct on FinanceBench's held-out test split",
+        "correctness/copilot-v2--qwen-3.8-27b-p2/test",
+        "correct",
+    ),
+    (
+        "Copilot",
+        "Correct on FinanceBench dev",
+        "correctness/copilot-v2--qwen-3.8-27b-p2/dev",
+        "correct",
+    ),
     ("Routing", "LLM router, held-out test split", "routing/llm-gpt-oss-120b/test", "accuracy"),
     (
         "Routing",
@@ -338,13 +350,27 @@ def checked(validation: dict[str, Any]) -> str:
     return f"Checked against the sources: {cut} sentence{'s' * (cut != 1)} could not be verified."
 
 
+def readable(name: str) -> str:
+    """A column's name as an axis or figure title: "fiscal_year" reads "fiscal year"."""
+    return name.replace("_", " ")
+
+
+def chart_frame(frame: pd.DataFrame, x: str) -> pd.DataFrame:
+    """The rows a chart plots, with years as labels: as numbers the axis would read 2,018."""
+    if "year" in x.lower() and pd.api.types.is_integer_dtype(frame[x]):
+        return frame.assign(**{x: frame[x].astype(str)})
+    return frame
+
+
 def show_table(table: dict[str, Any], chart: dict[str, Any] | None) -> None:
     frame = pd.DataFrame(table["rows"], columns=table["columns"])
     kind, x, y = (chart or {}).get("kind"), (chart or {}).get("x"), (chart or {}).get("y")
     if kind == "metric" and y in frame and len(frame) == 1:
-        st.metric(str(y).replace("_", " "), f"{frame[y].iloc[0]:,}")
+        st.metric(readable(str(y)), f"{frame[y].iloc[0]:,}")
     elif kind in ("bar", "line") and x in frame and y in frame:
-        (st.bar_chart if kind == "bar" else st.line_chart)(frame, x=x, y=y)
+        (st.bar_chart if kind == "bar" else st.line_chart)(
+            chart_frame(frame, str(x)), x=x, y=y, x_label=readable(str(x)), y_label=readable(str(y))
+        )
     with st.expander("Query result"):
         st.dataframe(frame, hide_index=True)
         if table.get("truncated"):
