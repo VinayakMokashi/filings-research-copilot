@@ -43,6 +43,10 @@ jobs:
       - name: Test
         run: uv run pytest
 
+      # Relative links and anchors only: fetching web pages would make CI depend on other sites.
+      - name: Documentation links
+        run: uv run python scripts/check_links.py
+
   images:
     name: Container images
     runs-on: ubuntu-latest
