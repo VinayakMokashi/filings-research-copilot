@@ -1,12 +1,12 @@
-"""Run FinanceBench dev questions through the copilot's graph, resumably (step 5.6).
+"""Run FinanceBench questions through the copilot's graph, resumably (step 5.6).
 
-Each dev question goes through the whole graph in batch mode (`build_components(batch=True)`:
-paced calls, and a spent quota stops the run so it can resume): rewrite, understand, route,
-the specialist, synthesise, validate (and revise), respond and remember, on a thread of its
-own. A first question makes no rewrite call, and batch runs keep no notes. Every
-event is appended to data/traces/<run>.jsonl, and each answer to
-data/processed/answers/<run>/dev/answers.jsonl in the doc agent's format, so `poe
-judge-answers --run <run>` and `poe check-faithfulness --run <run>` score it like any
+Each question of the split (dev unless --split test) goes through the whole graph in batch
+mode (`build_components(batch=True)`: paced calls, and a spent quota stops the run so it can
+resume): rewrite, understand, route, the specialist, synthesise, validate (and revise),
+respond and remember, on a thread of its own. A first question makes no rewrite call, and
+batch runs keep no notes. Every event is appended to data/traces/<run>.jsonl, and each
+answer to data/processed/answers/<run>/<split>/answers.jsonl in the doc agent's format, so
+`poe judge-answers --run <run>` and `poe check-faithfulness --run <run>` score it like any
 answer run. Each record also keeps what the copilot did:
 
 - `route`, the router that decided and its model, and `steps`, the nodes it ran;
@@ -16,15 +16,16 @@ answer run. Each record also keeps what the copilot did:
 - `validation`, and `revisions`.
 
 The specialist's answer before validation goes to
-data/processed/answers/<run>-drafts/dev/answers.jsonl, so judging both runs measures what
-the validator changed on the same questions. When every question is done,
-eval/results/copilot/<run>/dev/ gets the agent metrics: steps per task, tool success, cost
-and time per task, by route.
+data/processed/answers/<run>-drafts/<split>/answers.jsonl, so judging both runs measures
+what the validator changed on the same questions. When every question is done,
+eval/results/copilot/<run>/<split>/ gets the agent metrics: steps per task, tool success,
+cost and time per task, by route.
 
 Usage (needs Qdrant, the facts database and GROQ_API_KEY):
   uv run poe run-copilot --run copilot-v1
   uv run poe run-copilot --run copilot-smoke --limit 2
   uv run poe run-copilot --run nightly-slice --ids eval/nightly/slice.json  # the nightly slice
+  uv run poe run-copilot --run copilot-v2 --split test --allow-test   # milestone runs only
 """
 
 from __future__ import annotations
@@ -54,7 +55,7 @@ from copilot.eval.report import (
     summarise_by,
     write_run,
 )
-from copilot.eval.splits import load_split
+from copilot.eval.splits import HeldOutError, load_split
 from copilot.llm import LLMError
 from copilot.llm.gateway import token_cost
 from copilot.logs import configure_logging
@@ -167,23 +168,31 @@ def cost(tokens: dict[str, list[int]]) -> float | None:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--run", required=True, help="run name")
-    parser.add_argument("--limit", type=int, help="only the first N dev questions")
+    parser.add_argument("--limit", type=int, help="only the first N questions of the split")
     parser.add_argument(
-        "--ids", type=Path, help="only the dev questions a JSON file's `ids` list names"
+        "--ids", type=Path, help="only the questions a JSON file's `ids` list names"
     )
+    parser.add_argument("--split", choices=("dev", "test"), default="dev")
+    parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
 
     settings = get_settings()
     configure_logging(settings.log_level, settings.log_format)
-    questions = load_split("dev", settings.data_dir / "raw" / "financebench")
+    try:
+        questions = load_split(
+            args.split, settings.data_dir / "raw" / "financebench", allow_test=args.allow_test
+        )
+    except HeldOutError:
+        print("FinanceBench's test split is held out. Add --allow-test only for a milestone run.")
+        return 2
     if args.ids is not None:
         wanted = set(json.loads(args.ids.read_text(encoding="utf-8"))["ids"])
         questions = [question for question in questions if question.id in wanted]
     questions = questions[: args.limit]
     answers_root = settings.data_dir / "processed" / "answers"
-    out_path = answers_root / args.run / "dev" / "answers.jsonl"
-    drafts_path = answers_root / f"{args.run}-drafts" / "dev" / "answers.jsonl"
+    out_path = answers_root / args.run / args.split / "answers.jsonl"
+    drafts_path = answers_root / f"{args.run}-drafts" / args.split / "answers.jsonl"
     for path in (out_path, drafts_path):
         path.parent.mkdir(parents=True, exist_ok=True)
     done = read_records(out_path)
@@ -260,10 +269,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     summary = RunSummary(
         suite="copilot",
         run=args.run,
-        split="dev",
+        split=args.split,
         created=datetime.now(UTC),
         questions=len(rows),
-        test_split_opened=False,
+        test_split_opened=args.split == "test",
         system={
             "graph": (
                 "rewrite, understand, route, specialist (data on to doc when it finds nothing), "
@@ -279,7 +288,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "question_type": summarise_by(rows, METRICS, "question_type"),
         },
     )
-    results = args.results_dir / "copilot" / args.run / "dev"
+    results = args.results_dir / "copilot" / args.run / args.split
     write_run(results, summary, rows)
     print({name: round(value.mean, 4) for name, value in summary.metrics.items()})
     print(f"Wrote {results}, {out_path} and {drafts_path}")
