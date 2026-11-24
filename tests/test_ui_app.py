@@ -265,3 +265,29 @@ def test_the_search_page_lists_passages_and_counts_a_page_opened(
 
     assert clicks == [("s1", 1)]  # opened twice, counted once
     assert "The whole page." in [text.value for text in app.text]
+
+
+def test_a_chart_shows_years_as_years() -> None:
+    import pandas as pd
+
+    from copilot.ui.app import chart_frame, readable
+
+    frame = pd.DataFrame({"fiscal_year": [2018, 2019], "research_and_development": [3.2, 3.1]})
+
+    plotted = chart_frame(frame, "fiscal_year")
+
+    assert plotted["fiscal_year"].tolist() == ["2018", "2019"]  # not 2,018 on the axis
+    assert plotted["research_and_development"].tolist() == [3.2, 3.1]
+    assert frame["fiscal_year"].tolist() == [2018, 2019]  # the query result keeps its numbers
+    assert chart_frame(frame, "research_and_development") is frame
+    assert readable("research_and_development") == "research and development"
+
+
+def test_every_headline_on_the_results_page_has_its_run() -> None:
+    import json
+
+    from copilot.ui.app import HEADLINES, RESULTS
+
+    for _area, _what, folder, metric in HEADLINES:
+        summary = json.loads((RESULTS / folder / "summary.json").read_text(encoding="utf-8"))
+        assert metric in summary["metrics"], folder
