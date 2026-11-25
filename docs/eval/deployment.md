@@ -144,6 +144,7 @@ The UI counts a visitor's quota by the last address in `X-Forwarded-For` ([ADR-0
 | `demo-up` reported the database running 6 s into a 10-minute start: the instance's state reads RUNNABLE before the start has ended | The script waits for Cloud SQL's operation to end, not for the state |
 | Each deploy's start check downloaded the 0.38 GB API image back from the registry, billed as internet egress | The build loads the image into the runner's Docker as it pushes |
 | An open UI page kept the UI's CPU billed for as long as it stayed open, reconnecting after each timeout | An idle limit (step 9.0): after 15 minutes without input the page leaves for a static one, which holds no websocket |
+| A cited page or a search result never opened on the live UI, from 2 November to 25 November: the UI fetched pages without an identity token, and the private API refused the call. Local runs have no private API, so no test saw it; the demo recording of step 10.2 found it | The UI signs those calls as the chat does, with a test; deployed with #139, and the demo opened a cited page on the live service ([build log](../BUILD_LOG.md)) |
 
 ## Costs
 
