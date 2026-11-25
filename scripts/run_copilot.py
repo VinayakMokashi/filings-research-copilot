@@ -21,11 +21,17 @@ what the validator changed on the same questions. When every question is done,
 eval/results/copilot/<run>/<split>/ gets the agent metrics: steps per task, tool success,
 cost and time per task, by route.
 
+`--lenient` answers as the API does when a model's reply is unreadable: a check whose
+reply the provider refuses as invalid JSON lets the answer pass unchecked, and the record's
+`validation` says so. It is for a question whose check fails that way every time, which a
+strict run can never finish; a spent quota still stops the run.
+
 Usage (needs Qdrant, the facts database and GROQ_API_KEY):
   uv run poe run-copilot --run copilot-v1
   uv run poe run-copilot --run copilot-smoke --limit 2
   uv run poe run-copilot --run nightly-slice --ids eval/nightly/slice.json  # the nightly slice
   uv run poe run-copilot --run copilot-v2 --split test --allow-test   # milestone runs only
+  uv run poe run-copilot --run copilot-v2 --ids stuck.json --lenient   # one stuck question
 """
 
 from __future__ import annotations
@@ -36,6 +42,7 @@ import statistics
 import time
 from collections import Counter
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -138,6 +145,13 @@ def tool_ok(result: dict[str, Any]) -> bool:
     return True
 
 
+def quota_hit(events: Sequence[dict[str, Any]], result: dict[str, Any]) -> bool:
+    """A spent quota shaped the reply, which only a lenient run lets through: the API would
+    ask the user to try again, or show a query's rows without their written analysis."""
+    data = result.get("data") or {}
+    return any(event.get("event") == "quota" for event in events) or bool(data.get("rate_limited"))
+
+
 def draft_before_validation(copilot: Copilot, config: RunnableConfig) -> dict[str, Any]:
     """The specialist's result as it stood before its first check."""
     before: dict[str, Any] = {}
@@ -174,6 +188,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--split", choices=("dev", "test"), default="dev")
     parser.add_argument("--allow-test", action="store_true", help="open the held-out test split")
+    parser.add_argument(
+        "--lenient",
+        action="store_true",
+        help="as the API: an unreadable reply lets the answer pass unchecked",
+    )
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
 
@@ -202,7 +221,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"{len(questions)} questions, {len(done)} already answered, {len(todo)} to go")
     if todo:
         trace = TraceWriter(settings.data_dir / "traces" / f"{args.run}.jsonl")
-        copilot = Copilot(build_components(settings, batch=True), trace=trace)
+        components = build_components(settings, batch=True)
+        if args.lenient:
+            components = replace(components, strict=False)
+        copilot = Copilot(components, trace=trace)
         with (
             out_path.open("a", encoding="utf-8", newline="\n") as out,
             drafts_path.open("a", encoding="utf-8", newline="\n") as drafts,
@@ -219,6 +241,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     return RETRY_LATER
                 state = copilot.graph.get_state(config).values
                 result = state.get("result", {})
+                if quota_hit(events, result):
+                    print(f"Stopped at {question.id}: a model's quota is used up. Run again later.")
+                    return RETRY_LATER
                 decision = state.get("decision", {})
                 tokens = usage(events)
                 record = as_answer(question, result) | {
