@@ -23,6 +23,7 @@
 | [The interleaved search page](interleaving.md) | 9 | The Search page's live check: team draft between dense and hybrid search, a click credited once, nothing of the query kept; no readers' searches by the Phase 9 close |
 | [Drift checks](drift.md) | 9 | Whether retrieval similarity, refusals and the live API's latency moved: the first look, and the first comparisons with the default windows, which found no drift |
 | [The answer bandit online](bandit-online.md) | 9 | Whether the online bandit's policy earns at least the reward of its randomized fixed arm, over a week of the daily canary's judged answers |
+| [FinanceBench's held-out test split](financebench-test.md) | 10 | How the final copilot and the doc agent alone answer the 50 held-out test questions, from 12 companies never used in tuning, opened once |
 
 One report per experiment, with these sections:
 
@@ -52,6 +53,11 @@ Each run writes `items.jsonl`, `summary.json` and `summary.md` to `eval/results/
 
 | Run | Suite | Split | Headline (95% interval) | What it is |
 |---|---|---|---|---|
+| [copilot-v2--qwen-3.8-27b-p2, test](../../eval/results/correctness/copilot-v2--qwen-3.8-27b-p2/test/summary.md) | Correctness | Test, held out, opened once | correct 0.68 (0.54 to 0.80); refused 0.06 | The final copilot on FinanceBench's 50 held-out questions, at Phase 10 ([report](financebench-test.md)) |
+| [doc-agent-v4-cerebras--qwen-3.8-27b-p2, test](../../eval/results/correctness/doc-agent-v4-cerebras--qwen-3.8-27b-p2/test/summary.md) | Correctness | Test, held out, opened once | correct 0.66 (0.52 to 0.78); refused 0.04 | The doc agent alone on the same questions, the paired baseline |
+| [copilot-v2-drafts--qwen-3.8-27b-p2, test](../../eval/results/correctness/copilot-v2-drafts--qwen-3.8-27b-p2/test/summary.md) | Correctness | Test, held out, opened once | correct 0.70 (0.56 to 0.82); refused 0.00 | The copilot's first answers, before the validator |
+| [copilot-v2--qwen-3.8-27b-f1, test](../../eval/results/faithfulness/copilot-v2--qwen-3.8-27b-f1/test/summary.md) | Faithfulness | Test, 47 answered | faithful 0.45; 0.74 (0.56 to 0.89) on the 27 doc and hybrid answers | The check can't read the data agent's answers; the drafts and the doc agent sit [beside it](../../eval/results/faithfulness/) |
+| [copilot-v2, test](../../eval/results/copilot/copilot-v2/test/summary.md) | Agent metrics | Test | 8.6 steps; tool success 1.00; handed on 0.02; revised 0.26; $0.0047 a question | Routes, handoffs, revisions and cost on the held-out questions |
 | [first-pages](../../eval/results/retrieval/first-pages/dev/summary.md) | Retrieval | Dev | hit@20 0.29 (0.20 to 0.38) | Floor: the first 20 pages of the correct document |
 | [page_bge-small-dense-oracle](../../eval/results/retrieval/page_bge-small-dense-oracle/dev/summary.md) | Retrieval | Dev | recall@10 0.630 (0.54 to 0.72); MRR@10 0.423 | Dense search over page chunks within the question's filing: the baseline ([ADR-0011](../decisions/0011-retrieval-baseline.md)) |
 | [page_bge-small-dense-corpus](../../eval/results/retrieval/page_bge-small-dense-corpus/dev/summary.md) | Retrieval | Dev | recall@10 0.415 (0.33 to 0.51); MRR@10 0.230 | The same across all 84 filings |
