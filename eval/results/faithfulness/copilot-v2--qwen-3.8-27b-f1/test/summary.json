@@ -1,0 +1,80 @@
+{
+  "suite": "faithfulness",
+  "run": "copilot-v2--qwen-3.8-27b-f1",
+  "split": "test",
+  "created": "2026-11-25T07:46:39.375686Z",
+  "questions": 47,
+  "test_split_opened": true,
+  "system": {
+    "answers_run": "copilot-v2",
+    "judge_model": "cerebras/qwen-3.8-27b",
+    "prompt_version": "1",
+    "citation_precision": 0.9831,
+    "citations": 59,
+    "judge_errors": 0,
+    "judge_tokens": 35679
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "faithful": {
+      "mean": 0.44680851063829785,
+      "low": 0.2978723404255319,
+      "high": 0.5957446808510638
+    },
+    "supported_share": {
+      "mean": 0.5301418439716311,
+      "low": 0.39361702127659576,
+      "high": 0.6648936170212766
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 16,
+        "metrics": {
+          "faithful": {
+            "mean": 0.625,
+            "low": 0.375,
+            "high": 0.875
+          },
+          "supported_share": {
+            "mean": 0.796875,
+            "low": 0.609375,
+            "high": 0.9375
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 17,
+        "metrics": {
+          "faithful": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "supported_share": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 14,
+        "metrics": {
+          "faithful": {
+            "mean": 0.7857142857142857,
+            "low": 0.5714285714285714,
+            "high": 1.0
+          },
+          "supported_share": {
+            "mean": 0.869047619047619,
+            "low": 0.7023809523809523,
+            "high": 1.0
+          }
+        }
+      }
+    }
+  }
+}

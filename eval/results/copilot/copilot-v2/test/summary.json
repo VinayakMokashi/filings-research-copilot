@@ -1,0 +1,303 @@
+{
+  "suite": "copilot",
+  "run": "copilot-v2",
+  "split": "test",
+  "created": "2026-11-25T07:44:59.512672Z",
+  "questions": 50,
+  "test_split_opened": true,
+  "system": {
+    "graph": "rewrite, understand, route, specialist (data on to doc when it finds nothing), synthesise, validate, respond, remember",
+    "routes": {
+      "doc": 20,
+      "hybrid": 10,
+      "data": 20
+    },
+    "router_fallbacks": 0,
+    "median_seconds": 19.43
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "answered": {
+      "mean": 0.94,
+      "low": 0.86,
+      "high": 1.0
+    },
+    "tool_ok": {
+      "mean": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    },
+    "handed_on": {
+      "mean": 0.02,
+      "low": 0.0,
+      "high": 0.06
+    },
+    "revised": {
+      "mean": 0.26,
+      "low": 0.14,
+      "high": 0.38
+    },
+    "steps": {
+      "mean": 8.62,
+      "low": 8.34,
+      "high": 8.92
+    },
+    "cost_usd": {
+      "mean": 0.004702560000000001,
+      "low": 0.0042675824,
+      "high": 0.005170107100000001
+    },
+    "seconds": {
+      "mean": 29.457199999999997,
+      "low": 23.607319999999998,
+      "high": 35.73583
+    }
+  },
+  "by": {
+    "route": {
+      "data": {
+        "questions": 20,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "tool_ok": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "handed_on": {
+            "mean": 0.05,
+            "low": 0.0,
+            "high": 0.15
+          },
+          "revised": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "steps": {
+            "mean": 8.05,
+            "low": 8.0,
+            "high": 8.15
+          },
+          "cost_usd": {
+            "mean": 0.0039134650000000005,
+            "low": 0.0037715086249999995,
+            "high": 0.004077562999999999
+          },
+          "seconds": {
+            "mean": 20.059999999999995,
+            "low": 18.806500000000003,
+            "high": 22.1155375
+          }
+        }
+      },
+      "doc": {
+        "questions": 20,
+        "metrics": {
+          "answered": {
+            "mean": 0.9,
+            "low": 0.75,
+            "high": 1.0
+          },
+          "tool_ok": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "handed_on": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "revised": {
+            "mean": 0.35,
+            "low": 0.15,
+            "high": 0.55
+          },
+          "steps": {
+            "mean": 8.9,
+            "low": 8.4,
+            "high": 9.5
+          },
+          "cost_usd": {
+            "mean": 0.004670965,
+            "low": 0.0039266891250000005,
+            "high": 0.005476015749999999
+          },
+          "seconds": {
+            "mean": 30.5565,
+            "low": 19.1097375,
+            "high": 44.126412499999994
+          }
+        }
+      },
+      "hybrid": {
+        "questions": 10,
+        "metrics": {
+          "answered": {
+            "mean": 0.9,
+            "low": 0.7,
+            "high": 1.0
+          },
+          "tool_ok": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "handed_on": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "revised": {
+            "mean": 0.6,
+            "low": 0.3,
+            "high": 0.9
+          },
+          "steps": {
+            "mean": 9.2,
+            "low": 8.6,
+            "high": 9.8
+          },
+          "cost_usd": {
+            "mean": 0.006343940000000001,
+            "low": 0.005346273749999999,
+            "high": 0.007570318
+          },
+          "seconds": {
+            "mean": 46.053000000000004,
+            "low": 34.878,
+            "high": 56.27139999999999
+          }
+        }
+      }
+    },
+    "question_type": {
+      "domain-relevant": {
+        "questions": 16,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "tool_ok": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "handed_on": {
+            "mean": 0.0625,
+            "low": 0.0,
+            "high": 0.1875
+          },
+          "revised": {
+            "mean": 0.375,
+            "low": 0.125,
+            "high": 0.625
+          },
+          "steps": {
+            "mean": 8.8125,
+            "low": 8.375,
+            "high": 9.25
+          },
+          "cost_usd": {
+            "mean": 0.00502010625,
+            "low": 0.0042648109374999995,
+            "high": 0.0058379115625
+          },
+          "seconds": {
+            "mean": 36.379374999999996,
+            "low": 24.528593750000002,
+            "high": 49.505515624999994
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 17,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "tool_ok": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "handed_on": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "revised": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "steps": {
+            "mean": 8.0,
+            "low": 8.0,
+            "high": 8.0
+          },
+          "cost_usd": {
+            "mean": 0.0038620764705882354,
+            "low": 0.00373492,
+            "high": 0.0039960601470588235
+          },
+          "seconds": {
+            "mean": 19.18117647058823,
+            "low": 18.66822058823529,
+            "high": 19.745882352941173
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 17,
+        "metrics": {
+          "answered": {
+            "mean": 0.8235294117647058,
+            "low": 0.6470588235294118,
+            "high": 1.0
+          },
+          "tool_ok": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "handed_on": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "revised": {
+            "mean": 0.4117647058823529,
+            "low": 0.17647058823529413,
+            "high": 0.6470588235294118
+          },
+          "steps": {
+            "mean": 9.058823529411764,
+            "low": 8.470588235294118,
+            "high": 9.764705882352942
+          },
+          "cost_usd": {
+            "mean": 0.005244176470588235,
+            "low": 0.004293717794117647,
+            "high": 0.006269230588235294
+          },
+          "seconds": {
+            "mean": 33.21823529411765,
+            "low": 22.282705882352946,
+            "high": 46.522985294117646
+          }
+        }
+      }
+    }
+  }
+}

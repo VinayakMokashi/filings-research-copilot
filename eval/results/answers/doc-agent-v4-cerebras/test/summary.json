@@ -1,0 +1,145 @@
+{
+  "suite": "answers",
+  "run": "doc-agent-v4-cerebras",
+  "split": "test",
+  "created": "2026-11-24T06:17:46.835753Z",
+  "questions": 50,
+  "test_split_opened": true,
+  "system": {
+    "agent": "understood filings, three rewrites, fused dense search, page chunks",
+    "retry": "on a refusal, search for what is missing across the company's filings",
+    "retry_budget_tokens": 4500,
+    "context_budget_tokens": 3000,
+    "answer_model": "cerebras/gpt-oss-120b",
+    "rewrite_model": "cerebras/qwen-3.8-27b",
+    "prompt_version": "2",
+    "mean_prompt_tokens": 5291,
+    "mean_completion_tokens": 657,
+    "invalid_citations": 0,
+    "calculation_errors": 0,
+    "limit": null
+  },
+  "confidence": 0.95,
+  "resamples": 10000,
+  "metrics": {
+    "answered": {
+      "mean": 0.96,
+      "low": 0.9,
+      "high": 1.0
+    },
+    "retried": {
+      "mean": 0.26,
+      "low": 0.14,
+      "high": 0.38
+    },
+    "uncited": {
+      "mean": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "context_hit": {
+      "mean": 0.72,
+      "low": 0.6,
+      "high": 0.84
+    },
+    "cites_evidence": {
+      "mean": 0.62,
+      "low": 0.48,
+      "high": 0.74
+    }
+  },
+  "by": {
+    "question_type": {
+      "domain-relevant": {
+        "questions": 16,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.25,
+            "low": 0.0625,
+            "high": 0.5
+          },
+          "uncited": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.6875,
+            "low": 0.4375,
+            "high": 0.875
+          },
+          "cites_evidence": {
+            "mean": 0.625,
+            "low": 0.375,
+            "high": 0.875
+          }
+        }
+      },
+      "metrics-generated": {
+        "questions": 17,
+        "metrics": {
+          "answered": {
+            "mean": 0.8823529411764706,
+            "low": 0.7058823529411765,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.29411764705882354,
+            "low": 0.11764705882352941,
+            "high": 0.5294117647058824
+          },
+          "uncited": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.9411764705882353,
+            "low": 0.8235294117647058,
+            "high": 1.0
+          },
+          "cites_evidence": {
+            "mean": 0.7647058823529411,
+            "low": 0.5294117647058824,
+            "high": 0.9411764705882353
+          }
+        }
+      },
+      "novel-generated": {
+        "questions": 17,
+        "metrics": {
+          "answered": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          },
+          "retried": {
+            "mean": 0.23529411764705882,
+            "low": 0.058823529411764705,
+            "high": 0.47058823529411764
+          },
+          "uncited": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0
+          },
+          "context_hit": {
+            "mean": 0.5294117647058824,
+            "low": 0.29411764705882354,
+            "high": 0.7647058823529411
+          },
+          "cites_evidence": {
+            "mean": 0.47058823529411764,
+            "low": 0.23529411764705882,
+            "high": 0.7058823529411765
+          }
+        }
+      }
+    }
+  }
+}
