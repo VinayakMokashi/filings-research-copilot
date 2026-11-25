@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Filings Research Copilot |
 | **Plan written** | 2026-10-15 |
-| **Current phase** | Phase 8, Production deployment on Google Cloud (in progress) |
+| **Status** | Finished: Phases 0 to 10 done, 15 October to 25 November 2026 |
 
 This is the living plan. Steps are ticked as they land, every working session gets an entry in [BUILD_LOG.md](BUILD_LOG.md), and changes to the plan are recorded in the [change log](#10-change-log) with the reason. The [status tracker](#11-status-tracker) is at the bottom.
 
@@ -35,7 +35,7 @@ The project is finished when all of these are true:
 3. **Measured.** FinanceBench held-out results, retrieval recall@k, SQL execution accuracy, routing accuracy, latency and cost per answer, all reported with 95% confidence intervals.
 4. **Trained where it pays.** The domain embedder and the LoRA router are fine-tuned and compared with their baselines on fixed eval sets; each is adopted only on a significant gain (Phase 7).
 5. **Connected.** An MCP server that works from a standard MCP client such as Claude Desktop.
-6. **Automated.** CI runs lint, types, tests and an eval gate on every pull request; deploys go through GitHub Actions with Workload Identity Federation, so no service-account keys are stored.
+6. **Automated.** CI runs lint, types, tests, a secret scan and a documentation link check on every pull request, and a scheduled evaluation gates regressions on `main` ([ADR-0034](decisions/0034-nightly-evaluation.md)); deploys go through GitHub Actions with Workload Identity Federation, so no service-account keys are stored.
 7. **Documented.** Build log, decision records, concept guides, runbooks, README and project page are complete.
 
 Accuracy targets are set after the Phase 2 and Phase 3 baselines, not before. A change ships when its paired improvement is statistically significant on the dev set.
@@ -319,11 +319,12 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 
 **Goal:** a finished, verifiable project.
 
-- [ ] 10.1 Final README: architecture, results with confidence intervals, limitations, cost per demo.
-- [ ] 10.2 Demo video recorded during a demo window; screenshots.
-- [ ] 10.3 Project page updated with measured numbers and links.
-- [ ] 10.4 A technical write-up of what worked and what didn't.
-- [ ] 10.5 Documentation review: every concept guide complete with review questions; all links checked.
+- [x] 10.0 FinanceBench's held-out test split, opened once for the final copilot and the doc agent alone: correct 0.68 (0.56 to 0.80) and 0.66 (0.52 to 0.78), paired difference +0.02 (−0.08 to +0.12, p = 1.00) ([report](eval/financebench-test.md)).
+- [x] 10.1 Final README: architecture, results with confidence intervals, limitations, cost per demo ([README](../README.md)).
+- [x] 10.2 Demo video recorded during a demo window; screenshots. A script drives headless Chrome through one question on the live UI ([project page](https://vinayakmokashi.github.io/filings-research-copilot/#demo)).
+- [x] 10.3 Project page updated with measured numbers and links, each number linked to its report.
+- [x] 10.4 A technical write-up of what worked and what didn't ([write-up](WRITEUP.md)).
+- [x] 10.5 Documentation review: every concept guide complete with review questions; all links checked, on every pull request since ([`scripts/check_links.py`](../scripts/check_links.py)).
 
 **Done when:** every number on the README and project page links to the eval report that produced it.
 
@@ -410,6 +411,11 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 2026-11-23 | Step 9.3 done: the bandit stays on, and the canary goes back to ten questions a day | By ADR-0036's rule, set before the data: on the canary's judged answers the policy earned 0.93 against the fixed arm's 0.85, a difference that can't be told from none (p = 0.25). With cost counted at λ = 100 the fixed arm would win, and the judge shares the model the policy chose ([report](eval/bandit-online.md)) |
 | 2026-11-23 | Step 9.5 done | The default windows' first comparisons found no drift in retrieval similarity, refusals or the canary's latency ([report](eval/drift.md)) |
 | 2026-11-23 | Phase 9 closed | The nightly trend is on the project page, ratings are kept with their answers as preference pairs, and the bandit, the canary, the drift checks and the search page run on the live service. No reader asked, rated or searched during the phase, so the online signals so far come from the project's own questions |
+| 2026-11-24 | Step 10.0 added: FinanceBench's test split opened once, for the final copilot and the doc agent alone, within $0.75 | The held-out measure the evaluation table promised; the dev runs' setup and judges, so test and dev compare ([report](eval/financebench-test.md)) |
+| 2026-11-24 | Definition of done, item 6: the evaluation gate is the scheduled evaluation's regression test, not a step on every pull request | A model run needs provider keys, which a public repository's pull requests from forks can't use, and money each time; the scheduled run tests every change on `main` against the baseline and opens an issue on a significant drop ([ADR-0034](decisions/0034-nightly-evaluation.md)). CI checks the documentation's links instead |
+| 2026-11-24 | The person check of the judge stays open | The owner's choice: the judge's reference labels come from a stronger model, and every report says so ([ADR-0014](decisions/0014-answer-judge.md)) |
+| 2026-11-25 | After Phase 10 the evaluation runs every Sunday, as a full run, instead of every night | The owner's choice at the close: with the build finished, a full run a week is the finer test, at about $3.30 a month against about $12 ([ADR-0034's amendment](decisions/0034-nightly-evaluation.md#amendment-25-november-a-full-run-every-sunday-after-phase-10)) |
+| 2026-11-25 | Phase 10 closed, and the project finished | The README, the project page and the write-up report measured numbers, each linked to its report; the demo was recorded on the live service, where it found a fault no test had caught: cited pages couldn't open on the live UI, fixed with a test and deployed with the test results |
 
 ## 11. Status tracker
 
@@ -425,4 +431,4 @@ Already decided: public repository with an MIT licence ([ADR-0004](decisions/000
 | 7 Fine-tuning and optimisation | Done | 2026-10-27 | 2026-10-28 |
 | 8 Google Cloud deployment | Done | 2026-10-28 | 2026-11-10 |
 | 9 Online evaluation | Done | 2026-11-11 | 2026-11-23 |
-| 10 Showcase and polish | Planned | | |
+| 10 Showcase and polish | Done | 2026-11-24 | 2026-11-25 |
