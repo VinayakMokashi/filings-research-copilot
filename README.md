@@ -6,41 +6,99 @@
 
 An agentic research copilot for public-company filings. Ask a question about a company and get an answer built from its 10-K and 10-Q text and its XBRL financial facts, with every claim cited to the page or query it came from.
 
-> **Status:** in active development. Phases 0 to 6 are done (foundations, data and evaluation sets, the retrieval baseline, the doc agent with cited answers, the data agent with Text-to-SQL, orchestration with LangGraph, and the API, web UI, MCP server, container stack and traces); Phase 7, fine-tuning and optimisation, is done too. Phase 8, deployment on Google Cloud, is done: live since 2 November 2026, with an idle month measured at about $2.10 before credits. Phase 9, online evaluation and feedback, is done: a nightly evaluation within a hard cap, with its trend on the project page; ratings kept with their answers as preference pairs; an answer bandit learning online from a daily canary; drift checks; and a search page that interleaves two rankings. Phase 10, the showcase, is next. That is 11 phases, numbered 0–10. Progress is tracked in the [build plan](docs/PLAN.md) and the [build log](docs/BUILD_LOG.md).
->
-> **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/
->
-> **Live demo:** the [web UI](https://ui-499690143794.asia-south1.run.app) and the [MCP server](https://mcp-499690143794.asia-south1.run.app/mcp) (streamable HTTP), on Google Cloud. Questions are limited to 20 a visitor and 200 a day in all.
+![The copilot answering a question about Boeing's research and development expense: each step named as it runs, then a cited answer with a five-year chart](docs/site/media/demo.gif)
 
-## What it does (when finished)
+- **Try it:** the [web UI](https://ui-499690143794.asia-south1.run.app) and the [MCP server](https://mcp-499690143794.asia-south1.run.app/mcp) (streamable HTTP), on Google Cloud. Questions are limited to 20 a visitor and 200 a day in all.
+- **Project page:** https://vinayakmokashi.github.io/filings-research-copilot/, with a one-minute [demo video](https://vinayakmokashi.github.io/filings-research-copilot/#demo).
+- **Write-up:** [what worked and what didn't](docs/WRITEUP.md).
 
-- **Cited answers from filing text.** The filings a question names, three rewrites of it, and dense search over page chunks, each chosen by measurement; answers with a citation on every sentence, a calculator for arithmetic, and a refusal when the evidence isn't there. On FinanceBench dev the doc agent answers 65% of questions correctly (88% of those that ask for a figure), by an LLM judge checked against reference labels.
-- **Numbers from structured data.** Text-to-SQL over XBRL company facts, built on [text2sql-analyst](https://github.com/VinayakMokashi/text2sql-analyst): hints that link the question to the database's companies and metrics, read-only guardrails, and an answer that carries its SQL, the rows, exact statistics and a chart. On FinanceBench's dev figure questions it answers 32 of 33 correctly, by the same judge, where the doc agent answers 29.
-- **Research briefs.** A planner, parallel section writers, an editor and a critic, with every claim validated against its source.
-- **Tools for other AI apps.** An MCP server exposing search, financial queries and the copilot itself.
-- **Measured.** Evaluated on FinanceBench and purpose-built test sets, with 95% confidence intervals on every reported number.
-- **Deployable on demand.** Terraform deploys a production-shaped Google Cloud stack (Cloud Run, Cloud SQL, Pub/Sub, Secret Manager). The services scale to zero, and the database runs only for demos.
+> **Status:** finished. All eleven phases of the [build plan](docs/PLAN.md), numbered 0 to 10, ran from 15 October to 25 November 2026; the [build log](docs/BUILD_LOG.md) records every working session. The live service keeps running: a full evaluation every Sunday, a daily canary and an answer bandit, each within a hard spending cap.
+
+## What it does
+
+- **Cited answers from filing text.** It works out which filings a question names, rewrites the question three ways and searches page-sized chunks of those filings. Every sentence of the answer cites a page, a calculator does the arithmetic, and it declines when the pages don't hold the answer.
+- **Numbers from structured data.** Text-to-SQL over XBRL company facts, built on [text2sql-analyst](https://github.com/VinayakMokashi/text2sql-analyst): the answer carries its SQL, the rows, exact statistics and a chart.
+- **Both at once.** A question that needs figures and their reasons gets SQL's figures and the filings' explanation in one cited answer.
+- **Checked before it's shown.** A third model checks every cited sentence against its source; a failing answer is revised at most twice, then cut to what holds.
+- **Research briefs.** A planner, section writers working in parallel, a critic and an editor, with every claim checked against its source.
+- **Tools for other AI apps.** An MCP server exposing the filings' search, the facts database and the copilot itself.
+
+## Results
+
+Every rate comes with a 95% bootstrap interval, or an exact binomial one where every answer is right ([ADR-0007](docs/decisions/0007-evaluation-statistics.md)), and links to the report that measured it. FinanceBench was split by company before any code was written, and its 50 test questions were opened once, for the final version.
+
+| Measure | Result (95% interval) | Questions | Report |
+|---|---|---|---|
+| **Answer correctness, held out** | **0.68 (0.56 to 0.80)**; the doc agent alone 0.66 (0.52 to 0.78), paired difference +0.02 (−0.08 to +0.12, p = 1.00) | FinanceBench test: 50, from 12 companies never used in tuning | [Test split](docs/eval/financebench-test.md) |
+| Answer correctness, dev | 0.65 (0.56 to 0.74); the doc agent alone 0.65 (0.55 to 0.74) | FinanceBench dev: 100, from 20 companies | [Copilot v2](docs/eval/copilot-v2.md) |
+| Figure questions, answered by SQL | 32 of 33 (exact 0.84 to 1.00); reading pages, 29 | FinanceBench dev's metrics questions | [Data agent](docs/eval/data-agent-financebench.md) |
+| Faithfulness: every sentence supported by the pages it cites | 0.82 (0.71 to 0.91); the doc agent alone 0.49 (0.36 to 0.62) | The 55 dev answers from the doc and hybrid routes | [Copilot v2](docs/eval/copilot-v2.md#faithfulness) |
+| SQL execution accuracy | 14 of 14 held out (exact 0.77 to 1.00); 28 of 28 dev | The project's SQL set | [Test run](eval/results/sql/sql-agent-v2/test/summary.md), [guide](docs/concepts/value-linking.md) |
+| Routing accuracy | 60 of 60 held out (exact 0.94 to 1.00); 138 of 138 dev | The project's routing set | [Routing](docs/eval/routing.md#the-test-split) |
+| Retrieval recall@10 | 0.72 (0.63 to 0.81) | FinanceBench dev | [Run](eval/results/retrieval/page_bge-small-dense-rw-multi-hyde-decompose-understood/dev/summary.md), [ADR-0012](docs/decisions/0012-query-understanding-and-rewriting.md) |
+| Live answer time | 14.6 s on average | The daily canary's questions to the live API, 20 to 22 November | [Drift checks](docs/eval/drift.md) |
+| Cost of an answer | $0.0050 at list prices on Cerebras, the paid provider; Groq's free tier serves visitors first | FinanceBench dev | [Copilot v2](docs/eval/copilot-v2.md#cost) |
+
+The copilot matches the doc agent alone on correctness, on dev and held out, and its gain is elsewhere: figures from SQL rather than read off a page, and text answers whose every sentence is checked against its source before it is shown. The evaluations' judge is a model, checked against reference labels from a stronger model, not a person ([limitations](#limitations)).
 
 ## Architecture
 
+A question goes through a LangGraph graph. The router sends it to the specialist it needs, and the validator checks what the specialist wrote before the reply goes out:
+
 ```mermaid
 flowchart LR
-    C["Clients<br/>web · MCP"] --> A["API<br/>quotas · cache"]
-    A --> R{Router}
-    R --> D["Doc agent<br/>RAG over filings"]
-    R --> T["Tools<br/>calculator · fetchers"]
-    R --> B["Brief crew"]
-    R --> S["Data agent<br/>Text-to-SQL"]
-    D <--> Q[("Qdrant<br/>dense + BM25")]
-    S <--> P[("SQL store<br/>XBRL facts")]
-    D & T & B & S --> V["Validator"]
-    V -- "pass" --> ANS["Answer<br/>citations · chart · SQL"]
-    V -. "retry with feedback, max 2" .-> R
+    Q["Question"] --> RW["Rewrite<br/>a follow-up made standalone"]
+    RW --> U["Understand<br/>company · period · form"]
+    U --> R{"Route"}
+    R -- "figures" --> DA["Data agent<br/>Text-to-SQL over XBRL facts"]
+    R -- "text" --> DO["Doc agent<br/>search, cited answer"]
+    R -- "both" --> H["Hybrid<br/>SQL's figures, the pages' reasons"]
+    R -- "brief" --> B["Brief crew"]
+    R -- "advice, off-topic" --> X["Decline"]
+    DA -. "declined, or no rows" .-> DO
+    DA & DO & H & B & X --> S["Synthesise"]
+    S --> V{"Validate<br/>each cited sentence"}
+    V -- "fails: revise, at most twice" --> V
+    V -- "passes, or trimmed to what holds" --> A["Answer<br/>citations · SQL · chart"]
 ```
 
-Every model call goes through one gateway (LiteLLM, with Groq first and other providers as fallback), and every step is traced in Langfuse. Details: [docs/PLAN.md](docs/PLAN.md) and the [decision records](docs/decisions/README.md).
+It runs on Google Cloud, all in Terraform, built so that nothing costs money while nobody uses it:
 
-## What's built so far
+```mermaid
+flowchart LR
+    VIS["Visitor"] --> UI["Web UI<br/>Cloud Run, public"]
+    MC["MCP client"] --> MCP["MCP server<br/>Cloud Run, public"]
+    UI --> API["API<br/>Cloud Run, private"]
+    MCP --> API
+    API --> QD[("Qdrant Cloud<br/>page vectors")]
+    API --> FS[("Firestore<br/>quotas · cache · feedback")]
+    API -. "demo windows" .-> SQL[("Cloud SQL<br/>XBRL facts")]
+    API --> LLM["Groq's free tier,<br/>then Cerebras, capped"]
+    GH["GitHub Actions"] -- "keyless deploys,<br/>weekly evaluation, daily canary" --> API
+```
+
+Every model call goes through one gateway (LiteLLM), which counts tokens and cost, retries and falls back. Outside a demo window, the data agent queries a copy of the facts that the API image carries, with the same answers ([report](docs/eval/facts-postgres.md)). Each choice has a [decision record](docs/decisions/README.md), and each component a [concept guide](docs/concepts/README.md).
+
+## Limitations
+
+- **A small held-out set.** 50 test questions give intervals about ±0.13 wide ([report](docs/eval/financebench-test.md)), and FinanceBench's questions are templated and name their filing. The test result shows the copilot carries over to new companies, not that it would hold on any question an analyst might ask.
+- **Model judges.** Correctness and faithfulness are judged by Qwen3.8 27B with a rubric, and code compares the figures. The judge agreed with all 41 reference labels from a stronger model ([ADR-0014](docs/decisions/0014-answer-judge.md)), but no person has checked it.
+- **Faithfulness covers text answers.** The check reads sentences against cited pages; SQL answers cite a query, so the copilot's faithfulness is reported on its doc and hybrid answers.
+- **Coverage.** The filings are FinanceBench's: 361 filings from 40 companies ([data card](docs/data/financebench.md)). The facts database holds annual figures for whole companies, so questions about quarters or segments go to the filings' text.
+- **No readers yet.** The online signals, the answer bandit's rewards and the search page's clicks, come from the project's own canary questions ([bandit](docs/eval/bandit-online.md), [search page](docs/eval/interleaving.md)).
+- **Public benchmark.** FinanceBench has been public since 2023, so the models may have seen it. The split by company and the project's own sets limit what memorisation can explain; they don't rule it out.
+
+## Costs
+
+| | Cost | Report |
+|---|---|---|
+| An idle month | About $2.10 before credits, 96% of it the stopped database's storage | [Deployment](docs/eval/deployment.md#costs) |
+| A demo hour | About $0.015: the database's hour plus its ten-minute start; the model calls on Groq's free tier | [Deployment](docs/eval/deployment.md#a-demo-hour) |
+| An answer on the paid fallback | About $0.005, within a cap of $0.50 a day | [Copilot v2](docs/eval/copilot-v2.md#cost) |
+| The weekly evaluation | About $0.76 a run, within a cap of $1.20 | [Nightly evaluation](docs/eval/nightly.md) |
+| The answer bandit and its canary | At most $0.129 in a day so far, within a cap of $0.25 | [Bandit online](docs/eval/bandit-online.md) |
+
+## What's in the repository
 
 | Component | Where |
 |---|---|
@@ -73,7 +131,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Prompt search with DSPy: MIPROv2 over HyDE's instruction on questions about training filings; it returned the hand-written instruction, which no proposal beat | `src/copilot/training/hyde.py` ([ADR-0028](docs/decisions/0028-dspy-hyde.md), [guide](docs/concepts/dspy.md), [report](docs/eval/dspy-hyde.md)) |
 | Answer bandit: ε-greedy and UCB1 over three answer-model settings, replayed offline over judged answers; one fixed model earned more, so the bandit waited behind a setting for online rewards (Phase 9, below) | `src/copilot/answer/bandit.py`, `src/copilot/eval/bandit.py` ([ADR-0029](docs/decisions/0029-bandit-routing.md), [guide](docs/concepts/bandit-routing.md), [report](docs/eval/bandit-routing.md)) |
 | Brief crew: a Self-Discover plan, sections written in parallel by the doc agent and the hybrid, the validator's checker as the critic and an editor's summary; on 12 briefs of its own set it covers 86% of the rubric items with 92% of its sentences supported | `src/copilot/agents/brief.py` ([ADR-0030](docs/decisions/0030-brief-crew.md), [guide](docs/concepts/research-briefs.md), [report](docs/eval/brief-crew.md), [data card](docs/data/brief-set.md)) |
-| Orchestration: a LangGraph state graph from the question to the reply (rewrite, understand, route, the specialist, synthesise, validate, respond), with every node's start and end streamed and kept as a JSON-line trace, and conversations kept by a checkpointer, in Postgres when asked; `poe ask` runs one question through it. End to end on FinanceBench dev, version 2 answers 65% of questions correctly, as many as the doc agent alone and 16 points more than version 1, with 32 of the 33 figure questions right through the data agent and 82% of its doc and hybrid answers fully supported by their citations, against 49% for the doc agent alone. A question the data agent can't answer goes on to the doc agent, and an answer may keep a labelled assessment of the facts it cites | `src/copilot/agents/` ([ADR-0018](docs/decisions/0018-graph-design.md), [ADR-0026](docs/decisions/0026-copilot-v2.md), [guide](docs/concepts/langgraph-orchestration.md), [version 1 report](docs/eval/copilot-dev.md), [version 2 report](docs/eval/copilot-v2.md)) |
+| Orchestration: a LangGraph state graph from the question to the reply (rewrite, understand, route, the specialist, synthesise, validate, respond), with every node's start and end streamed and kept as a JSON-line trace, and conversations kept by a checkpointer, in Postgres when asked; `poe ask` runs one question through it. End to end on FinanceBench dev, version 2 answers 65% of questions correctly, as many as the doc agent alone and 16 points more than version 1, with 32 of the 33 figure questions right through the data agent and 82% of its doc and hybrid answers fully supported by their citations, against 49% for the doc agent alone. A question the data agent can't answer goes on to the doc agent, and an answer may keep a labelled assessment of the facts it cites. On FinanceBench's 50 held-out test questions, opened once, it answers 68% correctly (0.56 to 0.80), level with the doc agent alone (66%) | `src/copilot/agents/` ([ADR-0018](docs/decisions/0018-graph-design.md), [ADR-0026](docs/decisions/0026-copilot-v2.md), [guide](docs/concepts/langgraph-orchestration.md), [version 1 report](docs/eval/copilot-dev.md), [version 2 report](docs/eval/copilot-v2.md), [test report](docs/eval/financebench-test.md)) |
 | Validator loop: every cited sentence of a doc or hybrid answer checked by a third model before it is shown, and a failing answer revised at most twice, then trimmed to what holds or declined; faithful answers rise from 0.63 to 0.85 on FinanceBench dev, at $0.0008 an answer | `src/copilot/agents/validator.py` ([ADR-0019](docs/decisions/0019-validator-loop.md), [guide](docs/concepts/validator-loop.md), [report](docs/eval/validator-dev.md)) |
 | Memory: follow-ups rewritten into standalone questions from the conversation and the user's notes; Mem0-style notes about each user (what they follow, how they want answers), kept in Postgres across conversations; every turn of a 20-turn memory set resolved | `src/copilot/agents/memory.py` ([guide](docs/concepts/agent-memory.md), [data card](docs/data/memory-set.md)) |
 | API: FastAPI with the answer streamed as server-sent events (each node's start and end, the route, the reply), research briefs streamed the same way (`POST /v1/brief`), feedback, cited pages, health and readiness probes, request ids and OpenAPI docs | `src/copilot/api/` ([ADR-0020](docs/decisions/0020-api-and-streaming.md), [guide](docs/concepts/sse-streaming.md)) |
@@ -84,7 +142,7 @@ Every model call goes through one gateway (LiteLLM, with Groq first and other pr
 | Observability: each API run as a Langfuse trace, with a span per node and every model call's tokens and cost; latency by route and node from the traces | `src/copilot/agents/tracing.py`, `src/copilot/eval/latency.py` |
 | Deployment on Google Cloud, all in Terraform: four Cloud Run services that scale to zero (a public web UI and MCP server, a private API, and an ingestion worker fed by Pub/Sub with a dead-letter topic), Cloud SQL on a private address for demo windows, Firestore, Qdrant Cloud, and one least-privilege account per service. Keyless deploys from GitHub Actions with a start check, smoke tests and automatic rollback; a paid fallback capped at $0.50 a day. Under 30 simulated visitors one API instance served cached answers in 49 ms at the median, with no failures. From the billing export: an idle month costs about $2.10 before credits, 96% of it the stopped database's storage, and a demo hour $0.014 | `infra/terraform/`, `.github/workflows/deploy.yml`, `src/copilot/llm/fallback.py` ([ADR-0031](docs/decisions/0031-google-cloud-topology.md), [ADR-0032](docs/decisions/0032-continuous-deployment.md), [ADR-0033](docs/decisions/0033-capped-paid-fallback.md), [report](docs/eval/deployment.md), [runbook](docs/runbooks/deploy.md), [guide](docs/concepts/cloud-costs.md)) |
 | An idle limit in the web UI: after 15 minutes without input a page leaves for a static one, so a forgotten tab stops billing Cloud Run's CPU; measured on the live UI, it now costs about $0.023 once instead of about $2.20 a day | `src/copilot/ui/app.py`, `src/copilot/ui/static/paused.html` ([report](docs/eval/deployment.md#an-open-tab)) |
-| Nightly evaluation in GitHub Actions, keyless, within a hard cap of $0.40 a night ($1.20 on Sundays) that the gateway enforces: 32 FinanceBench dev questions (all 100 on Sundays) and the routing and SQL sets each night, metrics only, with paired tests against the last full run that fail the run and open an issue on a significant drop. The first complete full night (22 November) scored 0.66 correct (0.57 to 0.75), as the copilot's dev run did, and the trend is on the project page | `.github/workflows/nightly.yml`, `src/copilot/eval/nightly.py`, `src/copilot/llm/budget.py` ([ADR-0034](docs/decisions/0034-nightly-evaluation.md), [report](docs/eval/nightly.md), [runbook](docs/runbooks/nightly-eval.md), [guide](docs/concepts/online-evaluation.md)) |
+| Scheduled evaluation in GitHub Actions, keyless, within a hard cap that the gateway enforces: every night from 12 to 25 November (32 FinanceBench dev questions, all 100 on Sundays; $0.40 a night, $1.20 on Sundays), and since Phase 10 all 100 every Sunday, with the routing and SQL sets. It keeps metrics only, and paired tests against the last full run fail the run and open an issue on a significant drop. The first complete full night (22 November) scored 0.66 correct (0.57 to 0.75), as the copilot's dev run did, and the trend is on the project page | `.github/workflows/nightly.yml`, `src/copilot/eval/nightly.py`, `src/copilot/llm/budget.py` ([ADR-0034](docs/decisions/0034-nightly-evaluation.md), [report](docs/eval/nightly.md), [runbook](docs/runbooks/nightly-eval.md), [guide](docs/concepts/online-evaluation.md)) |
 | Feedback as preference pairs: a rating keeps the answer it rates, "Try another answer" writes a second one with another arm and the reader's pick makes a pair, and `poe export-preferences` writes TRL's format from retries, opposite ratings and the validator's revisions | `src/copilot/eval/preferences.py`, `scripts/export_preferences.py` ([ADR-0035](docs/decisions/0035-preference-pairs.md), [guide](docs/concepts/preference-data.md)) |
 | The answer bandit online, within $0.25 a day: a coin flip sends each paid answer to the fixed arm or to ε-greedy, and a daily canary asks the live API ten of the project's own questions, all judged. Over a week the policy earned 0.93 (0.86 to 0.98) against the fixed arm's 0.85 (0.76 to 0.94), a difference that can't be told from none, so by the rule set beforehand it stays on; counting cost as the offline replay did (λ = 100), the fixed arm would win | `src/copilot/api/bandit.py`, `src/copilot/eval/canary.py`, `.github/workflows/canary.yml` ([ADR-0036](docs/decisions/0036-bandit-online.md), [report](docs/eval/bandit-online.md), [runbook](docs/runbooks/bandit-and-canary.md)) |
 | Drift checks on retrieval similarity and refusals from the nightly runs, and on the live API's latency from the canary, each window tested question by question; the first comparisons found no drift | `src/copilot/eval/drift.py` ([ADR-0037](docs/decisions/0037-drift-checks.md), [report](docs/eval/drift.md)) |
@@ -100,6 +158,7 @@ cp .env.example .env          # add GROQ_API_KEY
 uv run poe services-up        # Qdrant on 127.0.0.1:6333, Postgres on 127.0.0.1:5433
 uv run poe check              # ruff, format check, mypy, pytest: the same steps as CI
 uv run poe secrets            # gitleaks over the full history, as CI does (needs Docker)
+uv run poe check-links        # every documentation link and anchor, as CI does
 uv run poe smoke              # one live call per model role (needs the key)
 uv run poe fetch-financebench # evaluation questions and the PDFs they cite (159 MB)
 uv run poe eval-retrieval --baseline first-pages   # score a retriever, with 95% intervals
@@ -138,10 +197,12 @@ Step-by-step setup and troubleshooting: [docs/runbooks/local-setup.md](docs/runb
 
 ## Documentation
 
+- [Write-up](docs/WRITEUP.md): what worked and what didn't, with every number linked
+- [Evaluation reports](docs/eval/README.md): one per experiment, and every run's headline
 - [Build plan](docs/PLAN.md): phases, steps and exit criteria
 - [Build log](docs/BUILD_LOG.md): what happened in each working session
 - [Decision records](docs/decisions/README.md): what was chosen and why
-- [Concept guides](docs/concepts/README.md): how each component works
+- [Concept guides](docs/concepts/README.md): how each component works, with review questions
 - [Runbooks](docs/runbooks/README.md): setup and operations
 
 ## License
