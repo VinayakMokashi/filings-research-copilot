@@ -45,7 +45,7 @@ On the routing set ([report](../eval/lora-router.md)), against the routers of Ph
 
 The classifier is significantly better than the semantic router on both splits, and worse than the LLM router on dev. It became the LLM router's fallback, behind `FRC_ROUTER_FALLBACK=classifier`, while the LLM router stays first ([ADR-0025](../decisions/0025-classifier-router.md)). The model is on Hugging Face as [vinayakmokashi45/filings-research-copilot-router](https://huggingface.co/vinayakmokashi45/filings-research-copilot-router).
 
-## Pitfalls
+## Pitfalls we hit
 
 - **Leaks from the evaluation set.** A written question can come close to a routing-set question by chance; 71 of the second set's 2,399 distinct questions did (77 of the first set's 2,368), and were dropped before labelling.
 - **A teacher's labels can't fill a gap in the questions.** The first set's decline questions were nearly all requests for investment advice, because each batch named companies and measures; none was harmful or tried to override the instructions. Its classifier sent those requests to small talk with 0.92 to 0.99 confidence, and routed only 9 of 21 dev declines correctly. Asking the writer for each kind a route's definition lists, in turn, raised that to 16 of 21. A distilled student learns the teacher's decisions only on the inputs it is shown.

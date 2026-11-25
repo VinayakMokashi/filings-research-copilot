@@ -75,5 +75,5 @@ The gap between the second and third rows is what finding the right filing is wo
 
 ## References
 
-- Manning, Raghavan and Schütze, [Introduction to Information Retrieval](https://nlp.stanford.edu/IR-book/), 2008, chapter 8 (evaluation).
+- Manning, Raghavan and Schütze, [Introduction to Information Retrieval](https://doi.org/10.1017/CBO9780511809071), Cambridge University Press, 2008, chapter 8 (evaluation).
 - Islam et al., [FinanceBench: A New Benchmark for Financial Question Answering](https://arxiv.org/abs/2311.11944), 2023.
