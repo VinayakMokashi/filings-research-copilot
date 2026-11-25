@@ -47,6 +47,11 @@ Two samples were added to each of the doc agent's stored answers to FinanceBench
 - **Where the votes split,** the answers often led with different quantities, a percentage in one and an amount in another, so a vote on the first figure compares unlike things.
 - **Decision: not adopted.** The copilot sends figure questions to the data agent, and the doc agent's figure mistakes aren't the scattered kind a vote can fix.
 
+## Pitfalls we hit
+
+- **The first figure isn't always the answer.** In five of the nine split votes, one answer led with an operand and another with the result, or one with a percentage and another with an amount. A vote on each answer's first figure then compares unlike quantities, so the key figure needs the question's measure, not just a position in the text.
+- **A systematic error survives the vote.** Both wrong answers gave the same wrong figure three times: a misread table is read the same way at any temperature. Voting fixes scattered slips, and these weren't.
+
 ## Review questions
 
 1. Why does sampling at temperature 0 not help, and what does a higher temperature change?
