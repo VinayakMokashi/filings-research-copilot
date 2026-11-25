@@ -132,6 +132,10 @@ The full night needed most of Groq's free daily quota for gpt-oss-20b, as expect
 
 If a full night is cut short again, the approved fallback stands: the small role moves to Cerebras's gpt-oss-120b for every night, the slice shrinks if the cap needs it, and a full night run by hand (at most $1.20) becomes the new baseline.
 
+## After Phase 10: a full run every Sunday
+
+The nightly slices ran from 12 to 25 November: after the baseline, each drew a verdict against it and none found a drop. At Phase 10's close the owner scaled the schedule down to a full run every Sunday, about $3.30 a month against about $12 for the nights ([ADR-0034's amendment](../decisions/0034-nightly-evaluation.md#amendment-25-november-a-full-run-every-sunday-after-phase-10)). The full run is the finer test, and with the build finished, few nights would have a change of their own to measure.
+
 ## Limits
 
 - **One night.** The cost of a night varies with the length of the models' replies, and the first scheduled nights will show by how much. If a night is cut short, the slice shrinks again.
