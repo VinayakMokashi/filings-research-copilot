@@ -24,7 +24,7 @@ On the dev split, the copilot's version 2 answers 0.65 of the questions correctl
 
 | Outcome | Copilot | Copilot before the validator | Doc agent alone | Copilot on dev | Doc agent alone on dev |
 |---|---|---|---|---|---|
-| Correct | **0.68 (0.54 to 0.80)** | 0.70 (0.56 to 0.82) | 0.66 (0.52 to 0.78) | 0.65 (0.56 to 0.74) | 0.65 (0.55 to 0.74) |
+| Correct | **0.68 (0.56 to 0.80)** | 0.70 (0.58 to 0.82) | 0.66 (0.52 to 0.78) | 0.65 (0.56 to 0.74) | 0.65 (0.55 to 0.74) |
 | Incorrect | 0.26 | 0.30 | 0.30 | 0.26 | 0.28 |
 | Refused or declined | 0.06 | 0.00 | 0.04 | 0.09 | 0.07 |
 
