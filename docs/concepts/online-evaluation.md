@@ -47,8 +47,8 @@ flowchart LR
 ```
 
 1. **Fixed questions.**
-   - **The slice:** 32 FinanceBench dev questions, drawn in proportion to the routes copilot v2 took and the question types, with a fixed seed. Every night answers the same ones, and the run on a Sunday answers all 100.
-   - **The other sets:** the routing set's 138 dev questions and the SQL set's 28, every night.
+   - **The slice:** 32 FinanceBench dev questions, drawn in proportion to the routes copilot v2 took and the question types, with a fixed seed. Every night answered the same ones, and the run on a Sunday answered all 100. Since Phase 10's close only the Sunday run is scheduled, so every scheduled run answers all 100 ([amendment](../decisions/0034-nightly-evaluation.md#amendment-25-november-a-full-run-every-sunday-after-phase-10)).
+   - **The other sets:** the routing set's 138 dev questions and the SQL set's 28, in every run.
 2. **Steps, each in a process of its own:** the copilot's answers, the correctness judge, the faithfulness check, the router and the data agent. They are the scripts every earlier evaluation used, so a night measures what the reports measured.
 3. **One ledger, one cap.**
    - **The ledger.** With `FRC_LLM_BUDGET_USD` and `FRC_LLM_BUDGET_FILE` set, the gateway appends every real call's cost to the ledger, a JSON-lines file all the steps share. Before each call it adds the ledger up.

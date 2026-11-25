@@ -1,18 +1,19 @@
-# The nightly evaluation (ADR-0034). Every night at 02:00 IST the copilot answers a fixed
-# slice of FinanceBench's dev questions (all of them on Sundays, IST), the LLM router the
-# routing set and the data agent the SQL set, on Cerebras in Phase 7's setup and within a
-# hard cap. Metrics alone go to the eval-history branch; a regression against the last
+# The scheduled evaluation (ADR-0034). Every Sunday at 02:00 IST the copilot answers all of
+# FinanceBench's dev questions, the LLM router the routing set and the data agent the SQL
+# set, on Cerebras in Phase 7's setup and within a hard cap. Until Phase 10's close it ran
+# every night, on a fixed slice of the dev questions except on Sundays; a run by hand can
+# still ask for a slice. Metrics alone go to the eval-history branch; a regression against the last
 # full run opens an issue and fails the run. FinanceBench's text never leaves the runner:
 # the steps' own output stays in local logs, and nothing is uploaded as an artifact.
 name: Nightly evaluation
 
 on:
   schedule:
-    - cron: "30 20 * * *" # 02:00 IST
+    - cron: "30 20 * * 6" # Saturday 20:30 UTC: 02:00 IST on Sundays
   workflow_dispatch:
     inputs:
       set:
-        description: "slice (40 questions, $0.40) or full (100, $1.20); auto: by the IST weekday"
+        description: "slice (32 questions, $0.40) or full (100, $1.20); auto: by the IST weekday"
         type: choice
         options: [auto, slice, full]
         default: auto

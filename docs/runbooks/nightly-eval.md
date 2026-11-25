@@ -1,18 +1,18 @@
 # The nightly evaluation
 
-How the copilot is evaluated every night, how to run a night by hand, and what to do when one fails or finds a regression ([ADR-0034](../decisions/0034-nightly-evaluation.md), [guide](../concepts/online-evaluation.md)).
+How the copilot is evaluated on a schedule, how to run a night by hand, and what to do when one fails or finds a regression ([ADR-0034](../decisions/0034-nightly-evaluation.md), [guide](../concepts/online-evaluation.md)). From 12 to 25 November the evaluation ran every night; since Phase 10's close it runs every Sunday, always as a full run ([ADR-0034's amendment](../decisions/0034-nightly-evaluation.md#amendment-25-november-a-full-run-every-sunday-after-phase-10)).
 
 ## What runs
 
-| | Every night | On Sundays (IST) |
+| | Every Sunday (IST), on schedule | A slice, by hand |
 |---|---|---|
-| When | 20:30 UTC, 02:00 IST | The run that starts at 02:00 IST on a Sunday |
-| FinanceBench dev | The 32-question slice in `eval/nightly/slice.json` | All 100 questions |
+| When | 20:30 UTC on Saturday, 02:00 IST on Sunday | When asked (`set: slice`) |
+| FinanceBench dev | All 100 questions | The 32-question slice in `eval/nightly/slice.json` |
 | Routing and SQL sets | Their dev splits: 138 and 28 questions | The same |
-| Cap | $0.40 | $1.20 |
+| Cap | $1.20 | $0.40 |
 | Waiting | Up to 3 hours in all, for a model that stopped a step | The same |
 
-The workflow is `.github/workflows/nightly.yml`.
+The workflow is `.github/workflows/nightly.yml`. Its name and the history's file names still say "nightly", from the two weeks it ran every night.
 
 - **When it really starts.** GitHub may start a scheduled run late when its runners are busy: the first three nights started 4.5 to 5.5 hours after 20:30 UTC. The set and the night's date are read in IST when the run starts, so a start up to about 22 hours late still runs the right set under the right date.
 

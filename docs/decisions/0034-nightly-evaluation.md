@@ -46,6 +46,15 @@ The constraints:
 6. **Regressions.** Each metric is compared with the last full run on the same questions, by a paired permutation test, with the night's tests adjusted together (Holm, α = 0.05). The metrics are correct and answered on the slice, and the routing and SQL accuracies.
    - A significant drop fails the run and opens a GitHub issue, or comments on the one already open.
 
+## Amendment (25 November): a full run every Sunday after Phase 10
+
+At Phase 10's close, with the build finished, the owner scaled the schedule down:
+
+- **When:** once a week, at 20:30 UTC on Saturdays (02:00 IST on Sundays). Every scheduled run is a full one: all 100 dev questions, the routing set and the SQL set, within the full run's $1.20. The nightly slices stop after the night of 25 November.
+- **Why:** with no change landing on `main` most nights, a slice a night would mostly measure the providers' variation, and the full run is the finer test (see Consequences). The month's model spend falls from about $12 to about $3.30.
+- **The verdict:** each run is tested against the last complete full run, and a complete run becomes the next baseline, as the Sunday runs did.
+- **Unchanged:** the models, the judges, the caps, the waits for a model that stopped a step, metrics only, and the issue on a significant drop. A run by hand can still ask for a slice.
+
 ## Evidence
 
 The first estimate, from copilot v2's dev run on Cerebras ([report](../eval/copilot-v2.md)), put a night of 40 questions at about $0.40, at the cap. So one night was run by hand on 11 November, from an empty cache, before the schedule started ([report](../eval/nightly.md)):
