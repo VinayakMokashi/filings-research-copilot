@@ -15,6 +15,63 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-25 · Phase 10 · The held-out test, one deploy, the demo, and the close
+
+- **Goal:** finish the test split, deploy the UI's fixes with its results, record the demo on the live service, and close the project: README, project page, write-up, documentation review, and the weekly schedule.
+- **Done:**
+  - **The test split** ([report](eval/financebench-test.md)). On the 50 held-out questions, from 12 companies never used in tuning, the copilot answered 0.68 (0.56 to 0.80) and the doc agent alone 0.66 (0.52 to 0.78): a paired difference of +0.02 (−0.08 to +0.12, p = 1.00). Both match their dev scores, and the copilot splits the same way as on dev: the data agent won figure questions (16 of 17 against 13), and analyst questions gave a little back. Its text answers were faithful more often than the doc agent's (0.74 against 0.56 on the same 27), short of significance (p = 0.06). The split cost $0.44 of its $0.75, and it is spent.
+  - **One deploy (#139)** carried the test results and the UI's fixes: cited pages and search results open on the live service again, a chart's years read as years, and the results page lists the copilot's own rows first, the held-out test above dev. It rolled out at 08:06 UTC with its smoke tests, and the live check passed on commit `9bfe895`.
+  - **The demo**, recorded on the live UI during a demo window (about 16 minutes of database, under half a cent): a script drove headless Chrome through one question of the project's own: Boeing's research and development expense from 2018 to 2022, and what its 2022 10-K says drove the 2022 increase. The answer came in 25 seconds with the five years from the facts database, the 10-K's reason, a chart, the SQL, and a cited page that now opens. Neither the answer nor the cited page shares a figure with FinanceBench's answers about Boeing; the one number in common, 737, is the airplane's name. The project page has the video and six stills, and the README a GIF.
+  - **The weekly schedule.** At the close the scheduled evaluation moved from nightly slices to a full run every Sunday, about $3.30 a month ([ADR-0034's amendment](decisions/0034-nightly-evaluation.md#amendment-25-november-a-full-run-every-sunday-after-phase-10)). The canary, the bandit and the paid fallback keep their caps.
+  - **Docs:** the README (results with intervals, each linked; architecture; limitations; costs), the project page (status, the held-out result, the demo, every number linked to its report, the stale text of earlier phases), the write-up ([what worked and what didn't](WRITEUP.md)), PLAN (Phase 10 done; the definition of done's item 6), the runbook and guide on the schedule, and the documentation review: two concept guides brought to the template, and a dead link replaced by the book's DOI.
+- **Commands:**
+  - `uv run poe run-copilot --run copilot-v2 --split test --allow-test`, in parts with `--ids`, then `--lenient` for one question; `judge-answers` and `check-faithfulness` for the copilot, its drafts and the doc agent;
+  - `uv run poe compare-runs` on the test runs, and two-sample tests of test against dev;
+  - `uv run poe demo-up` and `demo-down` around the recording; `uv run poe check`; `uv run poe check-links`.
+- **Results:** 821 tests pass; the documentation's 1,654 links and anchors resolve; the video runs 59 s in 997 KB.
+- **Problems and fixes:**
+  - **A check that never came back readable.** One test question's revised answer drew "Failed to validate JSON" from Groq twelve times over three strict runs, at temperature 0, so a strict run could never finish it. `run_copilot.py --lenient` answers such a question as the API does, letting the answer pass unchecked; its run got a readable reply on a retry, so all 50 answers were checked as usual.
+  - **An interval quoted from the wrong order.** The first draft of the test report computed the copilot's interval with the questions sorted by id, and quoted 0.54 to 0.80; the run's own summary, which resamples in the split's order, says 0.56 to 0.80. Every document now quotes the runs' summaries; the paired tests were the same either way.
+  - **The video was too large for the repository.** At the first quality setting the MP4 was 1.5 MB, and the pre-commit hook refuses a file over 1,024 KB; a lower setting (CRF 32) keeps the text sharp in 997 KB.
+- **Decisions:** [ADR-0034's amendment](decisions/0034-nightly-evaluation.md#amendment-25-november-a-full-run-every-sunday-after-phase-10) (a full run every Sunday); PLAN's change log (the definition of done's item 6; the judge's person check stays open).
+- **Next:** nothing planned. The live service keeps running within its caps: the Sunday evaluation, the daily canary and the bandit, and the paid fallback. Google Cloud's trial credit ends on 22 December, after which an idle month costs about $2.10.
+
+---
+
+### 2026-11-24 · Phase 10 · The showcase's plan, the test split opened, and a bug only a recorded demo found
+
+- **Goal:** start Phase 10: plan the showcase with the owner, open FinanceBench's held-out test split once, script the demo recording, and check every documentation link.
+- **Done:**
+  - **The plan.** The owner chose, in one list:
+    - the test split for the final copilot and the doc agent alone, paired, within a hard cap of $0.75;
+    - the judge's person check stays an open limitation;
+    - a scripted, silent demo recording;
+    - after the showcase, a full evaluation every Sunday instead of nightly slices.
+
+    The test uses the nightly's setup and the dev runs' judges, so test and dev compare.
+  - **The test split, opened (#137, no deploy).** The four evaluation scripts take `--split test`, and refuse it without `--allow-test`, with exit code 2 and nothing written. The copilot's run went in two halves on two days, so Groq's free quota for the small role still covered the nights. The doc agent answered all 50 on the first day.
+  - **The link check (#138, no deploy).** `scripts/check_links.py` checks every relative link and anchor in the Markdown files and the project page, with GitHub's heading slugs, and maps this repository's GitHub addresses to its files. CI runs it on every pull request, offline; `--external` fetches each web address once. It found no broken link among 1,549 in 345 files.
+  - **The demo, scripted.** Headless Chrome, driven over the DevTools protocol, asks the live UI a question during a demo window and records the screen, then saves stills of the answer, its chart, sources, SQL, a cited page and the results page. A second script checks that the demo answer shares no figure with FinanceBench's answers for the company, since the benchmark's text stays out of the repository.
+  - **The bug it found.** On the live UI a cited page never opened: "The page couldn't be loaded", since 2 November. The UI fetched pages without signing its call to the private API, which refused it. Local runs have no private API, so no test had seen it. The fix signs the call as the chat does, with a test.
+- **Commands:**
+  - `uv run poe check`, and `uv run python scripts/check_links.py --external`;
+  - `uv run poe run-copilot`, `answer-questions`, `judge-answers` and `check-faithfulness`, each with `--split test --allow-test`, in steps under one budget ledger (`FRC_LLM_BUDGET_USD`, `FRC_LLM_BUDGET_FILE`);
+  - `uv run poe demo-up` and `demo-down` around the recording (about 25 minutes of database, about $0.005).
+- **Results:**
+  - The night of 24 November: no drop against the baseline (0.625 against 0.656 on the same 32 questions, p = 1.0), and no drift after onnxruntime 1.32.
+  - The test split's first day cost $0.36 of its $0.75.
+- **Problems and fixes:**
+  - **The page bug,** above.
+  - **A chart's years read "2,018".** The chart took the years as numbers; it now plots them as labels, with readable axis titles.
+  - **Streamlit's labels start with an icon's name** in the page's text, so the recorder matches labels by their end; a toggle ignores a scripted click, so it sends real mouse events.
+  - **Stanford's IR book site** refused connections from two networks; the guide links the book's DOI instead.
+- **Decisions:**
+  - Definition of done, item 6: CI has no evaluation gate on pull requests, since model runs need secrets that a public repository's pull requests can't get. The nightly regression gate does that job, and PLAN's change log says so.
+  - The write-up lives in the repository.
+- **Next:** the copilot's other 25 test questions, the judges, the report and one deploy; the demo's final recording; the README, the project page, the write-up and the review.
+
+---
+
 ### 2026-11-23 · Phase 9 · The close: the first baseline, the bandit's week, and no drift
 
 - **Goal:** close Phase 9: read the first complete full night and the first verdict, compare the bandit with its fixed arm after the canary's week, run drift's first comparisons with the default windows, count the search page, and tick the plan.
