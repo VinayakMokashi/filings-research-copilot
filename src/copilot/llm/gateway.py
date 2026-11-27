@@ -118,7 +118,8 @@ def build_router(settings: Settings) -> Router:
     fallbacks: list[dict[str, list[str]]] = (
         [{role: fallback_names} for role in roles] if fallback_names else []
     )
-    return Router(
+    # LiteLLM 1.110 declares the constructor through a decorator that mypy reads as Any.
+    router: Router = Router(
         model_list=model_list,
         fallbacks=fallbacks,
         num_retries=settings.llm_max_retries,
@@ -130,6 +131,7 @@ def build_router(settings: Settings) -> Router:
         # try twice more, keeping a visitor waiting for a limit that won't lift in time.
         retry_policy=RetryPolicy(RateLimitErrorRetries=0) if settings.llm_paid_daily_usd else None,
     )
+    return router
 
 
 class LLMGateway:
