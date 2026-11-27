@@ -10,7 +10,6 @@ from unittest.mock import patch
 
 import pytest
 from litellm.exceptions import RateLimitError
-from litellm.router import Router
 from pydantic import SecretStr
 
 from copilot.agents.build import model_client
@@ -233,7 +232,8 @@ def test_with_the_fallback_on_a_rate_limit_is_not_retried() -> None:
     for paid_daily_usd, expected in ((0.0, 3), (0.5, 1)):
         attempts = 0
         router = build_router(Settings(_env_file=None, llm_paid_daily_usd=paid_daily_usd))
-        no_pause = patch.object(Router, "_time_to_sleep_before_retry", return_value=0)
+        # The retries' backoff sleeps through time.sleep in LiteLLM's router, whatever its version.
+        no_pause = patch("time.sleep")
         with no_pause, patch("litellm.completion", refuse), pytest.raises(RateLimitError):
             router.completion(model="fast", messages=[{"role": "user", "content": "hi"}])
         assert attempts == expected
