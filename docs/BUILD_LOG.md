@@ -15,6 +15,25 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-27 · Maintenance · Six dependency updates, one deploy, and LiteLLM's new router
+
+- **Goal:** merge Dependabot's six updates after the owner's go-ahead, with one deploy for the two that change the images.
+- **Done:**
+  - **Four that don't deploy,** merged at once: the ruff hook 0.17.6 (#141), setup-uv 10.4.0 in the workflows (#145), and the Google provider 8.12.0 in both Terraform roots (#142, #144). Plans of both roots with the new provider showed no changes.
+  - **Two that do:** the uv image 0.13.10 (#143) and five Python packages (#146: FastAPI 0.165.0, LangGraph 1.2.23, LiteLLM 1.110.1, Pydantic 2.14.4, ruff 0.17.6) were cherry-picked into #147 with two fixes, so production deployed once. It rolled out at 15:36 UTC; the live check passed, and a live question went through the whole graph on the new router: nine model calls across the three roles, none failing.
+  - Dependabot's one open alert, #48 (`diskcache`, through DSPy in the `dev` group, with no patched release), is unchanged; the images don't carry it.
+- **Commands:**
+  - `terraform plan` in `infra/terraform/bootstrap` and `infra/terraform/envs/prod` on each provider update's branch;
+  - `git cherry-pick` of #143's and #146's commits, then `uvx uv@0.13.10 sync --locked`;
+  - `uv run poe check`: ruff, format and mypy clean; 821 passed, 7 deselected.
+- **Problems and fixes:**
+  - **LiteLLM 1.110 rebuilt its router on a new core,** and #146's checks failed twice:
+    - mypy read the router's constructor as returning `Any`, so `build_router` annotates its result;
+    - the private retry-pause method one test patched is gone, so the test patches `time.sleep`, which the router's sync retries call.
+
+    The retries themselves were probed before the fix and are unchanged: three attempts without the paid fallback, one with it.
+- **Decisions:** none new. The owner approved the six updates.
+
 ### 2026-11-25 · Phase 10 · The held-out test, one deploy, the demo, and the close
 
 - **Goal:** finish the test split, deploy the UI's fixes with its results, record the demo on the live service, and close the project: README, project page, write-up, documentation review, and the weekly schedule.
