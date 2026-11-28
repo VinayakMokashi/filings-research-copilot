@@ -15,6 +15,21 @@ A dated journal of every working session, newest first. Each entry uses this tem
 
 ---
 
+### 2026-11-28 · Maintenance · Docs accuracy pass
+- **Goal:** make every figure in the README, `docs/WRITEUP.md`, `docs/PLAN.md` and the project page match a logged result.
+- **Done:**
+  - Coverage: the doc agent searches the 84 filings FinanceBench's questions are about, from 32 companies, not the 361 in FinanceBench's wider corpus.
+  - Routing: the 60 of 60 held-out and 138 of 138 dev results belong to router prompt r1; the deployed prompt r2 has been run on dev only. Updated in the README, the write-up and the project page's router popover.
+  - Costs: the README says which figures come from committed logs and which from the billing export, which isn't committed. The weekly evaluation quotes $0.756 for the first complete run (22 November), linked to its log on `eval-history`. The idle month reads "$2.10 once the credit ends, $2.07 of it storage".
+  - "Before any code was written" is now "before any retrieval code was written".
+  - The repository description no longer says "(in development)".
+  - New `TODO.md`: cost guards for when the upgrade credit ends on 22 December 2026.
+- **Commands:** `git push` only. CI passed; the deploy job was skipped because no image contents changed; the project page redeployed for the popover change.
+- **Results:** every figure touched now matches `eval/results/` or the `eval-history` branch.
+- **Problems and fixes:** the first `TODO.md` said the account still needed a paid upgrade. It was upgraded on 10 November, so the note was corrected.
+- **Decisions:** none.
+- **Next:** unchanged.
+
 ### 2026-11-27 · Maintenance · Six dependency updates, one deploy, and LiteLLM's new router
 
 - **Goal:** merge Dependabot's six updates after the owner's go-ahead, with one deploy for the two that change the images.
