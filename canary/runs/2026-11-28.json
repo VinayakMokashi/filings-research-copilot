@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-28",
+  "started": "2026-11-28T12:59:38+00:00",
+  "finished": "2026-11-28T13:02:11+00:00",
+  "commit": "998c5acea36c3cffff6485301a3ee88382fb3568",
+  "summary": {
+    "questions": 10,
+    "ok": 10,
+    "failed": 0,
+    "busy": 0,
+    "answered": 8,
+    "routes": {
+      "doc": 10
+    },
+    "arms": {
+      "strong": 7,
+      "fast": 3
+    },
+    "groups": {
+      "control": 7,
+      "policy": 3
+    },
+    "judged": 10,
+    "faithful": 8,
+    "median_seconds": 10.77,
+    "max_seconds": 51.37
+  },
+  "drift": {
+    "window": 3,
+    "periods": {
+      "seconds": {
+        "reference": [
+          "2026-11-15",
+          "2026-11-16",
+          "2026-11-17"
+        ],
+        "recent": [
+          "2026-11-26",
+          "2026-11-27",
+          "2026-11-28"
+        ]
+      },
+      "similarity": {
+        "reference": [
+          "2026-11-15",
+          "2026-11-16",
+          "2026-11-17"
+        ],
+        "recent": [
+          "2026-11-26",
+          "2026-11-27",
+          "2026-11-28"
+        ]
+      }
+    },
+    "checks": {
+      "seconds": {
+        "questions": 20,
+        "reference": 14.922,
+        "recent": 14.5635,
+        "difference": -0.3585,
+        "low": -3.4661,
+        "high": 1.6125,
+        "p": 0.9742025797420258,
+        "p_holm": 0.9742025797420258,
+        "drift": false
+      },
+      "similarity": {
+        "questions": 20,
+        "reference": 0.7508,
+        "recent": 0.7508,
+        "difference": -0.0,
+        "low": -0.0,
+        "high": -0.0,
+        "p": 0.08099190080991901,
+        "p_holm": 0.16198380161983802,
+        "drift": false
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "r001",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.6917603,
+      "answered": false,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": false,
+      "seconds": 51.37
+    },
+    {
+      "id": "r002",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.70320624,
+      "answered": false,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 13.67
+    },
+    {
+      "id": "r003",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.761418,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.15
+    },
+    {
+      "id": "r007",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.73603785,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 10.5
+    },
+    {
+      "id": "r008",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7303212,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 10.23
+    },
+    {
+      "id": "r009",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.718202,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 8.97
+    },
+    {
+      "id": "r010",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.75812066,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 11.03
+    },
+    {
+      "id": "r011",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7585274,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 13.77
+    },
+    {
+      "id": "r012",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.7621989,
+      "answered": true,
+      "cached": false,
+      "arm": "fast",
+      "assignment": "policy",
+      "judged": true,
+      "faithful": false,
+      "seconds": 15.83
+    },
+    {
+      "id": "r013",
+      "ok": true,
+      "error": null,
+      "route": "doc",
+      "similarity": 0.8521179,
+      "answered": true,
+      "cached": false,
+      "arm": "strong",
+      "assignment": "control",
+      "judged": true,
+      "faithful": true,
+      "seconds": 9.86
+    }
+  ]
+}
