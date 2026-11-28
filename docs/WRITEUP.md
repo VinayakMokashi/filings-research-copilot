@@ -81,7 +81,7 @@ The deployment is built so that nothing costs money while nobody is using it ([A
 - Firestore for quotas, the answer cache and feedback, and Qdrant Cloud's free tier for the vectors;
 - keyless deploys from GitHub Actions through Workload Identity Federation, all in Terraform ([ADR-0032](decisions/0032-continuous-deployment.md)).
 
-Measured from the billing export, an idle month costs about $2.10 before credits, 96% of it the stopped database's storage, and a demo hour $0.014. Under 30 simulated visitors, one API instance served cached answers in 49 ms at the median with no failures ([report](eval/deployment.md)).
+Measured from the billing export, which isn't committed, an idle month costs about $2.10 once the trial's credit ends, $2.07 of it the stopped database's storage, and a demo hour $0.014. Under 30 simulated visitors, one API instance served cached answers in 49 ms at the median with no failures ([report](eval/deployment.md)).
 
 Four surprises are worth knowing, each found by measuring:
 
@@ -109,7 +109,7 @@ Running it taught three things no offline run could:
 - **Fifty held-out questions** give intervals of about ±0.13, and FinanceBench's questions are templated, so the test result shows the copilot generalises to new companies, not that it would hold on any question an analyst might ask.
 - **The judge** was checked against a stronger model's labels, not a person's.
 - **The faithfulness check can't read SQL answers,** which cite a query, not sentences, so the copilot's faithfulness is reported on its text answers.
-- **The corpus** is FinanceBench's: 361 filings from 40 companies ([data card](data/financebench.md)), and the facts database holds annual figures for whole companies only.
+- **The corpus** is the 84 filings FinanceBench's questions are about, from 32 companies ([data card](data/financebench.md)), not the 361 in its wider corpus, and the facts database holds annual figures for whole companies only.
 - **The online numbers come from the project's own questions,** since no reader asked, rated or searched while they were measured.
 
 ## 10. With hindsight
@@ -127,7 +127,7 @@ Running it taught three things no offline run could:
 | 0.65 correct on dev; 82% of text answers fully supported | [copilot v2](eval/copilot-v2.md) |
 | Recall@10 0.722 | [retrieval](eval/retrieval-baseline.md), [ADR-0012](decisions/0012-query-understanding-and-rewriting.md) |
 | SQL 1.00 on dev, 14 of 14 held out; 32 of 33 figure questions | [SQL test run](../eval/results/sql/sql-agent-v2/test/summary.md), [data agent](eval/data-agent-financebench.md) |
-| Routing 60 of 60 held out; classifier 0.950 | [routing](eval/routing.md), [LoRA router](eval/lora-router.md) |
+| Routing 60 of 60 held out (router prompt r1; the deployed r2 was run on dev only); classifier 0.950 | [routing](eval/routing.md), [LoRA router](eval/lora-router.md) |
 | $2.10 an idle month; $0.014 a demo hour | [deployment](eval/deployment.md#costs) |
 | 0.66 nightly baseline | [nightly](eval/nightly.md) |
 | Bandit 0.93 against 0.85 | [bandit online](eval/bandit-online.md) |

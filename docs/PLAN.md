@@ -278,7 +278,7 @@ Every experiment gets a before/after on fixed eval sets, an eval report and an a
 - [x] 8.7 Load test with Locust and size the services from the results. 30 visitors for 10 minutes: 3,540 requests, none failed, cached answers in 49 ms at the median and 130 ms at the 99th percentile, one API instance at 6% CPU and half its memory; the sizes stay ([report](eval/deployment.md)).
 - [x] 8.8 Security pass: least-privilege service accounts, a read-only SQL user, dependency and image scans. The deployer may roll out the four services only, the scheduler holds a two-permission role, and the default Compute account lost Editor; the SQL reader, checked on the instance, may only read; Trivy found no fixable HIGH or CRITICAL; the registry's own scan was skipped (gcloud's on-demand scan doesn't run on Windows) ([report](eval/deployment.md)).
 - [x] 8.9 Measure and document the cost of an idle month and of one demo, inside the free-trial credit's 90 days. Measured from the billing export:
-  - an idle month costs about $2.10 before credits, 96% of it the stopped database's storage;
+  - an idle month costs about $2.10 before credits, $2.07 of it the stopped database's storage;
   - a demo hour costs $0.014;
   - an open UI page costs $0.09 an hour of Cloud Run time;
   - the deploy's start check no longer downloads the image it built, which had cost $0.04 a deploy.
